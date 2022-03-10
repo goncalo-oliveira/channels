@@ -5,6 +5,17 @@
     <RootNamespace>Parcel.Buffers</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <PackageId>Parcel.Buffers</PackageId>
+    <Version>0.1-preview-1</Version>
+    <Authors>Goncalo Oliveira</Authors>
+    <Description>Parcel Buffers</Description>
+    <RepositoryUrl>https://github.com/goncalo-oliveira/parcel-channels</RepositoryUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/"/>
+  </ItemGroup>
 
 </Project>

@@ -5,10 +5,21 @@
     <RootNamespace>Parcel.Channels.Protocol</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <PackageId>Parcel.Channels.Protocol</PackageId>
+    <Version>0.1-preview-1</Version>
+    <Authors>Goncalo Oliveira</Authors>
+    <Description>Parcel Channels - Protocol Extension</Description>
+    <RepositoryUrl>https://github.com/goncalo-oliveira/parcel-channels</RepositoryUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\parcel-channels\parcel-channels.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/"/>
   </ItemGroup>
 
 </Project>
