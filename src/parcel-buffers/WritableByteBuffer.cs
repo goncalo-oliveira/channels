@@ -1,3 +1,5 @@
+using System.Buffers.Binary;
+
 namespace Parcel.Buffers;
 
 /// <summary>
@@ -5,21 +7,25 @@ namespace Parcel.Buffers;
 /// </summary>
 public sealed class WritableByteBuffer : IByteBuffer
 {
+    private readonly Endianness endianness;
     private readonly List<byte> buffer;
 
-    public WritableByteBuffer()
+    public WritableByteBuffer( Endianness endianness = Endianness.BigEndian )
     {
         buffer = new List<byte>();
+        this.endianness = endianness;
     }
 
-    public WritableByteBuffer( byte[] source )
+    public WritableByteBuffer( byte[] source, Endianness endianness = Endianness.BigEndian )
     {
         buffer = new List<byte>( source );
+        this.endianness = endianness;
     }
 
-    public WritableByteBuffer( int capacity )
+    public WritableByteBuffer( int capacity, Endianness endianness = Endianness.BigEndian )
     {
         buffer = new List<byte>( capacity );
+        this.endianness = endianness;
     }
 
     public bool IsReadable => false;
@@ -148,57 +154,121 @@ public sealed class WritableByteBuffer : IByteBuffer
 
     public void WriteDouble( double value )
     {
-        var bytes = BitConverter.GetBytes( value );
+        var span = new Span<byte>( new byte[ sizeof( double ) ]);
+        if ( endianness == Endianness.BigEndian )
+        {
+            BinaryPrimitives.WriteDoubleBigEndian( span, value );
+        }
+        else
+        {
+            BinaryPrimitives.WriteDoubleLittleEndian( span, value );
+        }
 
-        WriteBytes( bytes, 0, bytes.Length );
+        WriteBytes( span.ToArray(), 0, span.Length );
     }
 
     public void WriteSingle( float value )
     {
-        var bytes = BitConverter.GetBytes( value );
+        var span = new Span<byte>( new byte[ sizeof( float ) ]);
+        if ( endianness == Endianness.BigEndian )
+        {
+            BinaryPrimitives.WriteSingleBigEndian( span, value );
+        }
+        else
+        {
+            BinaryPrimitives.WriteSingleLittleEndian( span, value );
+        }
 
-        WriteBytes( bytes, 0, bytes.Length );
+        WriteBytes( span.ToArray(), 0, span.Length );
     }
 
     public void WriteInt16( Int16 value )
     {
-        var bytes = BitConverter.GetBytes( value );
+        var span = new Span<byte>( new byte[ sizeof( Int16 ) ]);
+        if ( endianness == Endianness.BigEndian )
+        {
+            BinaryPrimitives.WriteInt16BigEndian( span, value );
+        }
+        else
+        {
+            BinaryPrimitives.WriteInt16LittleEndian( span, value );
+        }
 
-        WriteBytes( bytes, 0, bytes.Length );
+        WriteBytes( span.ToArray(), 0, span.Length );
     }
 
     public void WriteInt32( Int32 value )
     {
-        var bytes = BitConverter.GetBytes( value );
+        var span = new Span<byte>( new byte[ sizeof( Int32 ) ]);
+        if ( endianness == Endianness.BigEndian )
+        {
+            BinaryPrimitives.WriteInt32BigEndian( span, value );
+        }
+        else
+        {
+            BinaryPrimitives.WriteInt32LittleEndian( span, value );
+        }
 
-        WriteBytes( bytes, 0, bytes.Length );
+        WriteBytes( span.ToArray(), 0, span.Length );
     }
 
     public void WriteInt64( Int64 value )
     {
-        var bytes = BitConverter.GetBytes( value );
+        var span = new Span<byte>( new byte[ sizeof( Int64 ) ]);
+        if ( endianness == Endianness.BigEndian )
+        {
+            BinaryPrimitives.WriteInt64BigEndian( span, value );
+        }
+        else
+        {
+            BinaryPrimitives.WriteInt64LittleEndian( span, value );
+        }
 
-        WriteBytes( bytes, 0, bytes.Length );
+        WriteBytes( span.ToArray(), 0, span.Length );
     }
 
     public void WriteUInt16( UInt16 value )
     {
-        var bytes = BitConverter.GetBytes( value );
+        var span = new Span<byte>( new byte[ sizeof( UInt16 ) ]);
+        if ( endianness == Endianness.BigEndian )
+        {
+            BinaryPrimitives.WriteUInt16BigEndian( span, value );
+        }
+        else
+        {
+            BinaryPrimitives.WriteUInt16LittleEndian( span, value );
+        }
 
-        WriteBytes( bytes, 0, bytes.Length );
+        WriteBytes( span.ToArray(), 0, span.Length );
     }
 
     public void WriteUInt32( UInt32 value )
     {
-        var bytes = BitConverter.GetBytes( value );
+        var span = new Span<byte>( new byte[ sizeof( UInt32 ) ]);
+        if ( endianness == Endianness.BigEndian )
+        {
+            BinaryPrimitives.WriteUInt32BigEndian( span, value );
+        }
+        else
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian( span, value );
+        }
 
-        WriteBytes( bytes, 0, bytes.Length );
+        WriteBytes( span.ToArray(), 0, span.Length );
     }
 
     public void WriteUInt64( UInt64 value )
     {
-        var bytes = BitConverter.GetBytes( value );
+        var span = new Span<byte>( new byte[ sizeof( UInt64 ) ]);
+        if ( endianness == Endianness.BigEndian )
+        {
+            BinaryPrimitives.WriteUInt64BigEndian( span, value );
+        }
+        else
+        {
+            BinaryPrimitives.WriteUInt64LittleEndian( span, value );
+        }
 
-        WriteBytes( bytes, 0, bytes.Length );
+        WriteBytes( span.ToArray(), 0, span.Length );
     }
 }

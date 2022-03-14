@@ -40,4 +40,8 @@ public static class ByteBufferExtensions
     /// <param name="value">The byte[] value</param>
     public static void WriteBytes( this IByteBuffer source, byte[] value )
         => source.WriteBytes( value, 0, value.Length );
+
+    // public static IByteBuffer ReverseEndianness( this IByteBuffer source )
+    // {
+    // }
 }

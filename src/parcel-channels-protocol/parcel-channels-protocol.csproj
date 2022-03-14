@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageId>Parcel.Channels.Protocol</PackageId>
-    <Version>0.1-preview-1</Version>
+    <Version>0.1-preview-2</Version>
     <Authors>Goncalo Oliveira</Authors>
     <Description>Parcel Channels - Protocol Extension</Description>
     <RepositoryUrl>https://github.com/goncalo-oliveira/parcel-channels</RepositoryUrl>

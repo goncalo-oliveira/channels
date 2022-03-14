@@ -1,3 +1,5 @@
+using System.Buffers.Binary;
+
 namespace Parcel.Buffers;
 
 /// <summary>
@@ -5,13 +7,15 @@ namespace Parcel.Buffers;
 /// </summary>
 public sealed class WrappedByteBuffer : IByteBuffer
 {
+    private readonly Endianness endianness;
     private byte[] buffer;
     private int offset;
 
-    public WrappedByteBuffer( byte[] source )
+    public WrappedByteBuffer( byte[] source, Endianness endianness = Endianness.BigEndian )
     {
         buffer = source;
         offset = 0;
+        this.endianness = endianness;
     }
 
     public bool IsReadable => true;
@@ -65,42 +69,82 @@ public sealed class WrappedByteBuffer : IByteBuffer
 
     public double GetDouble( int offset )
     {
-        return BitConverter.ToDouble( buffer, offset );
+        var span = new ReadOnlySpan<byte>( buffer, offset, sizeof( double ) );
+        var value = ( endianness == Endianness.BigEndian )
+            ? BinaryPrimitives.ReadDoubleBigEndian( span )
+            : BinaryPrimitives.ReadDoubleLittleEndian( span );
+
+        return value;
     }
 
     public float GetSingle( int offset )
     {
-        return BitConverter.ToSingle( buffer, offset );
+        var span = new ReadOnlySpan<byte>( buffer, offset, sizeof( float ) );
+        var value = ( endianness == Endianness.BigEndian )
+            ? BinaryPrimitives.ReadSingleBigEndian( span )
+            : BinaryPrimitives.ReadSingleLittleEndian( span );
+
+        return value;
     }
 
     public short GetInt16( int offset )
     {
-        return BitConverter.ToInt16( buffer, offset );
+        var span = new ReadOnlySpan<byte>( buffer, offset, sizeof( Int16 ) );
+        var value = ( endianness == Endianness.BigEndian )
+            ? BinaryPrimitives.ReadInt16BigEndian( span )
+            : BinaryPrimitives.ReadInt16LittleEndian( span );
+
+        return value;
     }
 
     public int GetInt32( int offset )
     {
-        return  BitConverter.ToInt32( buffer, offset );
+        var span = new ReadOnlySpan<byte>( buffer, offset, sizeof( Int32 ) );
+        var value = ( endianness == Endianness.BigEndian )
+            ? BinaryPrimitives.ReadInt32BigEndian( span )
+            : BinaryPrimitives.ReadInt32LittleEndian( span );
+
+        return value;
     }
 
     public long GetInt64( int offset )
     {
-        return  BitConverter.ToInt64( buffer, offset );
+        var span = new ReadOnlySpan<byte>( buffer, offset, sizeof( Int64 ) );
+        var value = ( endianness == Endianness.BigEndian )
+            ? BinaryPrimitives.ReadInt64BigEndian( span )
+            : BinaryPrimitives.ReadInt64LittleEndian( span );
+
+        return value;
     }
 
     public ushort GetUInt16( int offset )
     {
-        return BitConverter.ToUInt16( buffer, offset );
+        var span = new ReadOnlySpan<byte>( buffer, offset, sizeof( UInt16 ) );
+        var value = ( endianness == Endianness.BigEndian )
+            ? BinaryPrimitives.ReadUInt16BigEndian( span )
+            : BinaryPrimitives.ReadUInt16LittleEndian( span );
+
+        return value;
     }
 
     public uint GetUInt32( int offset )
     {
-        return  BitConverter.ToUInt32( buffer, offset );
+        var span = new ReadOnlySpan<byte>( buffer, offset, sizeof( UInt32 ) );
+        var value = ( endianness == Endianness.BigEndian )
+            ? BinaryPrimitives.ReadUInt32BigEndian( span )
+            : BinaryPrimitives.ReadUInt32LittleEndian( span );
+
+        return value;
     }
 
     public ulong GetUInt64( int offset )
     {
-        return  BitConverter.ToUInt64( buffer, offset );
+        var span = new ReadOnlySpan<byte>( buffer, offset, sizeof( UInt64 ) );
+        var value = ( endianness == Endianness.BigEndian )
+            ? BinaryPrimitives.ReadUInt64BigEndian( span )
+            : BinaryPrimitives.ReadUInt64LittleEndian( span );
+
+        return value;
     }
 
     private T Read<T>( Func<int,T> read, int size )
