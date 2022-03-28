@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>Faactory.Channels.Buffers</RootNamespace>
+    <AssemblyName>faactory.channels.buffers</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackageId>Faactory.Channels.Buffers</PackageId>
+    <Version>0.1-preview-3</Version>
+    <Authors>Goncalo Oliveira</Authors>
+    <Description>Channels Buffers</Description>
+    <RepositoryUrl>https://github.com/goncalo-oliveira/channels</RepositoryUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>faactory.png</PackageIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/"/>
+    <None Include="../../faactory.png" Pack="true" PackagePath="/"/>
+  </ItemGroup>
+
+</Project>

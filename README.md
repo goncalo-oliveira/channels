@@ -1,4 +1,4 @@
-# Parcel Channels
+# Channels
 
 A TCP communication library based on middleware components.
 
@@ -133,7 +133,7 @@ public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Me
 Install the package from NuGet
 
 ```bash
-dotnet add package Parcel.Channels
+dotnet add package Faactory.Channels
 ```
 
 To quickly bootstrap a server, we need a `HostBuilder` to inject a *hosted service*. Then we need to configure the listening options and set up the input and output pipelines. Here's an example
@@ -150,7 +150,7 @@ var builder = new HostBuilder()
         } );
 
         // add our hosted service
-        services.AddParcelHostedService( builder =>
+        services.AddChannelsHostedService( builder =>
         {
             // configure options
             builder.Configure( options =>
@@ -184,7 +184,7 @@ services.AddLogging( loggingBuilder =>
         .SetMinimumLevel( LogLevel.Debug );
 } );
 
-services.AddParcelClient( builder =>
+services.AddChannelsClient( builder =>
 {
     builder.Configure( options =>
     {
@@ -212,7 +212,7 @@ await channel.WriteAsync( new MyData
 
 ## Adapters and Buffers
 
-Although raw data handling in the adapters can be done with `Byte[]`, it is recommended to use an `IByteBuffer` instance instead, particularly for reading data. You can read more about it [here](src/parcel-buffers/README.md).
+Although raw data handling in the adapters can be done with `Byte[]`, it is recommended to use an `IByteBuffer` instance instead, particularly for reading data. You can read more about it [here](src/buffers/README.md).
 
 ## Parcel Protocol
 
