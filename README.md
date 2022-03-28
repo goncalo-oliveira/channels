@@ -216,4 +216,4 @@ Although raw data handling in the adapters can be done with `Byte[]`, it is reco
 
 ## Parcel Protocol
 
-If you intend to use [Parcel Protocol](https://github.com/goncalo-oliveira/parcel-spec) for communication, you have available an extension library. You can read more about it [here](src/parcel-channels-protocol/README.md).
+If you intend to use [Parcel Protocol](https://github.com/goncalo-oliveira/parcel-spec) for communication, you have available an extension library. You can learn more about it [here](https://github.com/goncalo-oliveira/channels-parcel).
