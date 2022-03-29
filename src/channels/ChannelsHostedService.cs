@@ -7,7 +7,7 @@ using Faactory.Channels;
 
 namespace Faactory.Channels.Hosting;
 
-internal sealed class ParcelHostedService : IHostedService
+internal sealed class ChannelsHostedService : IHostedService
 {
     private readonly ILoggerFactory loggerFactory;
     private readonly ILogger logger;
@@ -20,14 +20,14 @@ internal sealed class ParcelHostedService : IHostedService
     private readonly IServiceChannelFactory channelFactory;
     private Socket? listener;
 
-    public ParcelHostedService( ILoggerFactory loggerFactory
+    public ChannelsHostedService( ILoggerFactory loggerFactory
         , IHostApplicationLifetime hostApplicationLifetime
         , IServiceChannelFactory channelFactory
         , IOptions<ServiceChannelOptions> optionsAccessor )
     {
         this.loggerFactory = loggerFactory;
         this.channelFactory = channelFactory;
-        logger = loggerFactory.CreateLogger<ParcelHostedService>();
+        logger = loggerFactory.CreateLogger<ChannelsHostedService>();
         appLifetime = hostApplicationLifetime;
 
         var options = optionsAccessor.Value;

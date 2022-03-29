@@ -28,13 +28,15 @@ public interface IByteBuffer
     /// <summary>
     /// Discards all bytes in the buffer
     /// </summary>
-    void DiscardAll();
+    /// <returns>The same IByteBuffer instance to allow fluent syntax</returns>
+    IByteBuffer DiscardAll();
 
     /// <summary>
     /// Discards read bytes from the buffer
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
-    void DiscardReadBytes();
+    /// <returns>The same IByteBuffer instance to allow fluent syntax</returns>
+    IByteBuffer DiscardReadBytes();
 
     /// <summary>
     /// Gets a boolean value from the byte at the given offset without moving the buffer index
@@ -200,13 +202,15 @@ public interface IByteBuffer
     /// Resets the reading offset
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
-    void ResetOffset();
+    /// <returns>The same IByteBuffer instance to allow fluent syntax</returns>
+    IByteBuffer ResetOffset();
 
     /// <summary>
     /// Reads and skips a range of bytes
     /// </summary>
     /// <param name="length">The number of bytes to skip</param>
-    void SkipBytes( int length );
+    /// <returns>The same IByteBuffer instance to allow fluent syntax</returns>
+    IByteBuffer SkipBytes( int length );
 
     /// <summary>
     /// Gets the entire buffer as a byte[] no matter where the reading/writing offset is
@@ -218,13 +222,15 @@ public interface IByteBuffer
     /// Writes a boolean value
     /// </summary>
     /// <param name="value">The value to write</param>
-    void WriteBoolean( bool value );
+    /// <returns>The same IByteBuffer instance to allow fluent syntax</returns>
+    IByteBuffer WriteBoolean( bool value );
 
     /// <summary>
     /// Writes a byte value
     /// </summary>
     /// <param name="value">The value to write</param>
-    void WriteByte( byte value );
+    /// <returns>The same IByteBuffer instance to allow fluent syntax</returns>
+    IByteBuffer WriteByte( byte value );
 
     /// <summary>
     /// Writes a range of bytes
@@ -232,59 +238,69 @@ public interface IByteBuffer
     /// <param name="value">The value to write</param>
     /// <param name="startIndex">The index in the value to start writing from</param>
     /// <param name="length">The number of bytes to write</param>
-    void WriteBytes( byte[] value, int startIndex, int length );
+    /// <returns>The same IByteBuffer instance to allow fluent syntax</returns>
+    IByteBuffer WriteBytes( byte[] value, int startIndex, int length );
 
     /// <summary>
     /// Writes the contents of an IByteBuffer instance
     /// </summary>
     /// <param name="value">The value to write</param>
-    void WriteByteBuffer( IByteBuffer value );
+    /// <returns>The same IByteBuffer instance to allow fluent syntax</returns>
+    IByteBuffer WriteByteBuffer( IByteBuffer value );
 
     /// <summary>
     /// Writes a double value
     /// </summary>
     /// <param name="value">The value to write</param>
-    void WriteDouble( double value );
+    /// <returns>The same IByteBuffer instance to allow fluent syntax</returns>
+    IByteBuffer WriteDouble( double value );
 
     /// <summary>
     /// Writes a float value
     /// </summary>
     /// <param name="value">The value to write</param>
-    void WriteSingle( float value );
+    /// <returns>The same IByteBuffer instance to allow fluent syntax</returns>
+    IByteBuffer WriteSingle( float value );
 
     /// <summary>
     /// Writes a short value
     /// </summary>
     /// <param name="value">The value to write</param>
-    void WriteInt16( short value );
+    /// <returns>The same IByteBuffer instance to allow fluent syntax</returns>
+    IByteBuffer WriteInt16( short value );
 
     /// <summary>
     /// Writes an int value
     /// </summary>
     /// <param name="value">The value to write</param>
-    void WriteInt32( int value );
+    /// <returns>The same IByteBuffer instance to allow fluent syntax</returns>
+    IByteBuffer WriteInt32( int value );
 
     /// <summary>
     /// Writes a long value
     /// </summary>
     /// <param name="value">The value to write</param>
-    void WriteInt64( long value );
+    /// <returns>The same IByteBuffer instance to allow fluent syntax</returns>
+    IByteBuffer WriteInt64( long value );
 
     /// <summary>
     /// Writes an ushort value
     /// </summary>
     /// <param name="value">The value to write</param>
-    void WriteUInt16( ushort value );
+    /// <returns>The same IByteBuffer instance to allow fluent syntax</returns>
+    IByteBuffer WriteUInt16( ushort value );
 
     /// <summary>
     /// Writes an uint value
     /// </summary>
     /// <param name="value">The value to write</param>
-    void WriteUInt32( uint value );
+    /// <returns>The same IByteBuffer instance to allow fluent syntax</returns>
+    IByteBuffer WriteUInt32( uint value );
 
     /// <summary>
     /// Writes an ulong value
     /// </summary>
     /// <param name="value">The value to write</param>
-    void WriteUInt64( ulong value );
+    /// <returns>The same IByteBuffer instance to allow fluent syntax</returns>
+    IByteBuffer WriteUInt64( ulong value );
 }

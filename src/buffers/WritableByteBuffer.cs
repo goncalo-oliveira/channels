@@ -34,12 +34,14 @@ public sealed class WritableByteBuffer : IByteBuffer
     public int ReadableBytes
         => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );
 
-    public void DiscardAll()
+    public IByteBuffer DiscardAll()
     {
         buffer.Clear();
+
+        return ( this );
     }
 
-    public void DiscardReadBytes()
+    public IByteBuffer DiscardReadBytes()
         => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );
 
     public bool GetBoolean( int offset )
@@ -117,42 +119,46 @@ public sealed class WritableByteBuffer : IByteBuffer
     public ulong ReadUInt64()
         => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );
 
-    public void ResetOffset()
+    public IByteBuffer ResetOffset()
         => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );
 
-    public void SkipBytes( int length )
+    public IByteBuffer SkipBytes( int length )
         => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );
 
     public byte[] ToArray() => buffer.ToArray();
 
-    public void WriteBoolean( bool value )
+    public IByteBuffer WriteBoolean( bool value )
     {
         var bytes = BitConverter.GetBytes( value );
 
-        WriteBytes( bytes, 0, bytes.Length );
+        return WriteBytes( bytes, 0, bytes.Length );
     }
 
-    public void WriteByte( byte value )
+    public IByteBuffer WriteByte( byte value )
     {
         buffer.Add( value );
+
+        return ( this );
     }
 
-    public void WriteBytes( byte[] value, int startIndex, int length )
+    public IByteBuffer WriteBytes( byte[] value, int startIndex, int length )
     {
         var bytes = value.Skip( startIndex )
             .Take( length );
 
         buffer.AddRange( bytes );
+
+        return ( this );
     }
 
-    public void WriteByteBuffer( IByteBuffer value )
+    public IByteBuffer WriteByteBuffer( IByteBuffer value )
     {
         var bytes = value.ToArray();
 
-        WriteBytes( bytes, 0, bytes.Length );
+        return WriteBytes( bytes, 0, bytes.Length );
     }
 
-    public void WriteDouble( double value )
+    public IByteBuffer WriteDouble( double value )
     {
         var span = new Span<byte>( new byte[ sizeof( double ) ]);
         if ( endianness == Endianness.BigEndian )
@@ -164,10 +170,10 @@ public sealed class WritableByteBuffer : IByteBuffer
             BinaryPrimitives.WriteDoubleLittleEndian( span, value );
         }
 
-        WriteBytes( span.ToArray(), 0, span.Length );
+        return WriteBytes( span.ToArray(), 0, span.Length );
     }
 
-    public void WriteSingle( float value )
+    public IByteBuffer WriteSingle( float value )
     {
         var span = new Span<byte>( new byte[ sizeof( float ) ]);
         if ( endianness == Endianness.BigEndian )
@@ -179,10 +185,10 @@ public sealed class WritableByteBuffer : IByteBuffer
             BinaryPrimitives.WriteSingleLittleEndian( span, value );
         }
 
-        WriteBytes( span.ToArray(), 0, span.Length );
+        return WriteBytes( span.ToArray(), 0, span.Length );
     }
 
-    public void WriteInt16( Int16 value )
+    public IByteBuffer WriteInt16( Int16 value )
     {
         var span = new Span<byte>( new byte[ sizeof( Int16 ) ]);
         if ( endianness == Endianness.BigEndian )
@@ -194,10 +200,10 @@ public sealed class WritableByteBuffer : IByteBuffer
             BinaryPrimitives.WriteInt16LittleEndian( span, value );
         }
 
-        WriteBytes( span.ToArray(), 0, span.Length );
+        return WriteBytes( span.ToArray(), 0, span.Length );
     }
 
-    public void WriteInt32( Int32 value )
+    public IByteBuffer WriteInt32( Int32 value )
     {
         var span = new Span<byte>( new byte[ sizeof( Int32 ) ]);
         if ( endianness == Endianness.BigEndian )
@@ -209,10 +215,10 @@ public sealed class WritableByteBuffer : IByteBuffer
             BinaryPrimitives.WriteInt32LittleEndian( span, value );
         }
 
-        WriteBytes( span.ToArray(), 0, span.Length );
+        return WriteBytes( span.ToArray(), 0, span.Length );
     }
 
-    public void WriteInt64( Int64 value )
+    public IByteBuffer WriteInt64( Int64 value )
     {
         var span = new Span<byte>( new byte[ sizeof( Int64 ) ]);
         if ( endianness == Endianness.BigEndian )
@@ -224,10 +230,10 @@ public sealed class WritableByteBuffer : IByteBuffer
             BinaryPrimitives.WriteInt64LittleEndian( span, value );
         }
 
-        WriteBytes( span.ToArray(), 0, span.Length );
+        return WriteBytes( span.ToArray(), 0, span.Length );
     }
 
-    public void WriteUInt16( UInt16 value )
+    public IByteBuffer WriteUInt16( UInt16 value )
     {
         var span = new Span<byte>( new byte[ sizeof( UInt16 ) ]);
         if ( endianness == Endianness.BigEndian )
@@ -239,10 +245,10 @@ public sealed class WritableByteBuffer : IByteBuffer
             BinaryPrimitives.WriteUInt16LittleEndian( span, value );
         }
 
-        WriteBytes( span.ToArray(), 0, span.Length );
+        return WriteBytes( span.ToArray(), 0, span.Length );
     }
 
-    public void WriteUInt32( UInt32 value )
+    public IByteBuffer WriteUInt32( UInt32 value )
     {
         var span = new Span<byte>( new byte[ sizeof( UInt32 ) ]);
         if ( endianness == Endianness.BigEndian )
@@ -254,10 +260,10 @@ public sealed class WritableByteBuffer : IByteBuffer
             BinaryPrimitives.WriteUInt32LittleEndian( span, value );
         }
 
-        WriteBytes( span.ToArray(), 0, span.Length );
+        return WriteBytes( span.ToArray(), 0, span.Length );
     }
 
-    public void WriteUInt64( UInt64 value )
+    public IByteBuffer WriteUInt64( UInt64 value )
     {
         var span = new Span<byte>( new byte[ sizeof( UInt64 ) ]);
         if ( endianness == Endianness.BigEndian )
@@ -269,6 +275,6 @@ public sealed class WritableByteBuffer : IByteBuffer
             BinaryPrimitives.WriteUInt64LittleEndian( span, value );
         }
 
-        WriteBytes( span.ToArray(), 0, span.Length );
+        return WriteBytes( span.ToArray(), 0, span.Length );
     }
 }

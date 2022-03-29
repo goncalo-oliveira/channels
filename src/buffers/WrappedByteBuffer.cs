@@ -23,22 +23,26 @@ public sealed class WrappedByteBuffer : IByteBuffer
     public int Length => buffer.Length;
     public int ReadableBytes => Length - offset;
 
-    public void DiscardAll()
+    public IByteBuffer DiscardAll()
     {
         Array.Resize<byte>( ref buffer, 0 );
+
+        return ( this );
     }
 
-    public void DiscardReadBytes()
+    public IByteBuffer DiscardReadBytes()
     {
         if ( offset <= 0 )
         {
-            return;
+            return ( this );
         }
 
         var dest = new byte[buffer.Length - offset];
         Array.Copy( buffer, offset, dest, 0, buffer.Length - offset );
 
         buffer = dest;
+
+        return ( this );
     }
 
     public bool GetBoolean( int offset )
@@ -222,12 +226,14 @@ public sealed class WrappedByteBuffer : IByteBuffer
         return Read( GetUInt64, sizeof( UInt64 ) );
     }
 
-    public void ResetOffset()
+    public IByteBuffer ResetOffset()
     {
         offset = 0;
+
+        return ( this );
     }
 
-    public void SkipBytes( int length )
+    public IByteBuffer SkipBytes( int length )
     {
         if ( ( offset + length ) > buffer.Length )
         {
@@ -235,43 +241,45 @@ public sealed class WrappedByteBuffer : IByteBuffer
         }
 
         offset += length;
+
+        return ( this );
     }
 
     public byte[] ToArray() => buffer;
 
-    public void WriteBoolean( bool value )
+    public IByteBuffer WriteBoolean( bool value )
         => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
 
-    public void WriteByte( byte value )
+    public IByteBuffer WriteByte( byte value )
         => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
 
-    public void WriteBytes( byte[] value, int startIndex, int length )
+    public IByteBuffer WriteBytes( byte[] value, int startIndex, int length )
         => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
 
-    public void WriteByteBuffer( IByteBuffer value )
+    public IByteBuffer WriteByteBuffer( IByteBuffer value )
         => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
 
-    public void WriteDouble( double value )
+    public IByteBuffer WriteDouble( double value )
         => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
 
-    public void WriteSingle( float value )
+    public IByteBuffer WriteSingle( float value )
         => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
 
-    public void WriteInt16( Int16 value )
+    public IByteBuffer WriteInt16( Int16 value )
         => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
 
-    public void WriteInt32( Int32 value )
+    public IByteBuffer WriteInt32( Int32 value )
         => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
 
-    public void WriteInt64( Int64 value )
+    public IByteBuffer WriteInt64( Int64 value )
         => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
 
-    public void WriteUInt16( UInt16 value )
+    public IByteBuffer WriteUInt16( UInt16 value )
         => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
 
-    public void WriteUInt32( UInt32 value )
+    public IByteBuffer WriteUInt32( UInt32 value )
         => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
 
-    public void WriteUInt64( UInt64 value )
+    public IByteBuffer WriteUInt64( UInt64 value )
         => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
 }

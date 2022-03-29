@@ -5,11 +5,11 @@ using Faactory.Sockets;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
-public static class ParcelHostedServiceExtensions
+public static class ChannelsHostedServiceExtensions
 {
-    public static IServiceCollection AddParcelHostedService( this IServiceCollection services, Action<IServiceChannelBuilder> configure )
+    public static IServiceCollection AddChannelsHostedService( this IServiceCollection services, Action<IServiceChannelBuilder> configure )
     {
-        services.AddHostedService<ParcelHostedService>()
+        services.AddHostedService<ChannelsHostedService>()
             .AddTransient<IServiceChannelFactory, ServiceChannelFactory>();
 
         var builder = new ServiceChannelBuilder( services );
