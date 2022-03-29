@@ -100,7 +100,7 @@ Because adapters and handlers are so similar, there might be a temptation to do 
 
 ## Writing to Output
 
-At any point, within an adapter or handler, we can write data to the channel output; this will trigger the output pipeline and at the end, send the data to the other party. However, there are two distinct ways that behave differently.
+At any point, within an adapter or handler, we can write data to the channel output; this will trigger the output pipeline and at the end, send the data to the other party. However, there are two distinct ways of doing so, with distinct behaviour.
 
 ### 1. Write directly to the Channel
 
