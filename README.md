@@ -117,8 +117,8 @@ public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Me
 
 ### 2. Write through the Output buffer (recommended)
 
-The context of an adapter or handler, contains an output buffer where we can write to. The written data doesn't immediately trigger the output pipeline. Instead, it is only triggered at the end of the pipeline, after all adapters and handlers have executed - without interruption. If an adapter interrupts the pipeline, or a handler crashes and interrupts the pipeline, the data in the buffer will never be written to the channel.
-This is the recommended method.
+The context of an adapter or handler, contains an output buffer where we can write to. The written data doesn't immediately trigger the output pipeline. Instead, it is only triggered at the end of the pipeline, after all adapters and handlers have executed - without interruption. This is the recommended method.
+If an adapter interrupts the pipeline, or a handler crashes and interrupts the pipeline, the data in the buffer will never be written to the channel.
 
 ```csharp
 public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Message> data )
