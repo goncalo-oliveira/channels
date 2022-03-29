@@ -41,7 +41,7 @@ An adapter is expected to *forward* data to next component in the pipeline, alth
 
 ### Implementing an Adapter
 
-Unless you have specific needs, you should inherit your adapter from `ChannelAdapter<T>` class and not from the `IChannelAdapter` interface directly. This is because the base class does a few things for us that, if implemented from the interface directly, won't be available. That includes
+Unless you have very specific needs, you should inherit your adapter from `ChannelAdapter<T>` class and not from the `IChannelAdapter` interface directly. This is because the base class does a few things for us that, if implemented from the interface directly, won't be available. That includes
 
 - Type checking
 - Type mutation
@@ -77,7 +77,7 @@ graph LR;
 
 ### Implementing an Handler
 
-Similarly to the adapter, unless you have specific needs, you should inherit your handler from the `ChannelHandler<T>` class and not the `IChannelHandler` interface directly. This is because, again, similarly to the adapter, the base class does a type checking for us; if the data type is not intended for the handler, then it (the handler) won't be executed.
+Similarly to the adapter, unless you have very specific needs, you should inherit your handler from the `ChannelHandler<T>` class and not the `IChannelHandler` interface directly. This is because, again, similarly to the adapter, the base class does a type checking for us; if the data type is not intended for the handler, then it (the handler) won't be executed.
 
 ```csharp
 public class MyChannelHandler : ChannelHandler<MyData>
