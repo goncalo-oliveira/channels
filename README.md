@@ -2,6 +2,8 @@
 
 A TCP communication library based on middleware components.
 
+![dotnet workflow](https://github.com/goncalo-oliveira/channels/actions/workflows/dotnet.yml/badge.svg)
+
 ## Design
 
 The concept behind this library is to apply a *middleware pipeline* to data coming in and out from the open communication channels.
