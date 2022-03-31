@@ -34,6 +34,9 @@ public sealed class WritableByteBuffer : IByteBuffer
     public int ReadableBytes
         => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );
 
+    public int Offset
+        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );
+
     public IByteBuffer DiscardAll()
     {
         buffer.Clear();

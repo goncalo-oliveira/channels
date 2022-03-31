@@ -9,19 +9,20 @@ public sealed class WrappedByteBuffer : IByteBuffer
 {
     private readonly Endianness endianness;
     private byte[] buffer;
-    private int offset;
 
     public WrappedByteBuffer( byte[] source, Endianness endianness = Endianness.BigEndian )
     {
         buffer = source;
-        offset = 0;
+        Offset = 0;
         this.endianness = endianness;
     }
 
     public bool IsReadable => true;
     public bool IsWritable => false;
     public int Length => buffer.Length;
-    public int ReadableBytes => Length - offset;
+    public int ReadableBytes => Length - Offset;
+
+    public int Offset { get; private set; }
 
     public IByteBuffer DiscardAll()
     {
@@ -32,13 +33,13 @@ public sealed class WrappedByteBuffer : IByteBuffer
 
     public IByteBuffer DiscardReadBytes()
     {
-        if ( offset <= 0 )
+        if ( Offset <= 0 )
         {
             return ( this );
         }
 
-        var dest = new byte[buffer.Length - offset];
-        Array.Copy( buffer, offset, dest, 0, buffer.Length - offset );
+        var dest = new byte[buffer.Length - Offset];
+        Array.Copy( buffer, Offset, dest, 0, buffer.Length - Offset );
 
         buffer = dest;
 
@@ -153,9 +154,9 @@ public sealed class WrappedByteBuffer : IByteBuffer
 
     private T Read<T>( Func<int,T> read, int size )
     {
-        var value = read( offset );
+        var value = read( Offset );
 
-        offset += size;
+        Offset += size;
 
         return ( value );
     }
@@ -172,9 +173,9 @@ public sealed class WrappedByteBuffer : IByteBuffer
 
     public byte[] ReadBytes( int length )
     {
-        var value = GetBytes( offset, length );
+        var value = GetBytes( Offset, length );
 
-        offset += length;
+        Offset += length;
 
         return ( value );
     }
@@ -228,19 +229,19 @@ public sealed class WrappedByteBuffer : IByteBuffer
 
     public IByteBuffer ResetOffset()
     {
-        offset = 0;
+        Offset = 0;
 
         return ( this );
     }
 
     public IByteBuffer SkipBytes( int length )
     {
-        if ( ( offset + length ) > buffer.Length )
+        if ( ( Offset + length ) > buffer.Length )
         {
             throw new ArgumentOutOfRangeException( nameof( length ) );
         }
 
-        offset += length;
+        Offset += length;
 
         return ( this );
     }

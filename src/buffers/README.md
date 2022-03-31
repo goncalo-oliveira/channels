@@ -32,3 +32,4 @@ Good to know...
 - Invoking `DiscardReadBytes` discards all read bytes (ReadXXX methods) and resets the offset
 - Invoking `ResetOffset` undoes previous readings and resets the offset
 - Invoking `ToArray` returns the entire buffer no matter where the buffer offset is
+- Except for the *getting* and *reading* methods, the buffer interface uses a fluent design

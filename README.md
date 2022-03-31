@@ -41,16 +41,16 @@ An adapter is expected to *forward* data to next component in the pipeline, alth
 
 ### Implementing an Adapter
 
-Unless you have very specific needs, you should inherit your adapter from `ChannelAdapter<T>` class and not from the `IChannelAdapter` interface directly. This is because the base class does a few things for us that, if implemented from the interface directly, won't be available. That includes
+Unless you have very specific needs, you should inherit your adapter from the `ChannelAdapter<T>` abstract class and not implementing the `IChannelAdapter` interface directly. This is because the base class does a few things for us that, if implementing the interface directly, won't be available. That includes
 
 - Type checking
 - Type mutation
 
 Type checking is essentially making sure the type of the data is intended for an adapter. If it's not, data is automatically forwarded to the next middleware component in the pipeline.
 
-Type mutation is the capacity to transform the data type, if compatible with the expected data of the adapter. The base class already deals with `IByteBuffer` and `Byte[]` mutation, but it also provides an opportunity to extend the behaviour.
+Type mutation is the capacity to change the data type, if compatible with the expected data of the adapter. The base class already deals with `IByteBuffer` <--> `Byte[]` and `T` <--> `IEnumerable<T>` mutations, but it also provides an opportunity to override/extend this behaviour.
 
-Here's an example of how to implement an adapter.
+Here's an example of how to implement an adapter that adapts from an `IByteBuffer` (or `Byte[]`).
 
 ```csharp
 public class MyChannelAdapter : ChannelAdapter<IByteBuffer>
@@ -66,6 +66,15 @@ public class MyChannelAdapter : ChannelAdapter<IByteBuffer>
 }
 ```
 
+### Ready-made Adapters
+
+In addition to the abstract `ChannelAdapter<T>` adapter, you have a few more ready-made adapters that you can use.
+
+| Adapter                 | Target       | Description                                        |
+|-------------------------|--------------|----------------------------------------------------|
+| AnonymousChannelAdapter | Input/Output | A quick way to implement an anonymous adapter      |
+| BufferLengthAdapter     | Input        | Ensures the input buffer doesn't exceed in length  |
+
 ## Handlers
 
 Although handlers are very similar to adapters, their conceptual purpose is different: to handle data. That means that business logic should be applied here and not on an adapter. Also, handlers are executed at the end of the pipeline and as such, they don't forward data.
@@ -78,6 +87,9 @@ graph LR;
 ### Implementing an Handler
 
 Similarly to the adapter, unless you have very specific needs, you should inherit your handler from the `ChannelHandler<T>` class and not the `IChannelHandler` interface directly. This is because, again, similarly to the adapter, the base class does a type checking for us; if the data type is not intended for the handler, then it (the handler) won't be executed.
+
+Similarly to the adapter, the base class also deals with `T` <--> `IEnumerable<T>` mutations.
+
 
 ```csharp
 public class MyChannelHandler : ChannelHandler<MyData>
@@ -95,7 +107,7 @@ Because adapters and handlers are so similar, there might be a temptation to do 
 
 - Adapters adapt and forward data
 - Handlers handle data and business logic
-- Adapters run at any point in the pipeline
+- Adapters can run at any point in the pipeline
 - Handlers run at the end of the pipeline
 
 ## Writing to Output
@@ -104,7 +116,7 @@ At any point, within an adapter or handler, we can write data to the channel out
 
 ### 1. Write directly to the Channel
 
-This is the most straightforward method and it will immediately trigger the output pipeline, but it is not the recommended way, unless you need the data to reach the other party as soon as possible, no matter what happens next (current or next middleware component).
+This is the most straightforward method and it will immediately trigger the output pipeline, but it is **not** the recommended way, unless you need the data to reach the other party as soon as possible, no matter what happens next (current or next middleware component).
 
 ```csharp
 public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Message> data )
@@ -115,9 +127,9 @@ public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Me
 }
 ```
 
-### 2. Write through the Output buffer (recommended)
+### 2. Write to the Output buffer (recommended)
 
-The context of an adapter or handler, contains an output buffer where we can write to. The written data doesn't immediately trigger the output pipeline. Instead, it is only triggered at the end of the pipeline, after all adapters and handlers have executed - without interruption. This is the recommended method.
+The context of an adapter or handler, gives us access to an output buffer that we can write to. This **is** the recommended method. Writing to the output buffer doesn't immediately trigger the output pipeline, instead, it is only triggered at the end of the pipeline, after all adapters and handlers have executed - without interruption.
 If an adapter interrupts the pipeline, or a handler crashes and interrupts the pipeline, the data in the buffer will never be written to the channel.
 
 ```csharp
@@ -134,10 +146,10 @@ public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Me
 Install the package from NuGet
 
 ```bash
-dotnet add package Faactory.Channels
+dotnet add package Faactory.Channels --prerelease
 ```
 
-To quickly bootstrap a server, we need a `HostBuilder` to inject a *hosted service*. Then we need to configure the listening options and set up the input and output pipelines. Here's an example
+To quickly bootstrap a server, we need an `HostBuilder` to inject a *hosted service*. Then we need to configure the listening options and set up the input and output pipelines. Here's an example
 
 ```csharp
 var builder = new HostBuilder()
@@ -185,8 +197,10 @@ services.AddLogging( loggingBuilder =>
         .SetMinimumLevel( LogLevel.Debug );
 } );
 
+// add our client factory
 services.AddChannelsClient( builder =>
 {
+    // configure options
     builder.Configure( options =>
     {
         options.Host = "localhost";

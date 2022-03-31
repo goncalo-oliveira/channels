@@ -26,6 +26,11 @@ public interface IByteBuffer
     int ReadableBytes { get; }
 
     /// <summary>
+    /// Gets the the current offset
+    /// </summary>
+    int Offset { get; }
+
+    /// <summary>
     /// Discards all bytes in the buffer
     /// </summary>
     /// <returns>The same IByteBuffer instance to allow fluent syntax</returns>

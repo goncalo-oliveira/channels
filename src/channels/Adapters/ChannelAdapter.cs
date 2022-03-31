@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Faactory.Channels.Buffers;
+using System.Collections;
 
 namespace Faactory.Channels.Adapters;
 
@@ -39,8 +40,31 @@ public abstract class ChannelAdapter<T> : IChannelAdapter, IInputChannelAdapter,
             return ExecuteAsync( context, (T)data );
         }
 
-        // attempt to transform the data
-        var convertedData = TransformData( data );
+        var type = typeof( T );
+        var dataType = data.GetType();
+
+        // T is not an enumerable but data is enumerable<T>
+        // deliver enumerable<T>.T sequentially
+        if ( !type.IsEnumerable() && dataType.IsEnumerable<T>() )
+        {
+            var tasks = ( (IEnumerable)data ).OfType<T>()
+                .Select( x => ExecuteAsync( context, x ) );
+
+            return Task.WhenAll( tasks );
+        }
+
+        // T is an enumerable but data is enumerable.type
+        // deliver data wrapped in an array
+        if ( type.IsEnumerable() && dataType.Equals( type.GetElementType()! ) )
+        {
+            var array = Array.CreateInstance( type.GetElementType()!, 1 );
+            array.SetValue( data, 0 );
+
+            return ExecuteAsync( context, array );
+        }
+
+        // attempt to convert the data
+        var convertedData = ConvertData( data );
 
         if ( ( convertedData != null ) && ( convertedData.GetType() != data.GetType() ) )
         {
@@ -55,7 +79,7 @@ public abstract class ChannelAdapter<T> : IChannelAdapter, IInputChannelAdapter,
         return Task.CompletedTask;
     }
 
-    protected virtual object? TransformData( object data )
+    protected virtual object? ConvertData( object data )
     {
         var type = typeof( T );
 
