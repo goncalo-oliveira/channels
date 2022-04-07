@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Faactory.Channels;
+using Faactory.Collections;
 
 public class FakeChannel : IChannel
 {

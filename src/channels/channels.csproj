@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageId>Faactory.Channels</PackageId>
-    <Version>0.1-preview-6</Version>
+    <Version>0.1-preview-7</Version>
     <Authors>Goncalo Oliveira</Authors>
     <Description>Channels</Description>
     <RepositoryUrl>https://github.com/goncalo-oliveira/channels</RepositoryUrl>
@@ -17,6 +17,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Faactory.Types" Version="1.5.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />

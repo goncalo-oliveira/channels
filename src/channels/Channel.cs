@@ -4,6 +4,7 @@ using Faactory.Channels.Buffers;
 using Faactory.Channels.Adapters;
 using Faactory.Channels.Handlers;
 using Faactory.Channels.Sockets;
+using Faactory.Collections;
 
 namespace Faactory.Channels;
 
