@@ -5,38 +5,36 @@ using Faactory.Channels.Buffers;
 using Faactory.Channels.Adapters;
 using Faactory.Channels.Handlers;
 using Faactory.Sockets;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
 public class ClientChannel : Channel
 {
-    private readonly ILoggerFactory loggerFactory;
-    public ClientChannel( ILoggerFactory loggerFactory
+    public ClientChannel( IServiceScope serviceScope
+        , ILoggerFactory loggerFactory
         , Socket socket
         , IEnumerable<IChannelAdapter> inputAdapters
         , IEnumerable<IChannelAdapter> outputAdapters
         , IEnumerable<IChannelHandler> inputHandlers
         , IIdleChannelMonitor? idleChannelMonitor )
-        : base( loggerFactory, socket, idleChannelMonitor )
+        : base( serviceScope, loggerFactory, socket, idleChannelMonitor )
     {
-        this.loggerFactory = loggerFactory;
-
         Input = new ChannelPipeline(  loggerFactory, inputAdapters, inputHandlers );
         Output = new ChannelPipeline( loggerFactory, outputAdapters, null );
     }
 
-    public ClientChannel( 
-          ILoggerFactory loggerFactory
+    public ClientChannel( IServiceScope serviceScope
+        , ILoggerFactory loggerFactory
         , Socket socket
         , IdleDetectionMode idleDetectionMode
         , TimeSpan idleDetectionTimeout )
         : base( 
-              loggerFactory
+              serviceScope
+            , loggerFactory
             , socket
             , new IdleChannelMonitor( loggerFactory, idleDetectionMode, idleDetectionTimeout ) )
-    {
-        this.loggerFactory = loggerFactory;
-    }
+    { }
 
     public override async Task CloseAsync()
     {

@@ -4,21 +4,14 @@ using Faactory.Channels.Handlers;
 
 namespace Faactory.Channels;
 
-internal abstract class ChannelFactory
+internal static class ServiceProviderPipelineExtensions
 {
-    private readonly IServiceProvider serviceProvider;
-
-    public ChannelFactory( IServiceProvider serviceProvider )
-    {
-        this.serviceProvider = serviceProvider;
-    }
-
-    protected IEnumerable<IChannelAdapter> GetAdapters<TPipeline>()
+    public static IEnumerable<IChannelAdapter> GetAdapters<TPipeline>( this IServiceProvider serviceProvider )
         => serviceProvider.GetServices<TPipeline>()
             .Cast<IChannelAdapter>()
             .ToArray();
 
-    protected IEnumerable<IChannelHandler> GetHandlers()
+    public static IEnumerable<IChannelHandler> GetHandlers( this IServiceProvider serviceProvider )
         => serviceProvider.GetServices<IChannelHandler>()
             .ToArray();
 }

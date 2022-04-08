@@ -2,20 +2,19 @@ using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Faactory.Channels.Adapters;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
-internal class ClientChannelFactory : ChannelFactory, IClientChannelFactory
+internal class ClientChannelFactory : IClientChannelFactory
 {
-    private readonly ILoggerFactory loggerFactory;
+    private readonly IServiceProvider serviceProvider;
     private readonly IOptionsMonitor<ClientChannelOptions> optionsMonitor;
 
-    public ClientChannelFactory( ILoggerFactory loggerFactory
-        , IServiceProvider serviceProvider
+    public ClientChannelFactory( IServiceProvider serviceProvider
         , IOptionsMonitor<ClientChannelOptions> optionsMonitor )
-        : base( serviceProvider )
     {
-        this.loggerFactory = loggerFactory;
+        this.serviceProvider = serviceProvider;
         this.optionsMonitor = optionsMonitor;
     }
 
@@ -26,9 +25,12 @@ internal class ClientChannelFactory : ChannelFactory, IClientChannelFactory
     {
         var options = optionsMonitor.Get( name );
 
-        var inputAdapters = GetAdapters<IInputChannelAdapter>();
-        var outputAdapters = GetAdapters<IOutputChannelAdapter>();
-        var inputHandlers = GetHandlers();
+        var serviceScope = serviceProvider.CreateScope();
+        var inputAdapters = serviceScope.ServiceProvider.GetAdapters<IInputChannelAdapter>();
+        var outputAdapters = serviceScope.ServiceProvider.GetAdapters<IOutputChannelAdapter>();
+        var inputHandlers = serviceScope.ServiceProvider.GetHandlers();
+
+        var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
 
         var idleChannelMonitor = ( options.IdleDetectionMode > IdleDetectionMode.None )
             ? new IdleChannelMonitor( loggerFactory, options.IdleDetectionMode, options.IdleDetectionTimeout )
@@ -39,7 +41,8 @@ internal class ClientChannelFactory : ChannelFactory, IClientChannelFactory
 
         await client.ConnectAsync( options.Host, options.Port, cancellationToken );
 
-        var channel = new ClientChannel( loggerFactory
+        var channel = new ClientChannel( serviceScope
+            , loggerFactory
             , client
             , inputAdapters
             , outputAdapters

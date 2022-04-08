@@ -7,32 +7,34 @@ using Faactory.Sockets;
 
 namespace Faactory.Channels;
 
-internal class ServiceChannelFactory : ChannelFactory, IServiceChannelFactory
+internal class ServiceChannelFactory : IServiceChannelFactory
 {
-    private readonly ILoggerFactory loggerFactory;
+    private readonly IServiceProvider serviceProvider;
     private readonly ServiceChannelOptions options;
 
-    public ServiceChannelFactory( ILoggerFactory loggerFactory
-        , IServiceProvider serviceProvider
+    public ServiceChannelFactory( IServiceProvider serviceProvider
         , IOptions<ServiceChannelOptions> optionsAccessor )
-        : base( serviceProvider )
     {
-        this.loggerFactory = loggerFactory;
+        this.serviceProvider = serviceProvider;
 
         options = optionsAccessor.Value;
     }
 
     public IChannel CreateChannel( System.Net.Sockets.Socket socket )
     {
-        var inputAdapters = GetAdapters<IInputChannelAdapter>();
-        var outputAdapters = GetAdapters<IOutputChannelAdapter>();
-        var inputHandlers = GetHandlers();
+        var serviceScope = serviceProvider.CreateScope();
+        var inputAdapters = serviceScope.ServiceProvider.GetAdapters<IInputChannelAdapter>();
+        var outputAdapters = serviceScope.ServiceProvider.GetAdapters<IOutputChannelAdapter>();
+        var inputHandlers = serviceScope.ServiceProvider.GetHandlers();
+
+        var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
 
         var idleChannelMonitor = ( options.IdleDetectionMode > IdleDetectionMode.None )
             ? new IdleChannelMonitor( loggerFactory, options.IdleDetectionMode, options.IdleDetectionTimeout )
             : null;
 
-        var channel = new ServiceChannel( loggerFactory
+        var channel = new ServiceChannel( serviceScope
+            , loggerFactory
             , socket
             , inputAdapters
             , outputAdapters

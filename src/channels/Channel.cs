@@ -5,6 +5,7 @@ using Faactory.Channels.Adapters;
 using Faactory.Channels.Handlers;
 using Faactory.Channels.Sockets;
 using Faactory.Collections;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
@@ -13,8 +14,10 @@ public abstract class Channel : ConnectedSocket, IChannel
     protected readonly ILogger logger;
     private readonly IDisposable loggerScope;
     private readonly IIdleChannelMonitor? idleMonitor;
+    private readonly IServiceScope channelScope;
 
-    public Channel( ILoggerFactory loggerFactory
+    public Channel( IServiceScope serviceScope
+        , ILoggerFactory loggerFactory
         , Socket socket
         , IIdleChannelMonitor? idleChannelMonitor)
         : base( loggerFactory, socket )
@@ -30,7 +33,11 @@ public abstract class Channel : ConnectedSocket, IChannel
 
         idleMonitor = idleChannelMonitor;
         idleMonitor?.Start( this );
+
+        channelScope = serviceScope;
     }
+
+    internal IServiceProvider ServiceProvider => channelScope.ServiceProvider;
 
     public IByteBuffer Buffer { get; private set; } = new WritableByteBuffer();
 
@@ -68,6 +75,7 @@ public abstract class Channel : ConnectedSocket, IChannel
 
         logger.LogDebug( "Disposed." );
         loggerScope.Dispose();
+        channelScope.Dispose();
     }
 
     protected override void OnDataReceived( byte[] data )
