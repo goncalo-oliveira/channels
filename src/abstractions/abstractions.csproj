@@ -3,10 +3,10 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>Faactory.Channels</RootNamespace>
-    <AssemblyName>faactory.channels</AssemblyName>
+    <AssemblyName>faactory.channels.abstractions</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <PackageId>Faactory.Channels</PackageId>
+    <PackageId>Faactory.Channels.Abstractions</PackageId>
     <Version>0.1-preview-9</Version>
     <Authors>Goncalo Oliveira</Authors>
     <Description>Channels</Description>
@@ -18,19 +18,17 @@
 
   <ItemGroup>
     <PackageReference Include="Faactory.Types" Version="1.5.1" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Options" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\buffers\buffers.csproj" />
-    <ProjectReference Include="..\abstractions\abstractions.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="../../README.md" Pack="true" PackagePath="/"/>
-    <None Include="../../faactory.png" Pack="true" PackagePath="/"/>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../faactory.png" Pack="true" PackagePath="/" />
   </ItemGroup>
 
 </Project>

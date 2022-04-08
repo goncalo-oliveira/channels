@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Faactory.Channels.Adapters;
+using Faactory.Channels.Handlers;
 
 namespace Faactory.Channels;
 
@@ -24,4 +25,10 @@ public interface IChannelBuilder
     /// </summary>
     /// <typeparam name="TAdapter">The type of the adapter implementation</typeparam>
     IChannelBuilder AddOutputAdapter<TAdapter>() where TAdapter : class, IChannelAdapter, IOutputChannelAdapter;
+
+    /// <summary>
+    /// Adds a transient service for the channel handler to the input pipeline
+    /// </summary>
+    /// <typeparam name="TAdapter">The type of the handler implementation</typeparam>
+    IChannelBuilder AddInputHandler<THandler>() where THandler : class, IChannelHandler;
 }
