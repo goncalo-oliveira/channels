@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Faactory.Channels.Adapters;
 
+// TODO: this should be an handler, not an adapter
 internal class OutputChannelAdapter : ChannelAdapter<byte[]>
 {
     private readonly ILogger logger;

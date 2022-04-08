@@ -35,9 +35,13 @@ public abstract class Channel : ConnectedSocket, IChannel
         idleMonitor?.Start( this );
 
         channelScope = serviceScope;
+
+        // notify channel created
+        this.NotifyChannelCreated();
     }
 
     internal IServiceProvider ServiceProvider => channelScope.ServiceProvider;
+    internal IChannelInfo Info => new ChannelInfo( this );
 
     public IByteBuffer Buffer { get; private set; } = new WritableByteBuffer();
 
@@ -82,6 +86,8 @@ public abstract class Channel : ConnectedSocket, IChannel
     {
         LastReceived = DateTimeOffset.UtcNow;
 
+        this.NotifyDataReceived( data );
+
         Buffer.WriteBytes( data, 0, data.Length );
 
         var pipelineBuffer = Buffer.MakeReadOnly();
@@ -106,11 +112,15 @@ public abstract class Channel : ConnectedSocket, IChannel
     protected override void OnDataSent( int bytesSent )
     {
         LastSent = DateTimeOffset.UtcNow;
+
+        this.NotifyDataSent( bytesSent );
     }
 
     protected override void OnDisconnected()
     {
         logger.LogInformation( "Closed." );
+
+        this.NotifyChannelClosed();
 
         Dispose();
     }
