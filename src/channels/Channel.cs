@@ -26,10 +26,10 @@ public abstract class Channel : ConnectedSocket, IChannel
         loggerScope = logger.BeginScope( $"channel-{Id.Substring( 0, 6 )}" );
 
         Input = new ChannelPipeline( loggerFactory, Array.Empty<IChannelAdapter>(), Array.Empty<IChannelHandler>() );
-        Output = new ChannelPipeline( loggerFactory, new IChannelAdapter[]
+        Output = new ChannelPipeline( loggerFactory, Array.Empty<IChannelAdapter>(), new IChannelHandler[]
         {
-            new OutputChannelAdapter( loggerFactory )
-        }, null );
+            new OutputChannelHandler( loggerFactory )
+        } );
 
         idleMonitor = idleChannelMonitor;
         idleMonitor?.Start( this );

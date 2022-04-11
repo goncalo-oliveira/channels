@@ -1,5 +1,6 @@
 using Faactory.Channels;
 using Faactory.Channels.Adapters;
+using Faactory.Channels.Handlers;
 using Faactory.Channels.Hosting;
 using Faactory.Sockets;
 
@@ -16,7 +17,7 @@ public static class ChannelsHostedServiceExtensions
 
         configure( builder );
 
-        builder.AddOutputAdapter<OutputChannelAdapter>();
+        builder.Services.AddTransient<IChannelHandler, OutputChannelHandler>();
 
         return ( services );
     }

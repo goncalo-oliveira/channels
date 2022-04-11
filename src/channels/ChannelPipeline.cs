@@ -102,8 +102,6 @@ internal class ChannelPipeline : IChannelPipeline
             return;
         }
 
-        //var context = new ChannelContext( loggerFactory, adapterContext.Channel );
-
         foreach ( var handler in handlers )
         {
             foreach ( var dataItem in handlerData )

@@ -1,4 +1,5 @@
 using System.Collections;
+using Faactory.Channels.Buffers;
 using Microsoft.Extensions.Logging;
 
 namespace Faactory.Channels.Handlers;
@@ -62,9 +63,41 @@ public abstract class ChannelHandler<T> : IChannelHandler
             return ExecuteAsync( context, array );
         }
 
+        // attempt to convert the data
+        var convertedData = ConvertData( data );
+
+        if ( ( convertedData != null ) && ( convertedData.GetType() != data.GetType() ) )
+        {
+            return ExecuteAsync( context, convertedData );
+        }
+
         // data when not suitable for this handler
         logger.LogDebug( $"Data type '{data.GetType().Name}' is not suitable for this handler." );
         
         return Task.CompletedTask;
+    }
+
+    private object? ConvertData( object data )
+    {
+        var type = typeof( T );
+
+        // attempt a byte[] to IByteBuffer transformation
+        if ( type.IsAssignableFrom( typeof( IByteBuffer ) ) && ( data is byte[] ) )
+        {
+            logger?.LogDebug( "Transformed 'Byte[]' to 'WrappedByteBuffer'." );
+
+            return new WrappedByteBuffer( (byte[])data );
+        }
+
+        // attempt an IByteBuffer to byte[] transformation
+        if ( ( type.IsArray && type.GetElementType() == typeof( byte ) ) 
+            && data.GetType().IsAssignableTo( typeof( IByteBuffer ) ) )
+        {
+            logger?.LogDebug( "Transformed 'WrappedByteBuffer' to 'Byte[]'." );
+
+            return ((IByteBuffer)data).ToArray();
+        }
+
+        return ( null );
     }
 }

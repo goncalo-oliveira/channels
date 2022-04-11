@@ -1,5 +1,6 @@
 using Faactory.Channels;
 using Faactory.Channels.Adapters;
+using Faactory.Channels.Handlers;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
@@ -13,7 +14,7 @@ public static class ChannelsClientServiceExtensions
 
         configure( builder );
 
-        builder.AddOutputAdapter<OutputChannelAdapter>();
+        builder.Services.AddTransient<IChannelHandler, OutputChannelHandler>();
 
         return ( services );
 
