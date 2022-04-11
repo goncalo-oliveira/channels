@@ -231,6 +231,34 @@ await channel.WriteAsync( new MyData
 
 Although raw data handling in the adapters can be done with `Byte[]`, it is recommended to use an `IByteBuffer` instance instead, particularly for reading data. You can read more about it [here](src/buffers/README.md).
 
+## Service Scope
+
+Every channel instance (client or service) uses a new `IServiceScope`. This means that if you add a scoped service to the DI container and use it in an adapter or handler, you'll have a unique instance per channel.
+
+## Channel Events
+
+In some cases, you might need to tap into channel events. This can be useful for logging, statistics or a custom scenario. The following events are available
+
+- Channel Created
+- Channel Closed
+- Data Received
+- Data Sent
+
+To receive channel events, you'll need to create a class that implements `IChannelEvents` interface and then add it to the DI container. You can have multiple implementations.
+
+```csharp
+public class MyChannelEvents : IChannelEvents
+{
+    // ...
+}
+
+// ...
+
+IServiceCollection services = ...;
+
+services.AddTransient<IChannelEvents, MyChannelEvents>();
+```
+
 ## Parcel Protocol
 
 If you intend to use [Parcel Protocol](https://github.com/goncalo-oliveira/parcel-spec) for communication, you have available an extension library. You can learn more about it [here](https://github.com/goncalo-oliveira/channels-parcel).
