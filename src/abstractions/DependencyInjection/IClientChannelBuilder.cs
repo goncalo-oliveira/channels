@@ -1,5 +1,3 @@
-using Faactory.Channels.Hosting;
-
 namespace Faactory.Channels;
 
 /// <summary>
