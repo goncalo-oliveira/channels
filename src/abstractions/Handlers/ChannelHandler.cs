@@ -55,7 +55,7 @@ public abstract class ChannelHandler<T> : IChannelHandler
 
         // T is an enumerable but data is enumerable.type
         // deliver data wrapped in an array
-        if ( type.IsEnumerable() && dataType.Equals( type.GetElementType()! ) )
+        if ( type.IsEnumerable() && dataType.Equals( type.GetEnumerableElementType()! ) )
         {
             var array = Array.CreateInstance( type.GetElementType()!, 1 );
             array.SetValue( data, 0 );

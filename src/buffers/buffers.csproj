@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageId>Faactory.Channels.Buffers</PackageId>
-    <Version>0.1</Version>
+    <Version>0.1.1</Version>
     <Authors>Goncalo Oliveira</Authors>
     <Description>Channels Buffers</Description>
     <RepositoryUrl>https://github.com/goncalo-oliveira/channels</RepositoryUrl>
