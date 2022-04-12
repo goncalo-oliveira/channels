@@ -21,7 +21,10 @@ public class ClientChannel : Channel
         : base( serviceScope, loggerFactory, socket, idleChannelMonitor )
     {
         Input = new ChannelPipeline(  loggerFactory, inputAdapters, inputHandlers );
-        Output = new ChannelPipeline( loggerFactory, outputAdapters, null );
+        Output = new ChannelPipeline( loggerFactory, outputAdapters, new IChannelHandler[]
+        {
+            new OutputChannelHandler( loggerFactory )
+        } );
     }
 
     public ClientChannel( IServiceScope serviceScope
@@ -42,7 +45,8 @@ public class ClientChannel : Channel
 
         try
         {
-            await Socket.DisconnectAsync( false );
+            await Socket.DisconnectAsync( false )
+                .ConfigureAwait( false );
         }
         catch ( Exception )
         {}

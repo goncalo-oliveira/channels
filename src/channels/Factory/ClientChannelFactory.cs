@@ -39,7 +39,8 @@ internal class ClientChannelFactory : IClientChannelFactory
         // create a TCP/IP socket
         var client = new Socket( SocketType.Stream, ProtocolType.Tcp );
 
-        await client.ConnectAsync( options.Host, options.Port, cancellationToken );
+        await client.ConnectAsync( options.Host, options.Port, cancellationToken )
+            .ConfigureAwait( false );
 
         var channel = new ClientChannel( serviceScope
             , loggerFactory

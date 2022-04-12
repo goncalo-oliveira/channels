@@ -18,7 +18,8 @@ public static class ChannelBuilderAnonymousExtensions
         {
             return new AnonymousChannelAdapter<TData>( async ( context, data ) =>
             {
-                await Task.Run( () => action.Invoke( context, data ) );
+                await Task.Run( () => action.Invoke( context, data ) )
+                    .ConfigureAwait( false );
             } );
         });
 
@@ -36,7 +37,8 @@ public static class ChannelBuilderAnonymousExtensions
         {
             return new AnonymousChannelAdapter<TData>( async ( context, data ) =>
             {
-                await Task.Run( () => action.Invoke( provider, context, data ) );
+                await Task.Run( () => action.Invoke( provider, context, data ) )
+                    .ConfigureAwait( false );
             } );
         });
 
@@ -54,7 +56,8 @@ public static class ChannelBuilderAnonymousExtensions
         {
             return new AnonymousChannelHandler<TData>( async ( context, data ) =>
             {
-                await Task.Run( () => action.Invoke( context, data ) );
+                await Task.Run( () => action.Invoke( context, data ) )
+                    .ConfigureAwait( false );
             } );
         });
 
@@ -72,7 +75,8 @@ public static class ChannelBuilderAnonymousExtensions
         {
             return new AnonymousChannelHandler<TData>( async ( context, data ) =>
             {
-                await Task.Run( () => action.Invoke( provider, context, data ) );
+                await Task.Run( () => action.Invoke( provider, context, data ) )
+                    .ConfigureAwait( false );
             } );
         });
 
@@ -90,7 +94,8 @@ public static class ChannelBuilderAnonymousExtensions
         {
             return new AnonymousChannelAdapter<TData>( async ( context, data ) =>
             {
-                await Task.Run( () => action.Invoke( context, data ) );
+                await Task.Run( () => action.Invoke( context, data ) )
+                    .ConfigureAwait( false );
             } );
         });
 
@@ -108,7 +113,8 @@ public static class ChannelBuilderAnonymousExtensions
         {
             return new AnonymousChannelAdapter<TData>( async ( context, data ) =>
             {
-                await Task.Run( () => action.Invoke( provider, context, data ) );
+                await Task.Run( () => action.Invoke( provider, context, data ) )
+                    .ConfigureAwait( false );
             } );
         });
 

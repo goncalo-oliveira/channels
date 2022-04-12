@@ -20,7 +20,10 @@ internal sealed class ServiceChannel : Channel
         : base( serviceScope, loggerFactory, socket, idleChannelMonitor )
     {
         Input = new ChannelPipeline(  loggerFactory, inputAdapters, inputHandlers );
-        Output = new ChannelPipeline( loggerFactory, outputAdapters, null );
+        Output = new ChannelPipeline( loggerFactory, outputAdapters, new IChannelHandler[]
+        {
+            new OutputChannelHandler( loggerFactory )
+        } );
     }
 
     public override Task CloseAsync()

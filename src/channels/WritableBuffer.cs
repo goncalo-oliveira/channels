@@ -18,7 +18,8 @@ internal class WritableBuffer : IWritableBuffer
 
         foreach ( var data in outputData )
         {
-            await channel.WriteAsync( data );
+            await channel.WriteAsync( data )
+                .ConfigureAwait( false );
         }
     }
 }

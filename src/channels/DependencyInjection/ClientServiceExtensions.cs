@@ -14,7 +14,7 @@ public static class ChannelsClientServiceExtensions
 
         configure( builder );
 
-        builder.Services.AddTransient<IChannelHandler, OutputChannelHandler>();
+        //builder.Services.AddTransient<IChannelHandler, OutputChannelHandler>();
 
         return ( services );
 

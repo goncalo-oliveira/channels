@@ -56,16 +56,18 @@ public abstract class Channel : ConnectedSocket, IChannel
 
     public abstract Task CloseAsync();
 
-    public virtual Task WriteAsync( object data )
+    public virtual async Task WriteAsync( object data )
     {
         logger.LogDebug( "Executing output pipeline..." );
 
-        Task.Run( () => Output.ExecuteAsync( this, data ) )
-            .ConfigureAwait( false )
-            .GetAwaiter()
-            .GetResult();
+        await Output.ExecuteAsync( this, data )
+            .ConfigureAwait( false );
+        // Task.Run( () => Output.ExecuteAsync( this, data ) )
+        //     .ConfigureAwait( false )
+        //     .GetAwaiter()
+        //     .GetResult();
 
-        return Task.CompletedTask;
+        //return Task.CompletedTask;
     }
 
     public virtual void Dispose()

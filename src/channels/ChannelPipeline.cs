@@ -39,7 +39,8 @@ internal class ChannelPipeline : IChannelPipeline
 
         adapterContext.Forward( data );
 
-        var interrupted = !await ExecuteAdaptersAsync( adapterContext );
+        var interrupted = !await ExecuteAdaptersAsync( adapterContext )
+            .ConfigureAwait( false );
 
         if ( interrupted )
         {
@@ -48,10 +49,12 @@ internal class ChannelPipeline : IChannelPipeline
         }
 
         // execute handlers
-        await ExecuteHandlersAsync( adapterContext );
+        await ExecuteHandlersAsync( adapterContext )
+            .ConfigureAwait( false );
 
         // write output buffer data if any
-        await ((WritableBuffer)adapterContext.Output).WriteAsync( channel );
+        await ((WritableBuffer)adapterContext.Output).WriteAsync( channel )
+            .ConfigureAwait( false );
     }
 
     private async Task<bool> ExecuteAdaptersAsync( AdapterContext context )
@@ -71,7 +74,8 @@ internal class ChannelPipeline : IChannelPipeline
 
             foreach ( var dataItem in adapterData )
             {
-                await adapter.ExecuteAsync( context, dataItem );
+                await adapter.ExecuteAsync( context, dataItem )
+                    .ConfigureAwait( false );
             }
         }
 
@@ -106,7 +110,8 @@ internal class ChannelPipeline : IChannelPipeline
         {
             foreach ( var dataItem in handlerData )
             {
-                await handler.ExecuteAsync( adapterContext, dataItem );
+                await handler.ExecuteAsync( adapterContext, dataItem )
+                    .ConfigureAwait( false );
             }
         }
     }
