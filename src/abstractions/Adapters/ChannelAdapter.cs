@@ -55,9 +55,9 @@ public abstract class ChannelAdapter<T> : IChannelAdapter, IInputChannelAdapter,
 
         // T is an enumerable but data is enumerable.type
         // deliver data wrapped in an array
-        if ( type.IsEnumerable() && dataType.Equals( type.GetElementType()! ) )
+        if ( type.IsEnumerable() && dataType.Equals( type.GetEnumerableElementType()! ) )
         {
-            var array = Array.CreateInstance( type.GetElementType()!, 1 );
+            var array = Array.CreateInstance( type.GetEnumerableElementType()!, 1 );
             array.SetValue( data, 0 );
 
             return ExecuteAsync( context, array );

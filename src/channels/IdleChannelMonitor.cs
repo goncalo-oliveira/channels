@@ -54,10 +54,17 @@ internal class IdleChannelMonitor : IIdleChannelMonitor
 
     public void Stop()
     {
-        timer?.Change( Timeout.Infinite, Timeout.Infinite );
-        timer?.Dispose();
-
-        timer = null;
+        try
+        {
+            timer?.Change( Timeout.Infinite, Timeout.Infinite );
+            timer?.Dispose();
+        }
+        catch ( ObjectDisposedException )
+        { }
+        finally
+        {
+            timer = null;
+        }
     }
 
     public void Dispose()
