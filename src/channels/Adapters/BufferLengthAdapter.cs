@@ -65,6 +65,8 @@ public sealed class BufferLengthAdapter : ChannelAdapter<IByteBuffer>
             data.DiscardAll();
         }
 
+        context.Forward( data );
+
         return Task.CompletedTask;
     }
 }
