@@ -148,7 +148,7 @@ public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Me
 Install the package from NuGet
 
 ```bash
-dotnet add package Faactory.Channels --prerelease
+dotnet add package Faactory.Channels
 ```
 
 To quickly bootstrap a server, we need an `HostBuilder` to inject a *hosted service*. Then we need to configure the listening options and set up the input and output pipelines. Here's an example
