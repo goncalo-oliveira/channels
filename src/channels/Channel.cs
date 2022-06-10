@@ -19,7 +19,8 @@ public abstract class Channel : ConnectedSocket, IChannel
     public Channel( IServiceScope serviceScope
         , ILoggerFactory loggerFactory
         , Socket socket
-        , IIdleChannelMonitor? idleChannelMonitor)
+        , IIdleChannelMonitor? idleChannelMonitor
+        , Buffers.Endianness bufferEndianness )
         : base( loggerFactory, socket )
     {
         logger = loggerFactory.CreateLogger<IChannel>();
@@ -30,6 +31,8 @@ public abstract class Channel : ConnectedSocket, IChannel
         {
             new OutputChannelHandler( loggerFactory )
         } );
+
+        Buffer = new WritableByteBuffer( bufferEndianness );
 
         idleMonitor = idleChannelMonitor;
         idleMonitor?.Start( this );
@@ -43,7 +46,7 @@ public abstract class Channel : ConnectedSocket, IChannel
     internal IServiceProvider ServiceProvider => channelScope.ServiceProvider;
     internal IChannelInfo Info => new ChannelInfo( this );
 
-    public IByteBuffer Buffer { get; private set; } = new WritableByteBuffer();
+    public IByteBuffer Buffer { get; private set; }
 
     public DateTimeOffset Created { get; } = DateTimeOffset.UtcNow;
     public DateTimeOffset? LastReceived { get; private set; }

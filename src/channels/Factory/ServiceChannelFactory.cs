@@ -39,7 +39,8 @@ internal class ServiceChannelFactory : IServiceChannelFactory
             , inputAdapters
             , outputAdapters
             , inputHandlers
-            , idleChannelMonitor );
+            , idleChannelMonitor
+            , options.BufferEndianness );
 
         channel.BeginReceive();
 

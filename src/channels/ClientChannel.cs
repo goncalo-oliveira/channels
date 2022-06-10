@@ -17,8 +17,9 @@ public class ClientChannel : Channel
         , IEnumerable<IChannelAdapter> inputAdapters
         , IEnumerable<IChannelAdapter> outputAdapters
         , IEnumerable<IChannelHandler> inputHandlers
-        , IIdleChannelMonitor? idleChannelMonitor )
-        : base( serviceScope, loggerFactory, socket, idleChannelMonitor )
+        , IIdleChannelMonitor? idleChannelMonitor
+        , Buffers.Endianness bufferEndianness )
+        : base( serviceScope, loggerFactory, socket, idleChannelMonitor, bufferEndianness )
     {
         Input = new ChannelPipeline(  loggerFactory, inputAdapters, inputHandlers );
         Output = new ChannelPipeline( loggerFactory, outputAdapters, new IChannelHandler[]
@@ -31,12 +32,14 @@ public class ClientChannel : Channel
         , ILoggerFactory loggerFactory
         , Socket socket
         , IdleDetectionMode idleDetectionMode
-        , TimeSpan idleDetectionTimeout )
+        , TimeSpan idleDetectionTimeout
+        , Buffers.Endianness bufferEndianness )
         : base( 
               serviceScope
             , loggerFactory
             , socket
-            , new IdleChannelMonitor( loggerFactory, idleDetectionMode, idleDetectionTimeout ) )
+            , new IdleChannelMonitor( loggerFactory, idleDetectionMode, idleDetectionTimeout )
+            , bufferEndianness )
     { }
 
     public override async Task CloseAsync()

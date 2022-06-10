@@ -64,7 +64,7 @@ public abstract class ChannelAdapter<T> : IChannelAdapter, IInputChannelAdapter,
         }
 
         // attempt to convert the data
-        var convertedData = ConvertData( data );
+        var convertedData = ConvertData( context, data );
 
         if ( ( convertedData != null ) && ( convertedData.GetType() != data.GetType() ) )
         {
@@ -79,7 +79,7 @@ public abstract class ChannelAdapter<T> : IChannelAdapter, IInputChannelAdapter,
         return Task.CompletedTask;
     }
 
-    protected virtual object? ConvertData( object data )
+    protected virtual object? ConvertData( IAdapterContext context, object data )
     {
         var type = typeof( T );
 
@@ -88,7 +88,7 @@ public abstract class ChannelAdapter<T> : IChannelAdapter, IInputChannelAdapter,
         {
             logger?.LogDebug( "Transformed 'Byte[]' to 'WrappedByteBuffer'." );
 
-            return new WrappedByteBuffer( (byte[])data );
+            return new WrappedByteBuffer( (byte[])data, context.Channel.Buffer.Endianness );
         }
 
         // attempt an IByteBuffer to byte[] transformation

@@ -48,7 +48,8 @@ internal class ClientChannelFactory : IClientChannelFactory
             , inputAdapters
             , outputAdapters
             , inputHandlers
-            , idleChannelMonitor );
+            , idleChannelMonitor
+            , options.BufferEndianness );
 
         channel.BeginReceive();
 
