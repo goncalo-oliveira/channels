@@ -7,16 +7,16 @@ namespace Faactory.Channels.Buffers;
 /// </summary>
 public sealed class WrappedByteBuffer : IByteBuffer
 {
-    private readonly Endianness endianness;
     private byte[] buffer;
 
     public WrappedByteBuffer( byte[] source, Endianness endianness = Endianness.BigEndian )
     {
         buffer = source;
         Offset = 0;
-        this.endianness = endianness;
+        Endianness = endianness;
     }
 
+    public Endianness Endianness { get; }
     public bool IsReadable => true;
     public bool IsWritable => false;
     public int Length => buffer.Length;
@@ -75,7 +75,7 @@ public sealed class WrappedByteBuffer : IByteBuffer
     public double GetDouble( int offset )
     {
         var span = new ReadOnlySpan<byte>( buffer, offset, sizeof( double ) );
-        var value = ( endianness == Endianness.BigEndian )
+        var value = ( Endianness == Endianness.BigEndian )
             ? BinaryPrimitives.ReadDoubleBigEndian( span )
             : BinaryPrimitives.ReadDoubleLittleEndian( span );
 
@@ -85,7 +85,7 @@ public sealed class WrappedByteBuffer : IByteBuffer
     public float GetSingle( int offset )
     {
         var span = new ReadOnlySpan<byte>( buffer, offset, sizeof( float ) );
-        var value = ( endianness == Endianness.BigEndian )
+        var value = ( Endianness == Endianness.BigEndian )
             ? BinaryPrimitives.ReadSingleBigEndian( span )
             : BinaryPrimitives.ReadSingleLittleEndian( span );
 
@@ -95,7 +95,7 @@ public sealed class WrappedByteBuffer : IByteBuffer
     public short GetInt16( int offset )
     {
         var span = new ReadOnlySpan<byte>( buffer, offset, sizeof( Int16 ) );
-        var value = ( endianness == Endianness.BigEndian )
+        var value = ( Endianness == Endianness.BigEndian )
             ? BinaryPrimitives.ReadInt16BigEndian( span )
             : BinaryPrimitives.ReadInt16LittleEndian( span );
 
@@ -105,7 +105,7 @@ public sealed class WrappedByteBuffer : IByteBuffer
     public int GetInt32( int offset )
     {
         var span = new ReadOnlySpan<byte>( buffer, offset, sizeof( Int32 ) );
-        var value = ( endianness == Endianness.BigEndian )
+        var value = ( Endianness == Endianness.BigEndian )
             ? BinaryPrimitives.ReadInt32BigEndian( span )
             : BinaryPrimitives.ReadInt32LittleEndian( span );
 
@@ -115,7 +115,7 @@ public sealed class WrappedByteBuffer : IByteBuffer
     public long GetInt64( int offset )
     {
         var span = new ReadOnlySpan<byte>( buffer, offset, sizeof( Int64 ) );
-        var value = ( endianness == Endianness.BigEndian )
+        var value = ( Endianness == Endianness.BigEndian )
             ? BinaryPrimitives.ReadInt64BigEndian( span )
             : BinaryPrimitives.ReadInt64LittleEndian( span );
 
@@ -125,7 +125,7 @@ public sealed class WrappedByteBuffer : IByteBuffer
     public ushort GetUInt16( int offset )
     {
         var span = new ReadOnlySpan<byte>( buffer, offset, sizeof( UInt16 ) );
-        var value = ( endianness == Endianness.BigEndian )
+        var value = ( Endianness == Endianness.BigEndian )
             ? BinaryPrimitives.ReadUInt16BigEndian( span )
             : BinaryPrimitives.ReadUInt16LittleEndian( span );
 
@@ -135,7 +135,7 @@ public sealed class WrappedByteBuffer : IByteBuffer
     public uint GetUInt32( int offset )
     {
         var span = new ReadOnlySpan<byte>( buffer, offset, sizeof( UInt32 ) );
-        var value = ( endianness == Endianness.BigEndian )
+        var value = ( Endianness == Endianness.BigEndian )
             ? BinaryPrimitives.ReadUInt32BigEndian( span )
             : BinaryPrimitives.ReadUInt32LittleEndian( span );
 
@@ -145,7 +145,7 @@ public sealed class WrappedByteBuffer : IByteBuffer
     public ulong GetUInt64( int offset )
     {
         var span = new ReadOnlySpan<byte>( buffer, offset, sizeof( UInt64 ) );
-        var value = ( endianness == Endianness.BigEndian )
+        var value = ( Endianness == Endianness.BigEndian )
             ? BinaryPrimitives.ReadUInt64BigEndian( span )
             : BinaryPrimitives.ReadUInt64LittleEndian( span );
 
