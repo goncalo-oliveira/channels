@@ -69,7 +69,7 @@ public sealed class WrappedByteBuffer : IByteBuffer
     {
         var dest = GetBytes( offset, length );
 
-        return new WrappedByteBuffer( dest );
+        return new WrappedByteBuffer( dest, Endianness );
     }
 
     public double GetDouble( int offset )
@@ -184,7 +184,7 @@ public sealed class WrappedByteBuffer : IByteBuffer
     {
         var value = ReadBytes( length );
 
-        return new WrappedByteBuffer( value );
+        return new WrappedByteBuffer( value, Endianness );
     }
 
     public double ReadDouble()
