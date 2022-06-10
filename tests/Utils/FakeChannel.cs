@@ -1,6 +1,7 @@
 using System;
 using System.Threading.Tasks;
 using Faactory.Channels;
+using Faactory.Channels.Buffers;
 using Faactory.Collections;
 
 public class FakeChannel : IChannel
@@ -14,6 +15,8 @@ public class FakeChannel : IChannel
     public DateTimeOffset? LastReceived => throw new NotImplementedException();
 
     public DateTimeOffset? LastSent => throw new NotImplementedException();
+
+    public IByteBuffer Buffer { get; } = new WritableByteBuffer();
 
     public Task CloseAsync()
     {

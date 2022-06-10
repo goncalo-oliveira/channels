@@ -64,7 +64,7 @@ public abstract class ChannelHandler<T> : IChannelHandler
         }
 
         // attempt to convert the data
-        var convertedData = ConvertData( data );
+        var convertedData = ConvertData( context, data );
 
         if ( ( convertedData != null ) && ( convertedData.GetType() != data.GetType() ) )
         {
@@ -77,7 +77,7 @@ public abstract class ChannelHandler<T> : IChannelHandler
         return Task.CompletedTask;
     }
 
-    private object? ConvertData( object data )
+    private object? ConvertData( IChannelContext context, object data )
     {
         var type = typeof( T );
 
@@ -86,7 +86,7 @@ public abstract class ChannelHandler<T> : IChannelHandler
         {
             logger?.LogDebug( "Transformed 'Byte[]' to 'WrappedByteBuffer'." );
 
-            return new WrappedByteBuffer( (byte[])data );
+            return new WrappedByteBuffer( (byte[])data, context.Channel.Buffer.Endianness );
         }
 
         // attempt an IByteBuffer to byte[] transformation

@@ -15,7 +15,7 @@ public static class ByteBufferExtensions
             return ( source );
         }
 
-        return new WrappedByteBuffer( source.ToArray() );
+        return new WrappedByteBuffer( source.ToArray(), source.Endianness );
     }
 
     /// <summary>
@@ -30,7 +30,7 @@ public static class ByteBufferExtensions
             return ( source );
         }
 
-        return new WritableByteBuffer( source.ToArray() );
+        return new WritableByteBuffer( source.ToArray(), source.Endianness );
     }
 
     /// <summary>

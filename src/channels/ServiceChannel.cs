@@ -16,8 +16,9 @@ internal sealed class ServiceChannel : Channel
         , IEnumerable<IChannelAdapter> inputAdapters
         , IEnumerable<IChannelAdapter> outputAdapters
         , IEnumerable<IChannelHandler> inputHandlers
-        , IIdleChannelMonitor? idleChannelMonitor )
-        : base( serviceScope, loggerFactory, socket, idleChannelMonitor )
+        , IIdleChannelMonitor? idleChannelMonitor
+        , Endianness bufferEndianness )
+        : base( serviceScope, loggerFactory, socket, idleChannelMonitor, bufferEndianness )
     {
         Input = new ChannelPipeline(  loggerFactory, inputAdapters, inputHandlers );
         Output = new ChannelPipeline( loggerFactory, outputAdapters, new IChannelHandler[]

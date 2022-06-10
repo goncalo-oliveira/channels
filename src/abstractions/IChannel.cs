@@ -13,6 +13,8 @@ public interface IChannel : IDisposable
     /// </summary>
     string Id { get; }
 
+    IByteBuffer Buffer { get; }
+
     /// <summary>
     /// Gets a data holder available throughout the entire channel session
     /// </summary>

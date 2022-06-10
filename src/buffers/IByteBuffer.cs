@@ -5,6 +5,8 @@ namespace Faactory.Channels.Buffers;
 /// </summary>
 public interface IByteBuffer
 {
+    public Endianness Endianness { get; }
+
     /// <summary>
     /// Gets if the buffer can be read
     /// </summary>

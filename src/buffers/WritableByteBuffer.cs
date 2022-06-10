@@ -7,27 +7,27 @@ namespace Faactory.Channels.Buffers;
 /// </summary>
 public sealed class WritableByteBuffer : IByteBuffer
 {
-    private readonly Endianness endianness;
     private readonly List<byte> buffer;
 
     public WritableByteBuffer( Endianness endianness = Endianness.BigEndian )
     {
         buffer = new List<byte>();
-        this.endianness = endianness;
+        Endianness = endianness;
     }
 
     public WritableByteBuffer( byte[] source, Endianness endianness = Endianness.BigEndian )
     {
         buffer = new List<byte>( source );
-        this.endianness = endianness;
+        Endianness = endianness;
     }
 
     public WritableByteBuffer( int capacity, Endianness endianness = Endianness.BigEndian )
     {
         buffer = new List<byte>( capacity );
-        this.endianness = endianness;
+        Endianness = endianness;
     }
 
+    public Endianness Endianness { get; }
     public bool IsReadable => false;
     public bool IsWritable => true;
     public int Length => buffer.Count;
@@ -164,7 +164,7 @@ public sealed class WritableByteBuffer : IByteBuffer
     public IByteBuffer WriteDouble( double value )
     {
         var span = new Span<byte>( new byte[ sizeof( double ) ]);
-        if ( endianness == Endianness.BigEndian )
+        if ( Endianness == Endianness.BigEndian )
         {
             BinaryPrimitives.WriteDoubleBigEndian( span, value );
         }
@@ -179,7 +179,7 @@ public sealed class WritableByteBuffer : IByteBuffer
     public IByteBuffer WriteSingle( float value )
     {
         var span = new Span<byte>( new byte[ sizeof( float ) ]);
-        if ( endianness == Endianness.BigEndian )
+        if ( Endianness == Endianness.BigEndian )
         {
             BinaryPrimitives.WriteSingleBigEndian( span, value );
         }
@@ -194,7 +194,7 @@ public sealed class WritableByteBuffer : IByteBuffer
     public IByteBuffer WriteInt16( Int16 value )
     {
         var span = new Span<byte>( new byte[ sizeof( Int16 ) ]);
-        if ( endianness == Endianness.BigEndian )
+        if ( Endianness == Endianness.BigEndian )
         {
             BinaryPrimitives.WriteInt16BigEndian( span, value );
         }
@@ -209,7 +209,7 @@ public sealed class WritableByteBuffer : IByteBuffer
     public IByteBuffer WriteInt32( Int32 value )
     {
         var span = new Span<byte>( new byte[ sizeof( Int32 ) ]);
-        if ( endianness == Endianness.BigEndian )
+        if ( Endianness == Endianness.BigEndian )
         {
             BinaryPrimitives.WriteInt32BigEndian( span, value );
         }
@@ -224,7 +224,7 @@ public sealed class WritableByteBuffer : IByteBuffer
     public IByteBuffer WriteInt64( Int64 value )
     {
         var span = new Span<byte>( new byte[ sizeof( Int64 ) ]);
-        if ( endianness == Endianness.BigEndian )
+        if ( Endianness == Endianness.BigEndian )
         {
             BinaryPrimitives.WriteInt64BigEndian( span, value );
         }
@@ -239,7 +239,7 @@ public sealed class WritableByteBuffer : IByteBuffer
     public IByteBuffer WriteUInt16( UInt16 value )
     {
         var span = new Span<byte>( new byte[ sizeof( UInt16 ) ]);
-        if ( endianness == Endianness.BigEndian )
+        if ( Endianness == Endianness.BigEndian )
         {
             BinaryPrimitives.WriteUInt16BigEndian( span, value );
         }
@@ -254,7 +254,7 @@ public sealed class WritableByteBuffer : IByteBuffer
     public IByteBuffer WriteUInt32( UInt32 value )
     {
         var span = new Span<byte>( new byte[ sizeof( UInt32 ) ]);
-        if ( endianness == Endianness.BigEndian )
+        if ( Endianness == Endianness.BigEndian )
         {
             BinaryPrimitives.WriteUInt32BigEndian( span, value );
         }
@@ -269,7 +269,7 @@ public sealed class WritableByteBuffer : IByteBuffer
     public IByteBuffer WriteUInt64( UInt64 value )
     {
         var span = new Span<byte>( new byte[ sizeof( UInt64 ) ]);
-        if ( endianness == Endianness.BigEndian )
+        if ( Endianness == Endianness.BigEndian )
         {
             BinaryPrimitives.WriteUInt64BigEndian( span, value );
         }
