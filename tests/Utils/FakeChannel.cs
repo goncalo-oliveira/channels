@@ -16,7 +16,7 @@ public class FakeChannel : IChannel
 
     public DateTimeOffset? LastSent => throw new NotImplementedException();
 
-    public IByteBuffer Buffer => throw new NotImplementedException();
+    public IByteBuffer Buffer { get; } = new WritableByteBuffer();
 
     public Task CloseAsync()
     {
