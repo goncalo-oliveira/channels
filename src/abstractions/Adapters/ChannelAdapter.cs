@@ -8,7 +8,7 @@ namespace Faactory.Channels.Adapters;
 /// Base class for a channel adapter
 /// </summary>
 /// <typeparam name="T">The data type</typeparam>
-public abstract class ChannelAdapter<T> : IChannelAdapter, IInputChannelAdapter, IOutputChannelAdapter
+public abstract class ChannelAdapter<T> : IChannelAdapter
 {
     private ILogger? logger;
 

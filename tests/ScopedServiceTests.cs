@@ -19,7 +19,7 @@ public class ScopedServiceTests
         public string Id { get; } = Guid.NewGuid().ToString( "N" );
     }
 
-    private class MyAdapter : ChannelAdapter<string>
+    private class MyAdapter : ChannelAdapter<string>, IInputChannelAdapter
     {
         private readonly string id;
 
