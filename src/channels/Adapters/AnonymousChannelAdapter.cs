@@ -6,7 +6,7 @@ namespace Faactory.Channels.Adapters;
 /// An anonymous channel adapter
 /// </summary>
 /// <typeparam name="T">The expected data type</typeparam>
-public sealed class AnonymousChannelAdapter<T> : ChannelAdapter<T>
+public sealed class AnonymousChannelAdapter<T> : ChannelAdapter<T>, IInputChannelAdapter, IOutputChannelAdapter
 {
     private readonly Func<IAdapterContext, T, Task> execute;
 

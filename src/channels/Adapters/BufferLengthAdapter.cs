@@ -28,7 +28,7 @@ public class BufferLengthAdapterOptions
 /// <summary>
 /// This adapter ensures the length of the input buffer doesn't exceed a maximum value. Configure with BufferLengthAdapterOptions.
 /// </summary>
-public sealed class BufferLengthAdapter : ChannelAdapter<IByteBuffer>
+public sealed class BufferLengthAdapter : ChannelAdapter<IByteBuffer>, IInputChannelAdapter
 {
     private readonly int maxBufferSize;
     private readonly bool closeChannel;

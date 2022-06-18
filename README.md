@@ -52,10 +52,12 @@ Type checking is essentially making sure the type of the data is intended for an
 
 Type mutation is the capacity to change the data type, if compatible with the expected data of the adapter. The base class already deals with `IByteBuffer` <--> `Byte[]` and `T` <--> `IEnumerable<T>` mutations, but it also provides an opportunity to override/extend this behaviour.
 
-Here's an example of how to implement an adapter that adapts from an `IByteBuffer` (or `Byte[]`).
+Since version 0.3 we also need to indicate whether the adapter is meant for the input or/and the output pipelines. We do that by adding the interfaces `IInputChannelAdapter` or/and `iOutputChannelAdapter` respectively.
+
+Here's an example of how to implement an adapter that adapts from an `IByteBuffer` (or `Byte[]`). This adapter can only be added to the input pipeline.
 
 ```csharp
-public class MyChannelAdapter : ChannelAdapter<IByteBuffer>
+public class MyChannelAdapter : ChannelAdapter<IByteBuffer>, IInputChannelAdapter
 {
     public override Task ExecuteAsync( IAdapterContext context, IByteBuffer data )
     {
@@ -88,7 +90,7 @@ graph LR;
 
 ### Implementing an Handler
 
-Similarly to the adapter, unless you have very specific needs, you should inherit your handler from the `ChannelHandler<T>` class and not the `IChannelHandler` interface directly. This is because, again, similarly to the adapter, the base class does a type checking for us; if the data type is not intended for the handler, then it (the handler) won't be executed.
+Similarly to the adapter, unless you have very specific needs, you should inherit your handler from the `ChannelHandler<T>` class and not implementing the `IChannelHandler` interface directly. This is because, again, similarly to the adapter, the base class does type checking for us; if the data type is not intended for the handler, then it (the handler) won't be executed.
 
 Similarly to the adapter, the base class also deals with `T` <--> `IEnumerable<T>` mutations.
 
@@ -112,13 +114,13 @@ Because adapters and handlers are so similar, there might be a temptation to do 
 - Adapters can run at any point in the pipeline
 - Handlers run at the end of the pipeline
 
-## Writing to Output
+## Writing to Channel Output
 
-At any point, within an adapter or handler, we can write data to the channel output; this will trigger the output pipeline and at the end, send the data to the other party. However, there are two distinct ways of doing so, with distinct behaviour.
+At any point, within an adapter or handler, we can write data to the channel output; this will trigger the output pipeline and at the end of it, send the data to the other party. However, there are two distinct ways of doing this, each with a distinct behaviour.
 
 ### 1. Write directly to the Channel
 
-This is the most straightforward method and it will immediately trigger the output pipeline, but it is **not** the recommended way, unless you need the data to reach the other party as soon as possible, no matter what happens next (current or next middleware component).
+This is the most straightforward method and it will immediately trigger the output pipeline, however, it is **not** the recommended way, unless you need the data to reach the other party as soon as possible, no matter what happens next (current or next middleware component). This is an asynchronous process.
 
 ```csharp
 public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Message> data )
