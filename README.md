@@ -261,6 +261,9 @@ IServiceCollection services = ...;
 services.AddTransient<IChannelEvents, MyChannelEvents>();
 ```
 
-## Parcel Protocol
+## Protocol Extensions
 
-If you intend to use [Parcel Protocol](https://github.com/goncalo-oliveira/parcel-spec) for communication, you have available an extension library. You can learn more about it [here](https://github.com/goncalo-oliveira/channels-parcel).
+The following are available as protocol extensions built for Channels.
+
+- [Parcel](https://github.com/goncalo-oliveira/channels-parcel)
+- [Teltonika](https://www.nuget.org/packages/Faactory.Channels.Teltonika)
