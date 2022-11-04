@@ -28,6 +28,8 @@ public sealed class WrappedByteBuffer : IByteBuffer
     {
         Array.Resize<byte>( ref buffer, 0 );
 
+        ResetOffset();
+
         return ( this );
     }
 
@@ -42,6 +44,8 @@ public sealed class WrappedByteBuffer : IByteBuffer
         Array.Copy( buffer, Offset, dest, 0, buffer.Length - Offset );
 
         buffer = dest;
+
+        ResetOffset();
 
         return ( this );
     }
