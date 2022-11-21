@@ -6,7 +6,7 @@ public static class ByteBufferExtensions
     /// Creates a read-only buffer from the given source
     /// </summary>
     /// <param name="source">The source buffer</param>
-    /// <returns><A read-only buffer instance/returns>
+    /// <returns>A read-only buffer instance</returns>
     public static IByteBuffer MakeReadOnly( this IByteBuffer source )
     {
         if ( source.IsReadable && !source.IsWritable )
