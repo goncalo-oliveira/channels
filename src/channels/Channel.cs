@@ -12,7 +12,7 @@ namespace Faactory.Channels;
 public abstract class Channel : ConnectedSocket, IChannel
 {
     protected readonly ILogger logger;
-    private readonly IDisposable loggerScope;
+    private readonly IDisposable? loggerScope;
     private readonly IIdleChannelMonitor? idleMonitor;
     private readonly IServiceScope channelScope;
 
@@ -83,7 +83,7 @@ public abstract class Channel : ConnectedSocket, IChannel
         Socket.Dispose();
 
         logger.LogDebug( "Disposed." );
-        loggerScope.Dispose();
+        loggerScope?.Dispose();
         channelScope.Dispose();
     }
 
