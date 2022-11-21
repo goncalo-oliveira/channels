@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageId>Faactory.Channels.Abstractions</PackageId>
-    <Version>0.3.2</Version>
+    <Version>0.4.0</Version>
     <Authors>Goncalo Oliveira</Authors>
     <Description>Channels</Description>
     <RepositoryUrl>https://github.com/goncalo-oliveira/channels</RepositoryUrl>
@@ -18,8 +18,8 @@
 
   <ItemGroup>
     <PackageReference Include="Faactory.Types" Version="1.6.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
