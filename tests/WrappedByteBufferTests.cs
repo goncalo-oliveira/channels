@@ -40,4 +40,77 @@ public class WrappedByteBufferTests
         Assert.Equal( 0, buffer.Offset );
         Assert.Equal( 0, buffer.ReadableBytes );
     }
+
+    [Fact]
+    public void TestMatches()
+    {
+        var buffer = new WrappedByteBuffer( new byte[]
+        {
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
+        } );
+
+        Assert.True( buffer.MatchBytes( new byte[]
+        { 
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
+        } ) );
+
+        Assert.True( buffer.MatchBytes( new byte[]
+        { 
+            0x00, 0x01
+        } ) );
+
+        Assert.False( buffer.MatchBytes( new byte[]
+        { 
+            0x00, 0x09
+        } ) );
+
+        Assert.True( buffer.MatchBytes( new byte[]
+        { 
+            0x01, 0x02
+        }, 1 ) );
+
+        Assert.False( buffer.MatchBytes( new byte[]
+        { 
+            0x00, 0x01
+        }, 1 ) );
+
+        Assert.Throws<InvalidOperationException>( () =>
+        {
+            var writable = buffer.MakeWritable();
+
+            writable.MatchBytes( new byte[]
+            { 
+                0x00, 0x01
+            } );
+        } );
+    }
+
+    [Fact]
+    public void TestFind()
+    {
+        var buffer = new WrappedByteBuffer( new byte[]
+        {
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
+        } );
+
+        Assert.Equal( 2, buffer.FindBytes( new byte[]
+        {
+            0x02, 0x03
+        } ) );
+
+        Assert.Equal( -1, buffer.FindBytes( new byte[]
+        {
+            0x02, 0x03
+        }, 3 ) );
+
+        Assert.Throws<InvalidOperationException>( () =>
+        {
+            var writable = buffer.MakeWritable();
+
+            writable.FindBytes( new byte[]
+            { 
+                0x02, 0x03
+            } );
+        } );
+    }
 }
