@@ -49,27 +49,27 @@ public class WrappedByteBufferTests
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
         } );
 
-        Assert.True( buffer.MatchesSequence( new byte[]
+        Assert.True( buffer.MatchBytes( new byte[]
         { 
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
         } ) );
 
-        Assert.True( buffer.MatchesSequence( new byte[]
+        Assert.True( buffer.MatchBytes( new byte[]
         { 
             0x00, 0x01
         } ) );
 
-        Assert.False( buffer.MatchesSequence( new byte[]
+        Assert.False( buffer.MatchBytes( new byte[]
         { 
             0x00, 0x09
         } ) );
 
-        Assert.True( buffer.MatchesSequence( new byte[]
+        Assert.True( buffer.MatchBytes( new byte[]
         { 
             0x01, 0x02
         }, 1 ) );
 
-        Assert.False( buffer.MatchesSequence( new byte[]
+        Assert.False( buffer.MatchBytes( new byte[]
         { 
             0x00, 0x01
         }, 1 ) );
@@ -78,7 +78,7 @@ public class WrappedByteBufferTests
         {
             var writable = buffer.MakeWritable();
 
-            writable.MatchesSequence( new byte[]
+            writable.MatchBytes( new byte[]
             { 
                 0x00, 0x01
             } );

@@ -24,7 +24,7 @@ public static class ByteBufferSearchExtensions
         // look for a sequence match
         for ( int idx = offset; idx < source.ReadableBytes; idx++ )
         {
-            if ( MatchesSequence( source, sequence, idx ) )
+            if ( MatchBytes( source, sequence, idx ) )
             {
                 return ( idx );
             }
@@ -40,7 +40,7 @@ public static class ByteBufferSearchExtensions
     /// <param name="sequence">The sequence of bytes to match</param>
     /// <param name="offset">The offset in the buffer; if -1 it uses the buffer's current offset</param>
     /// <returns>True if the sequence matches; false otherwise.</returns>
-    public static bool MatchesSequence( this IByteBuffer source, byte[] sequence, int offset = -1 )
+    public static bool MatchBytes( this IByteBuffer source, byte[] sequence, int offset = -1 )
     {
         if ( !source.IsReadable )
         {
