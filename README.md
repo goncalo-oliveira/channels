@@ -261,6 +261,56 @@ IServiceCollection services = ...;
 services.AddTransient<IChannelEvents, MyChannelEvents>();
 ```
 
+## Idle Channels
+
+An idle detection mechanism is available by default for both service and client channels. The default detection method is `IdleDetectionMode.Auto`. This mode attempts to verify if the underlying socket is still connected and if not, closes the channel.
+By default, there's also an hard timeout of 60 seconds; if no data is received or sent through the underlying socket before the timeout, the channel is closed. Using the `IdleDetectionMode.Auto` method the hard timeout can be disabled by setting its value to `TimeSpan.Zero` in the channel options.
+
+```csharp
+IServiceChannelBuilder builder = ...;
+
+builder.Configure( options =>
+{
+    options.Port = 8080;
+
+    // these are the default settings; added here just for clarity
+    options.IdleDetectionMode = IdleDetectionMode.Auto;
+    options.IdleDetectionTimeout = TimeSpan.FromSeconds( 60 );
+    // to use Auto method without the hard timeout
+    //options.IdleDetectionTimeout = TimeSpan.Zero;
+} );
+```
+
+
+Other detection modes only use the hard timeout on received or sent data, or both.
+
+```csharp
+IServiceChannelBuilder builder = ...;
+
+builder.Configure( options =>
+{
+    options.Port = 8080;
+
+    // hard timeout (30s) to both received and sent data
+    options.IdleDetectionMode = IdleDetectionMode.Both;
+    options.IdleDetectionTimeout = TimeSpan.FromSeconds( 30 );
+} );
+```
+
+The idle detection can be disabled by setting the mode to `IdleDetectionMode.None`.
+
+```csharp
+IServiceChannelBuilder builder = ...;
+
+builder.Configure( options =>
+{
+    options.Port = 8080;
+
+    // disable idle detection
+    options.IdleDetectionMode = IdleDetectionMode.None;
+} );
+```
+
 ## Protocol Extensions
 
 The following are available as protocol extensions built for Channels.
