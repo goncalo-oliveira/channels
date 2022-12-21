@@ -74,8 +74,6 @@ internal class IdleChannelMonitor : IIdleChannelMonitor
 
     private void IdleDetectionTimeoutCallback( object? state )
     {
-        logger.LogDebug( $"IdleChannelMonitor [{detectionMode}] triggered." );
-
         var channel = (Channel)state!;
 
         // attempt to poll channel socket if auto mode is being used
