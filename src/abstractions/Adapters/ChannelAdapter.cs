@@ -26,13 +26,15 @@ public abstract class ChannelAdapter<T> : IChannelAdapter
     {
         logger = logger ?? context.LoggerFactory.CreateLogger( GetType() );
 
-        logger.LogDebug( $"Received '{data.GetType().Name}' data." );
-
         if ( data == null )
         {
             // no data...
+            logger.LogDebug( $"Received 'null' data." );
+
             return Task.CompletedTask;
         }
+
+        logger.LogDebug( $"Received '{data.GetType().Name}' data." );
 
         if ( data is T )
         {
