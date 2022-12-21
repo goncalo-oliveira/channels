@@ -52,7 +52,7 @@ Type checking is essentially making sure the type of the data is intended for an
 
 Type mutation is the capacity to change the data type, if compatible with the expected data of the adapter. The base class already deals with `IByteBuffer` <--> `Byte[]` and `T` <--> `IEnumerable<T>` mutations, but it also provides an opportunity to override/extend this behaviour.
 
-Since version 0.3 we also need to indicate whether the adapter is meant for the input or/and the output pipelines. We do that by adding the interfaces `IInputChannelAdapter` or/and `iOutputChannelAdapter` respectively.
+Since version 0.3 we also need to indicate whether the adapter is meant for the input or/and the output pipelines. We do that by adding the interfaces `IInputChannelAdapter` or/and `IOutputChannelAdapter` respectively.
 
 Here's an example of how to implement an adapter that adapts from an `IByteBuffer` (or `Byte[]`). This adapter can only be added to the input pipeline.
 
