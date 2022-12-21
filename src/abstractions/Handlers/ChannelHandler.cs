@@ -86,7 +86,7 @@ public abstract class ChannelHandler<T> : IChannelHandler
         // attempt a byte[] to IByteBuffer transformation
         if ( type.IsAssignableFrom( typeof( IByteBuffer ) ) && ( data is byte[] ) )
         {
-            logger?.LogDebug( "Transformed 'Byte[]' to 'WrappedByteBuffer'." );
+            logger?.LogDebug( "Transformed from 'Byte[]' to 'IByteBuffer'." );
 
             return new WrappedByteBuffer( (byte[])data, context.Channel.Buffer.Endianness );
         }
@@ -95,7 +95,7 @@ public abstract class ChannelHandler<T> : IChannelHandler
         if ( ( type.IsArray && type.GetElementType() == typeof( byte ) ) 
             && data.GetType().IsAssignableTo( typeof( IByteBuffer ) ) )
         {
-            logger?.LogDebug( "Transformed 'WrappedByteBuffer' to 'Byte[]'." );
+            logger?.LogDebug( "Transformed from 'IByteBuffer' to 'Byte[]'." );
 
             return ((IByteBuffer)data).ToArray();
         }
