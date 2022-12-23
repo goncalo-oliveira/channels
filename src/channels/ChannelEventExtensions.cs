@@ -5,30 +5,29 @@ namespace Faactory.Channels;
 internal static class ChannelEventExtensions
 {
     public static void NotifyChannelCreated( this Channel channel )
-        => GetEventServices( channel )
-            .NotifyEvent( x => x.ChannelCreated( channel.Info ) );
+        => channel.GetEventServices()
+            .InvokeAll( x => x.ChannelCreated( channel.Info ) );
 
     public static void NotifyChannelClosed( this Channel channel )
-        => GetEventServices( channel )
-            .NotifyEvent( x => x.ChannelClosed( channel.Info ) );
+        => channel.GetEventServices()
+            .InvokeAll( x => x.ChannelClosed( channel.Info ) );
 
     public static void NotifyDataReceived( this Channel channel, byte[] data )
-        => GetEventServices( channel )
-            .NotifyEvent( x => x.DataReceived( channel.Info, data ) );
+        => channel.GetEventServices()
+            .InvokeAll( x => x.DataReceived( channel.Info, data ) );
 
     public static void NotifyDataSent( this Channel channel, int sent )
-        => GetEventServices( channel )
-            .NotifyEvent( x => x.DataSent( channel.Info, sent ) );
+        => channel.GetEventServices()
+            .InvokeAll( x => x.DataSent( channel.Info, sent ) );
 
-    private static void NotifyEvent( this IChannelEvents[] services, Action<IChannelEvents> notify )
+    private static void InvokeAll( this IEnumerable<IChannelEvents> services, Action<IChannelEvents> invoke )
     {
         foreach ( var service in services )
         {
-            notify( service );
+            invoke( service );
         }
     }
 
-    private static IChannelEvents[] GetEventServices( Channel channel )
-        => channel.ServiceProvider.GetServices<IChannelEvents>()
-            .ToArray();
+    private static IEnumerable<IChannelEvents> GetEventServices( this Channel channel )
+        => channel.ServiceProvider.GetServices<IChannelEvents>();
 }
