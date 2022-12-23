@@ -133,7 +133,7 @@ public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Me
 
 ### 2. Write to the Output buffer (recommended)
 
-The context of an adapter or handler, gives us access to an output buffer that we can write to. This **is** the recommended method. Writing to the output buffer doesn't immediately trigger the output pipeline, instead, it is only triggered at the end of the pipeline, after all adapters and handlers have executed - without interruption.
+The context of an adapter or handler, gives us access to an output buffer that we can write to. This **is** the recommended method. Writing to the output buffer doesn't immediately trigger the output pipeline. Instead, it is only triggered at the end of the pipeline, after all adapters and handlers have executed (fully).
 If an adapter interrupts the pipeline, or a handler crashes and interrupts the pipeline, the data in the buffer will never be written to the channel.
 
 ```csharp
@@ -261,53 +261,76 @@ IServiceCollection services = ...;
 services.AddTransient<IChannelEvents, MyChannelEvents>();
 ```
 
+## Channel Services
+
+Sometimes it might be required to execute a long-running service inside a channel. This can be achieved by creating a class that implements `IChannelService` interface.
+
+```csharp
+public class MyService : IChannelService
+{
+    // ...
+
+    public void Start( IChannel channel )
+    {
+        // This is invoked when a channel is created
+    }
+
+    public void Stop()
+    {
+        // This is invoked when a channel is closed
+    }
+}
+```
+
+To set up the service we can use the channel builder extensions
+
+```csharp
+IChannelBuilder builder = ...;
+
+builder.AddService<MyService>();
+```
+
 ## Idle Channels
 
-An idle detection mechanism is available by default for both service and client channels. The default detection method is `IdleDetectionMode.Auto`. This mode attempts to verify if the underlying socket is still connected and if not, closes the channel.
-By default, there's also an hard timeout of 60 seconds; if no data is received or sent through the underlying socket before the timeout, the channel is closed. Using the `IdleDetectionMode.Auto` method the hard timeout can be disabled by setting its value to `TimeSpan.Zero` in the channel options.
+> On previous releases, the idle detection mechanism was available and active by default. Since version 0.5 this is no longer true and the idle detection service needs to be added.
+
+There's a ready-made service that monitors channels activity and detects if a channel has become idle or unresponsive. When that happens, the underlying socket is disconnected and the channel closed.
+
+To enable this service, just add it as a channel service using the builder extensions
 
 ```csharp
-IServiceChannelBuilder builder = ...;
+IChannelBuilder builder = ...;
 
-builder.Configure( options =>
+builder.AddIdleChannelService();
+```
+
+The default detection mode is `IdleDetectionMode.Auto`. This mode attempts to verify if the underlying socket is still connected and if not, closes the channel.
+
+There's also an idle timeout of 60 seconds by default; if no data is received or sent through the underlying socket before the timeout, the channel is closed. This timeout can be disabled when using the `IdleDetectionMode.Auto` method by setting its value to `TimeSpan.Zero`.
+
+```csharp
+IChannelBuilder builder = ...;
+
+builder.AddIdleChannelService( options =>
 {
-    options.Port = 8080;
-
     // these are the default settings; added here just for clarity
-    options.IdleDetectionMode = IdleDetectionMode.Auto;
-    options.IdleDetectionTimeout = TimeSpan.FromSeconds( 60 );
+    options.DetectionMode = IdleDetectionMode.Auto;
+    options.Timeout = TimeSpan.FromSeconds( 60 );
     // to use Auto method without the hard timeout
-    //options.IdleDetectionTimeout = TimeSpan.Zero;
+    //options.Timeout = TimeSpan.Zero;
 } );
 ```
 
-
-Other detection modes only use the hard timeout on received or sent data, or both.
-
-```csharp
-IServiceChannelBuilder builder = ...;
-
-builder.Configure( options =>
-{
-    options.Port = 8080;
-
-    // hard timeout (30s) to both received and sent data
-    options.IdleDetectionMode = IdleDetectionMode.Both;
-    options.IdleDetectionTimeout = TimeSpan.FromSeconds( 30 );
-} );
-```
-
-The idle detection can be disabled by setting the mode to `IdleDetectionMode.None`.
+Other detection modes only use the timeout on received or sent data (or both).
 
 ```csharp
-IServiceChannelBuilder builder = ...;
+IChannelBuilder builder = ...;
 
-builder.Configure( options =>
+builder.AddIdleChannelService( options =>
 {
-    options.Port = 8080;
-
-    // disable idle detection
-    options.IdleDetectionMode = IdleDetectionMode.None;
+    // timeout (30s) to both received and sent data
+    options.DetectionMode = IdleDetectionMode.Both;
+    options.Timeout = TimeSpan.FromSeconds( 30 );
 } );
 ```
 
