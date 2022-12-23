@@ -16,9 +16,8 @@ internal sealed class ServiceChannel : Channel
         , IEnumerable<IChannelAdapter> inputAdapters
         , IEnumerable<IChannelAdapter> outputAdapters
         , IEnumerable<IChannelHandler> inputHandlers
-        , IIdleChannelMonitor? idleChannelMonitor
         , Endianness bufferEndianness )
-        : base( serviceScope, loggerFactory, socket, idleChannelMonitor, bufferEndianness )
+        : base( serviceScope, loggerFactory, socket, bufferEndianness )
     {
         Input = new ChannelPipeline(  loggerFactory, inputAdapters, inputHandlers );
         Output = new ChannelPipeline( loggerFactory, outputAdapters, new IChannelHandler[]
@@ -34,7 +33,9 @@ internal sealed class ServiceChannel : Channel
             Socket.Shutdown( SocketShutdown.Both );
         }
         catch ( Exception )
-        {}
+        {
+            OnDisconnected();
+        }
 
         try
         {

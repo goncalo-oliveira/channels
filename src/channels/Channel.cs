@@ -13,13 +13,11 @@ public abstract class Channel : ConnectedSocket, IChannel
 {
     protected readonly ILogger logger;
     private readonly IDisposable? loggerScope;
-    private readonly IIdleChannelMonitor? idleMonitor;
     private readonly IServiceScope channelScope;
 
     public Channel( IServiceScope serviceScope
         , ILoggerFactory loggerFactory
         , Socket socket
-        , IIdleChannelMonitor? idleChannelMonitor
         , Buffers.Endianness bufferEndianness )
         : base( loggerFactory, socket )
     {
@@ -34,13 +32,11 @@ public abstract class Channel : ConnectedSocket, IChannel
 
         Buffer = new WritableByteBuffer( bufferEndianness );
 
-        idleMonitor = idleChannelMonitor;
-        idleMonitor?.Start( this );
-
         channelScope = serviceScope;
 
-        // notify channel created
+        // notify channel created and start long-running services
         this.NotifyChannelCreated();
+        this.StartChannelServices();
     }
 
     internal IServiceProvider ServiceProvider => channelScope.ServiceProvider;
@@ -65,17 +61,11 @@ public abstract class Channel : ConnectedSocket, IChannel
 
         await Output.ExecuteAsync( this, data )
             .ConfigureAwait( false );
-        // Task.Run( () => Output.ExecuteAsync( this, data ) )
-        //     .ConfigureAwait( false )
-        //     .GetAwaiter()
-        //     .GetResult();
-
-        //return Task.CompletedTask;
     }
 
     public virtual void Dispose()
     {
-        idleMonitor?.Dispose();
+        //this.StopChannelServices();
 
         Input.Dispose();
         Output.Dispose();
@@ -125,6 +115,7 @@ public abstract class Channel : ConnectedSocket, IChannel
     {
         logger.LogInformation( "Closed." );
 
+        this.StopChannelServices();
         this.NotifyChannelClosed();
 
         Dispose();

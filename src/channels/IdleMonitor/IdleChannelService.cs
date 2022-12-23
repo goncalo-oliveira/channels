@@ -3,41 +3,42 @@ using Microsoft.Extensions.Options;
 
 namespace Faactory.Channels;
 
-internal class IdleChannelMonitor : IIdleChannelMonitor
+internal sealed class IdleChannelService : IChannelService
 {
     private readonly ILogger logger;
     private Timer? timer;
     private readonly IdleDetectionMode detectionMode;
     private readonly TimeSpan timeout;
 
-    public IdleChannelMonitor( 
+    public IdleChannelService( 
           ILoggerFactory loggerFactory
-        , IdleDetectionMode idleDetectionMode
-        , TimeSpan idleDetectionTimeout )
+        , IOptions<IdleChannelServiceOptions> optionsAccessor )
     {
-        logger = loggerFactory.CreateLogger<IdleChannelMonitor>();
+        logger = loggerFactory.CreateLogger<IdleChannelService>();
 
-        detectionMode = idleDetectionMode;
-        timeout = idleDetectionTimeout;
+        var options = optionsAccessor.Value;
 
-        if ( detectionMode == IdleDetectionMode.None )
-        {
-            throw new ArgumentOutOfRangeException( nameof( detectionMode ) );
-        }
+        detectionMode = options.DetectionMode;
+        timeout = options.Timeout;
 
         if ( ( timeout == TimeSpan.Zero ) && ( detectionMode != IdleDetectionMode.Auto ) )
         {
             // no hard timeout is only allowed with Auto mode
             throw new ArgumentOutOfRangeException( nameof( timeout ) );
         }
-
-        timer = new Timer( IdleDetectionTimeoutCallback
-            , null
-            , Timeout.Infinite, Timeout.Infinite );
     }
 
     public void Start( IChannel channel )
     {
+        logger.LogDebug( "Starting..." );
+
+        if ( detectionMode == IdleDetectionMode.None )
+        {
+            // not enabled
+            logger.LogInformation( "Canceled. Idle detection mode is set to 'None'." );
+
+            return;
+        }
 
         var dueTime = ( detectionMode == IdleDetectionMode.Auto )
             ? TimeSpan.FromSeconds( 5 )
@@ -50,10 +51,22 @@ internal class IdleChannelMonitor : IIdleChannelMonitor
         timer = new Timer( IdleDetectionTimeoutCallback
             , channel
             , dueTime, intervalTime );
+
+        logger.LogInformation( "Started." );
     }
 
     public void Stop()
     {
+        logger.LogDebug( "Stopping..." );
+
+        if ( timer == null )
+        {
+            // not active
+            logger.LogDebug( "Already stopped." );
+
+            return;
+        }
+
         try
         {
             timer?.Change( Timeout.Infinite, Timeout.Infinite );
@@ -65,11 +78,14 @@ internal class IdleChannelMonitor : IIdleChannelMonitor
         {
             timer = null;
         }
+
+        logger.LogInformation( "Stopped." );
     }
 
     public void Dispose()
     {
         timer?.Dispose();
+        timer = null;
     }
 
     private void IdleDetectionTimeoutCallback( object? state )

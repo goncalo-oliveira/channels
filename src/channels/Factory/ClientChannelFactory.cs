@@ -32,10 +32,6 @@ internal class ClientChannelFactory : IClientChannelFactory
 
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
 
-        var idleChannelMonitor = ( options.IdleDetectionMode > IdleDetectionMode.None )
-            ? new IdleChannelMonitor( loggerFactory, options.IdleDetectionMode, options.IdleDetectionTimeout )
-            : null;
-
         // create a TCP/IP socket
         var client = new Socket( SocketType.Stream, ProtocolType.Tcp );
 
@@ -48,7 +44,6 @@ internal class ClientChannelFactory : IClientChannelFactory
             , inputAdapters
             , outputAdapters
             , inputHandlers
-            , idleChannelMonitor
             , options.BufferEndianness );
 
         channel.BeginReceive();
