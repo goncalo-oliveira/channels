@@ -33,4 +33,11 @@ internal class ChannelBuilder : IChannelBuilder
 
         return ( this );
     }
+
+    public IChannelBuilder AddService<TService>() where TService : class, IChannelService
+    {
+        Services.AddScoped<IChannelService, TService>();
+
+        return ( this );
+    }
 }

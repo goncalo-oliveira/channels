@@ -17,9 +17,8 @@ public class ClientChannel : Channel
         , IEnumerable<IChannelAdapter> inputAdapters
         , IEnumerable<IChannelAdapter> outputAdapters
         , IEnumerable<IChannelHandler> inputHandlers
-        , IIdleChannelMonitor? idleChannelMonitor
         , Buffers.Endianness bufferEndianness )
-        : base( serviceScope, loggerFactory, socket, idleChannelMonitor, bufferEndianness )
+        : base( serviceScope, loggerFactory, socket, bufferEndianness )
     {
         Input = new ChannelPipeline(  loggerFactory, inputAdapters, inputHandlers );
         Output = new ChannelPipeline( loggerFactory, outputAdapters, new IChannelHandler[]
@@ -31,14 +30,11 @@ public class ClientChannel : Channel
     public ClientChannel( IServiceScope serviceScope
         , ILoggerFactory loggerFactory
         , Socket socket
-        , IdleDetectionMode idleDetectionMode
-        , TimeSpan idleDetectionTimeout
         , Buffers.Endianness bufferEndianness )
         : base( 
               serviceScope
             , loggerFactory
             , socket
-            , new IdleChannelMonitor( loggerFactory, idleDetectionMode, idleDetectionTimeout )
             , bufferEndianness )
     { }
 
@@ -52,7 +48,9 @@ public class ClientChannel : Channel
                 .ConfigureAwait( false );
         }
         catch ( Exception )
-        {}
+        {
+            OnDisconnected();
+        }
 
         try
         {

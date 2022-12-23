@@ -14,9 +14,23 @@ using Xunit;
 
 public class ScopedServiceTests
 {
-    private class MyService
+    private class MyService : IChannelService
     {
         public string Id { get; } = Guid.NewGuid().ToString( "N" );
+        public string Status { get; private set; } = "unknown";
+
+        public void Dispose()
+        { }
+
+        public void Start( IChannel channel )
+        {
+            Status = "started";
+        }
+
+        public void Stop()
+        {
+            Status = "stopped";
+        }
     }
 
     private class MyAdapter : ChannelAdapter<string>, IInputChannelAdapter
@@ -74,5 +88,45 @@ public class ScopedServiceTests
 
         // ids can't match, since they come from two different instances (different scopes)
         Assert.NotEqual( id1, id3 );
+    }
+
+    [Fact]
+    public async Task TestChannelServices()
+    {
+        IServiceCollection services = new ServiceCollection()
+            .AddLogging()
+            .AddTransient<IServiceChannelFactory, ServiceChannelFactory>()
+            .AddScoped<IChannelService, MyService>();
+
+        var provider = services.BuildServiceProvider();
+
+        var channelFactory = provider.GetRequiredService<IServiceChannelFactory>();
+
+        var channel1 = channelFactory.CreateChannel( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
+        var channel2 = channelFactory.CreateChannel( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
+
+        var svc1 = (MyService)((Channel)channel1).ServiceProvider.GetServices<IChannelService>().Single();
+        var svc2 = (MyService)((Channel)channel2).ServiceProvider.GetServices<IChannelService>().Single();
+
+        // ids shouldn't match, since they come from two different channels (different scopes)
+        Assert.NotEqual( svc1.Id, svc2.Id );
+
+        var svc1Copy = (MyService)((Channel)channel1).ServiceProvider.GetServices<IChannelService>().Single();
+        var svc2Copy = (MyService)((Channel)channel2).ServiceProvider.GetServices<IChannelService>().Single();
+
+        // ids should match, since service is scoped to channel
+        Assert.Equal( svc1.Id, svc1Copy.Id );
+        Assert.Equal( svc2.Id, svc2Copy.Id );
+
+        // both services should have "started"
+        Assert.Equal( "started", svc1.Status );
+        Assert.Equal( "started", svc2.Status );
+
+        await channel1.CloseAsync();
+        await channel2.CloseAsync();
+
+        // both services should have "stopped"
+        Assert.Equal( "stopped", svc1.Status );
+        Assert.Equal( "stopped", svc2.Status );
     }
 }

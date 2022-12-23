@@ -29,17 +29,12 @@ internal class ServiceChannelFactory : IServiceChannelFactory
 
         var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
 
-        var idleChannelMonitor = ( options.IdleDetectionMode > IdleDetectionMode.None )
-            ? new IdleChannelMonitor( loggerFactory, options.IdleDetectionMode, options.IdleDetectionTimeout )
-            : null;
-
         var channel = new ServiceChannel( serviceScope
             , loggerFactory
             , socket
             , inputAdapters
             , outputAdapters
             , inputHandlers
-            , idleChannelMonitor
             , options.BufferEndianness );
 
         channel.BeginReceive();
