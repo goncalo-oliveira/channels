@@ -12,11 +12,11 @@ internal static class ChannelServiceExtensions
         => GetChannelServices( channel )
             .InvokeAll( x => x.Stop() );
 
-    private static void InvokeAll( this IChannelService[] services, Action<IChannelService> notify )
+    private static void InvokeAll( this IChannelService[] services, Action<IChannelService> invoke )
     {
         foreach ( var service in services )
         {
-            notify( service );
+            invoke( service );
         }
     }
 
