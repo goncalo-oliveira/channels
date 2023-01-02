@@ -30,6 +30,17 @@ graph LR;
     a2 --> channelOutput([Output])
 ```
 
+## Middleware Characteristics
+
+Unless you have very specific needs, middleware components should inherit from the abstract classes provided instead of implementing the interfaces directly. The base class for all middleware components (adapters and handlers) do a few things for us that won't be available when implementing the interfaces directly. This includes
+
+- Type checking
+- Type mutation
+
+Type checking is essentially making sure the type of the data received is intended for the middleware. If it's not, the middleware component is not executed. If the component is an adapter, the data is automatically forwarded to the next middleware component in the pipeline.
+
+Type mutation is the capacity to change the data type, if compatible with the expected data of the middleware component. All components already deal with `IByteBuffer` <--> `Byte[]` and `T` <--> `IEnumerable<T>` mutations, but they also provide an opportunity to change/extend this behaviour by overriding the `ConvertData` method.
+
 ## Adapters
 
 An adapter is a middleware component that can be executed at any point in the pipeline and it has a single conceptual purpose: to adapt data.
@@ -39,22 +50,15 @@ graph LR;
     in[/Data In/] --> Adapter --> out[/Data Out/]
 ```
 
-An adapter is expected to *forward* data to next component in the pipeline, although that is not mandatory. However, if the adapter doesn't forward any data, the pipeline is interrupted and no other components will be executed.
+An adapter is expected to *forward* data to next component in the pipeline, although that is not a requirement. If an adapter doesn't forward any data, the pipeline is interrupted and no other components will be executed.
 
 ### Implementing an Adapter
 
-Unless you have very specific needs, you should inherit your adapter from the `ChannelAdapter<T>` abstract class and not implementing the `IChannelAdapter` interface directly. This is because the base class does a few things for us that, if implementing the interface directly, won't be available. That includes
-
-- Type checking
-- Type mutation
-
-Type checking is essentially making sure the type of the data is intended for an adapter. If it's not, data is automatically forwarded to the next middleware component in the pipeline.
-
-Type mutation is the capacity to change the data type, if compatible with the expected data of the adapter. The base class already deals with `IByteBuffer` <--> `Byte[]` and `T` <--> `IEnumerable<T>` mutations, but it also provides an opportunity to override/extend this behaviour.
+Unless you have very specific needs, you should inherit your adapter from the `ChannelAdapter<T>` abstract class instead of implementing the `IChannelAdapter` interface directly.
 
 Since version 0.3 we also need to indicate whether the adapter is meant for the input or/and the output pipelines. We do that by adding the interfaces `IInputChannelAdapter` or/and `IOutputChannelAdapter` respectively.
 
-Here's an example of how to implement an adapter that adapts from an `IByteBuffer` (or `Byte[]`). This adapter can only be added to the input pipeline.
+Here's an example on how to implement an adapter that adapts from an `IByteBuffer` (or `Byte[]`). This adapter can only be added to the input pipeline.
 
 ```csharp
 public class MyChannelAdapter : ChannelAdapter<IByteBuffer>, IInputChannelAdapter
@@ -90,10 +94,7 @@ graph LR;
 
 ### Implementing an Handler
 
-Similarly to the adapter, unless you have very specific needs, you should inherit your handler from the `ChannelHandler<T>` class and not implementing the `IChannelHandler` interface directly. This is because, again, similarly to the adapter, the base class does type checking for us; if the data type is not intended for the handler, then it (the handler) won't be executed.
-
-Similarly to the adapter, the base class also deals with `T` <--> `IEnumerable<T>` mutations.
-
+Similarly to the adapter, unless you have very specific needs, you should inherit your handler from the `ChannelHandler<T>` class and not implementing the `IChannelHandler` interface directly.
 
 ```csharp
 public class MyChannelHandler : ChannelHandler<MyData>
@@ -113,14 +114,55 @@ Because adapters and handlers are so similar, there might be a temptation to do 
 - Handlers handle data and business logic
 - Adapters can run at any point in the pipeline
 - Handlers run at the end of the pipeline
+- Data with type T is forwarded to the next (single) adapter in the pipeline
+- Data with type T can be forwarded to multiple handlers
+
+## Enumerable type mutation and sequence order
+
+As said before, the base class for both adapters and handlers deals with `T` <--> `IEnumerable<T>` mutations. This is helpful to focus on how we want to deal with data (particularly in handlers), however, there are a few things to consider.
+
+When the middleware expects `T` and receives `IEnumerable<T>` instead, by default, the execution is spawned through multiple tasks. The benefit of this is that the execution is usually faster, but the downside is that there's no guarantee the data is executed sequentially (FIFO).
+
+```csharp
+public class MyHandler : ChannelHandler<MyData>
+{
+    public override Task ExecuteAsync( IChannelContext context, MyData data )
+    {
+        /*
+        if MyData[] is sent to the handler, this method is spawned through multiple threads
+        to improve speed but there's no guarantee on the order of the execution
+        */
+    }
+}
+```
+
+If the middleware we are implementing (adapter or handler) requires data to be processed sequentially (FIFO), it should instead implement `T[]` (or `IEnumerable<T>`) and manually cycle through the elements
+
+```csharp
+public class MyHandler : ChannelHandler<MyData[]>
+{
+    public override async Task ExecuteAsync( IChannelContext context, MyData[] data )
+    {
+        foreach ( var item in data )
+        {
+            await ExecuteSingleAsync( context, item );
+        }
+    }
+
+    private Task ExecuteSingleAsync( IChannelContext context, MyData data )
+    {
+        // ...
+    }
+}
+```
 
 ## Writing to Channel Output
 
-At any point, within an adapter or handler, we can write data to the channel output; this will trigger the output pipeline and at the end of it, send the data to the other party. However, there are two distinct ways of doing this, each with a distinct behaviour.
+At any point, within an adapter or handler, we can write data to the channel output; this will trigger the output pipeline and at the end of it, send the data to the other party. However, there are two distinct ways of doing this, both with a distinct behaviour.
 
 ### 1. Write directly to the Channel
 
-This is the most straightforward method and it will immediately trigger the output pipeline, however, it is **not** the recommended way, unless you need the data to reach the other party as soon as possible, no matter what happens next (current or next middleware component). This is an asynchronous process.
+This is the most straightforward method and it will immediately trigger the output pipeline, however, it is **NOT** the recommended way, unless you need the data to reach the other party as soon as possible, no matter what happens next (current or next middleware component). This is an asynchronous process.
 
 ```csharp
 public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Message> data )
@@ -133,8 +175,8 @@ public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Me
 
 ### 2. Write to the Output buffer (recommended)
 
-The context of an adapter or handler, gives us access to an output buffer that we can write to. This **is** the recommended method. Writing to the output buffer doesn't immediately trigger the output pipeline. Instead, it is only triggered at the end of the pipeline, after all adapters and handlers have executed (fully).
-If an adapter interrupts the pipeline, or a handler crashes and interrupts the pipeline, the data in the buffer will never be written to the channel.
+The middleware component context gives us access to an output buffer that we can write to. This **IS** the recommended method. Writing to the output buffer doesn't immediately trigger the output pipeline. Instead, it is only triggered at the end of the pipeline, after all adapters and handlers have executed (fully).
+If the pipeline is interrupted, because an adapter didn't forward any data or a handler crashed, the data in the buffer will never be written to the channel.
 
 ```csharp
 public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Message> data )
@@ -231,7 +273,7 @@ await channel.WriteAsync( new MyData
 
 ## Adapters and Buffers
 
-Although raw data handling in the adapters can be done with `Byte[]`, it is recommended to use an `IByteBuffer` instance instead, particularly for reading data. You can read more about it [here](src/buffers/README.md).
+Although raw data handling in the adapters can be done with `Byte[]`, it is recommended to use a `IByteBuffer` instance instead, particularly for reading data. You can read more about it [here](src/buffers/README.md).
 
 ## Service Scope
 
@@ -246,7 +288,7 @@ In some cases, you might need to tap into channel events. This can be useful for
 - Data Received
 - Data Sent
 
-To receive channel events, you'll need to create a class that implements `IChannelEvents` interface and then add it to the DI container. You can have multiple implementations.
+To receive channel events, you'll need to create a class that implements `IChannelEvents` interface and then add it to the DI container. You can add multiple implementations.
 
 ```csharp
 public class MyChannelEvents : IChannelEvents
@@ -304,7 +346,7 @@ IChannelBuilder builder = ...;
 builder.AddIdleChannelService();
 ```
 
-The default detection mode is `IdleDetectionMode.Auto`. This mode attempts to verify if the underlying socket is still connected and if not, closes the channel.
+The default detection mode is `IdleDetectionMode.Auto`. This mode attempts to actively verify if the underlying socket is still connected and if not, closes the channel.
 
 There's also an idle timeout of 60 seconds by default; if no data is received or sent through the underlying socket before the timeout, the channel is closed. This timeout can be disabled when using the `IdleDetectionMode.Auto` method by setting its value to `TimeSpan.Zero`.
 
