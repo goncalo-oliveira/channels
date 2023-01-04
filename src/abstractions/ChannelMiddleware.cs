@@ -83,7 +83,7 @@ public abstract class ChannelMiddleware<T>
             return ExecuteAsync( context, convertedData );
         }
 
-        OnDataNotSuitable( context, targetType );
+        OnDataNotSuitable( context, data );
 
         return Task.CompletedTask;
     }
