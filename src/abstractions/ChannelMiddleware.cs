@@ -76,9 +76,10 @@ public abstract class ChannelMiddleware<T>
         }
 
         // attempt to convert the data
-        var convertedData = ConvertData( context, data );
-
-        if ( ( convertedData != null ) && ( convertedData.GetType() != data.GetType() ) )
+        if ( ConvertData( context, data, out var convertedData ) 
+            && ( convertedData != null )
+            && ( convertedData.GetType() != data.GetType() )
+           )
         {
             return ExecuteAsync( context, convertedData );
         }
@@ -91,7 +92,7 @@ public abstract class ChannelMiddleware<T>
     /// <summary>
     /// Converts received data to expected type
     /// </summary>
-    protected virtual T? ConvertData( IChannelContext context, object data )
+    protected virtual bool ConvertData( IChannelContext context, object data, out T? result )
     {
         var type = typeof( T );
 
@@ -100,7 +101,9 @@ public abstract class ChannelMiddleware<T>
         {
             Logger?.LogDebug( "Transformed from 'Byte[]' to 'IByteBuffer'." );
 
-            return (T)(IByteBuffer)new WrappedByteBuffer( (byte[])data, context.Channel.Buffer.Endianness );
+            result = (T)(IByteBuffer)new WrappedByteBuffer( (byte[])data, context.Channel.Buffer.Endianness );
+
+            return ( true );
         }
 
         // attempt an IByteBuffer to byte[] transformation
@@ -109,10 +112,13 @@ public abstract class ChannelMiddleware<T>
         {
             Logger?.LogDebug( "Transformed from 'IByteBuffer' to 'Byte[]'." );
 
-            return (T)(object)((IByteBuffer)data).ToArray();
+            result = (T)(object)((IByteBuffer)data).ToArray();
+
+            return ( true );
         }
 
-        return ( default( T ) );
-    }
+        result = default( T? );
 
+        return ( false );
+    }
 }
