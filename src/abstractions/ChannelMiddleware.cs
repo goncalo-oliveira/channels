@@ -112,7 +112,8 @@ public abstract class ChannelMiddleware<T>
         {
             Logger?.LogDebug( "Transformed from 'IByteBuffer' to 'Byte[]'." );
 
-            result = (T)(object)((IByteBuffer)data).ToArray();
+            var buffer = (IByteBuffer)data;
+            result = (T)(object)buffer.ReadBytes( buffer.ReadableBytes );
 
             return ( true );
         }
