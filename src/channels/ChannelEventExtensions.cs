@@ -20,14 +20,6 @@ internal static class ChannelEventExtensions
         => channel.GetEventServices()
             .InvokeAll( x => x.DataSent( channel.Info, sent ) );
 
-    private static void InvokeAll( this IEnumerable<IChannelEvents> services, Action<IChannelEvents> invoke )
-    {
-        foreach ( var service in services )
-        {
-            invoke( service );
-        }
-    }
-
     private static IEnumerable<IChannelEvents> GetEventServices( this Channel channel )
         => channel.ServiceProvider.GetServices<IChannelEvents>();
 }

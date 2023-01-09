@@ -12,14 +12,6 @@ internal static class ChannelServiceExtensions
         => channel.GetChannelServices()
             .InvokeAll( x => x.Stop() );
 
-    private static void InvokeAll( this IEnumerable<IChannelService> services, Action<IChannelService> invoke )
-    {
-        foreach ( var service in services )
-        {
-            invoke( service );
-        }
-    }
-
     private static IEnumerable<IChannelService> GetChannelServices( this Channel channel )
         => channel.ServiceProvider.GetServices<IChannelService>();
 }
