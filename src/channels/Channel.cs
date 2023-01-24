@@ -42,6 +42,7 @@ public abstract class Channel : ConnectedSocket, IChannel
     internal IServiceProvider ServiceProvider => channelScope.ServiceProvider;
     internal IChannelInfo Info => new ChannelInfo( this );
 
+    public bool IsClosed { get; private set; }
     public IByteBuffer Buffer { get; private set; }
 
     public DateTimeOffset Created { get; } = DateTimeOffset.UtcNow;
@@ -57,6 +58,12 @@ public abstract class Channel : ConnectedSocket, IChannel
 
     public virtual async Task WriteAsync( object data )
     {
+        if ( IsShutdown )
+        {
+            logger.LogWarning( "Can't write to a closed channel." );
+            return;
+        }
+
         logger.LogDebug( "Executing output pipeline..." );
 
         await Output.ExecuteAsync( this, data )
@@ -115,8 +122,21 @@ public abstract class Channel : ConnectedSocket, IChannel
     {
         logger.LogInformation( "Closed." );
 
-        this.StopChannelServices();
-        this.NotifyChannelClosed();
+        try
+        {
+            this.StopChannelServices();
+        }
+        catch ( Exception )
+        { }
+
+        try
+        {
+            this.NotifyChannelClosed();
+        }
+        catch ( Exception )
+        { }
+
+        IsClosed = true;
 
         Dispose();
     }

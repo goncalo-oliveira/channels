@@ -30,7 +30,8 @@ internal sealed class ServiceChannel : Channel
     {
         try
         {
-            Socket.Shutdown( SocketShutdown.Both );
+            //Socket.Shutdown( SocketShutdown.Both );
+            Shutdown();
         }
         catch ( Exception )
         {
