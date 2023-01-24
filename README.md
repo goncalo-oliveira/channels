@@ -16,7 +16,8 @@ graph LR;
     subgraph adapters
     a1 --> a2[/Adapter/]
     end
-    a2 --> Handlers
+    a2 --> h1[/Handler/]
+    a2 --> h2[/Handler/]
 ```
 
 For data going through the channel output, only *adapters* are applicable.
