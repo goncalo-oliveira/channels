@@ -34,6 +34,8 @@ internal sealed class ServiceChannel : Channel
             Shutdown();
         }
         catch ( Exception )
+        { }
+        finally
         {
             OnDisconnected();
         }
