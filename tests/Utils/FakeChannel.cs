@@ -18,6 +18,8 @@ public class FakeChannel : IChannel
 
     public IByteBuffer Buffer { get; } = new WritableByteBuffer();
 
+    public bool IsClosed => false;
+
     public Task CloseAsync()
     {
         return Task.CompletedTask;

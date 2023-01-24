@@ -135,6 +135,13 @@ internal class ChannelPipeline : IChannelPipeline
                     await handler.ExecuteAsync( adapterContext, dataItem )
                         .ConfigureAwait( false );
                 }
+                catch ( System.ObjectDisposedException )
+                {
+                    // socket was disposed
+                    logger.LogError( "Channel is closed." );
+
+                    return ( false );
+                }
                 catch ( Exception ex )
                 {
                     logger.LogError( ex, $"Failed to execute '{handler.GetType().Name}' handler. Pipeline interrupted." );

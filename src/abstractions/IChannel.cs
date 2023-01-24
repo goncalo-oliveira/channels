@@ -13,6 +13,11 @@ public interface IChannel : IDisposable
     /// </summary>
     string Id { get; }
 
+    /// <summary>
+    /// Gets if the channel is closed
+    /// </summary>
+    bool IsClosed { get; }
+
     IByteBuffer Buffer { get; }
 
     /// <summary>

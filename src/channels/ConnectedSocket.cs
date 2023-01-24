@@ -24,6 +24,8 @@ public class ConnectedSocket
 
     public Socket Socket { get; init; }
 
+    internal bool IsShutdown { get; private set; }
+
     internal bool IsConnected()
     {
         try
@@ -46,21 +48,41 @@ public class ConnectedSocket
 
     internal void BeginReceive()
     {
-        Socket.BeginReceive( socketBuffer
-            , 0
-            , socketBuffer.Length
-            , 0
-            , new AsyncCallback( ReadCallback ), this );
+        try
+        {
+            Socket.BeginReceive( socketBuffer
+                , 0
+                , socketBuffer.Length
+                , 0
+                , new AsyncCallback( ReadCallback ), this );
+        }
+        catch ( ObjectDisposedException )
+        {
+            // socket is closed
+            Logger.LogTrace( "Disconnected." );
+
+            OnDisconnected();
+        }
     }
 
     public void Send( byte[] data )
     {
-        Socket.BeginSend( data
-            , 0
-            , data.Length
-            , 0
-            , new AsyncCallback( SendCallback )
-            , this );
+        try
+        {
+            Socket.BeginSend( data
+                , 0
+                , data.Length
+                , 0
+                , new AsyncCallback( SendCallback )
+                , this );
+        }
+        catch ( ObjectDisposedException )
+        {
+            // socket is closed
+            Logger.LogTrace( "Disconnected." );
+
+            OnDisconnected();
+        }
     }
 
     protected virtual void OnDataReceived( byte[] data )
@@ -72,14 +94,23 @@ public class ConnectedSocket
     protected virtual void OnDisconnected()
     {}
 
+    protected void Shutdown()
+    {
+        try
+        {
+            Socket.Shutdown( SocketShutdown.Both );
+        }
+        catch ( Exception )
+        { }
+
+        IsShutdown = true;
+    }
+
     private static void ReadCallback( IAsyncResult ar )
     {
         // retrieve the connection object and the handler socket from the asynchronous state object
         var connection = (ConnectedSocket)ar.AsyncState!;
         var handler = connection.Socket;
-
-        // var json = JsonSerializer.Serialize( handler );
-        // connection.Logger.LogDebug( json );
 
         if ( handler.SafeHandle.IsClosed )
         {

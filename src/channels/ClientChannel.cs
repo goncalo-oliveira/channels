@@ -40,7 +40,8 @@ public class ClientChannel : Channel
 
     public override async Task CloseAsync()
     {
-        Socket.Shutdown( SocketShutdown.Both );
+        //Socket.Shutdown( SocketShutdown.Both );
+        Shutdown();
 
         try
         {
