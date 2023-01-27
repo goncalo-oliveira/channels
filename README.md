@@ -306,22 +306,48 @@ services.AddTransient<IChannelEvents, MyChannelEvents>();
 
 ## Channel Services
 
-Sometimes it might be required to execute a long-running service inside a channel. This can be achieved by creating a class that implements `IChannelService` interface.
+Sometimes it might be required to execute a long-running service inside a channel. The easiest and fastest way is to create a worker service by inheriting `ChannelService` abstract class.
+
+```csharp
+public class MyService : ChannelService
+{
+    protected override async Task ExecuteAsync( CancellationToken cancellationToken )
+    {
+        while ( !cancellationToken.IsCancellationRequested )
+        {
+            // insert code...
+
+            /*
+            here we have access to the channel instance through the Channel property
+            */
+
+            // Channel.WriteAsync( ... );
+
+            await Task.Delay( 1000 );
+        }
+    }
+}
+```
+
+However, if you need need better control or a different approach, you can create a class that implements the `IChannelService` interface instead.
 
 ```csharp
 public class MyService : IChannelService
 {
     // ...
 
-    public void Start( IChannel channel )
+    public Task StartAsync( IChannel channel, CancellationToken cancellationToken )
     {
-        // This is invoked when a channel is created
+        // Invoked when a channel is created
     }
 
-    public void Stop()
+    public Task StopAsync( CancellationToken cancellationToken )
     {
-        // This is invoked when a channel is closed
+        // Invoked when a channel is closed
     }
+
+    public void Dispose()
+    { }
 }
 ```
 
