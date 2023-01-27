@@ -15,34 +15,26 @@ using Xunit;
 
 public class ScopedServiceTests
 {
-    private class MyService : ChannelService
+    private class MyService : IChannelService
     {
         public string Id { get; } = Guid.NewGuid().ToString( "N" );
         public string Status { get; private set; } = "unknown";
 
-        public override async Task StartAsync( IChannel channel, CancellationToken cancellationToken )
-        {
-            await base.StartAsync( channel, cancellationToken );
+        public void Dispose()
+        { }
 
-            if ( !cancellationToken.IsCancellationRequested )
-            {
-                Status = "started";
-            }
+        public Task StartAsync( IChannel channel, CancellationToken cancellationToken )
+        {
+            Status = "started";
+
+            return Task.CompletedTask;
         }
 
-        public override async Task StopAsync( CancellationToken cancellationToken )
+        public Task StopAsync( CancellationToken cancellationToken )
         {
-            await base.StopAsync( cancellationToken );
-
             Status = "stopped";
-        }
 
-        protected override async Task ExecuteAsync(CancellationToken cancellationToken)
-        {
-            while ( !cancellationToken.IsCancellationRequested )
-            {
-                await Task.Delay( 1000 );
-            }
+            return Task.CompletedTask;
         }
     }
 
