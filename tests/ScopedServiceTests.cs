@@ -110,14 +110,20 @@ public class ScopedServiceTests
         var channel1 = channelFactory.CreateChannel( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
         var channel2 = channelFactory.CreateChannel( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
 
-        var svc1 = (MyService)((Channel)channel1).ServiceProvider.GetServices<IChannelService>().Single();
-        var svc2 = (MyService)((Channel)channel2).ServiceProvider.GetServices<IChannelService>().Single();
+        var svc1 = channel1.GetService<MyService>();
+        var svc2 = channel2.GetService<MyService>();
+
+        Assert.NotNull( svc1 );
+        Assert.NotNull( svc2 );
 
         // ids shouldn't match, since they come from two different channels (different scopes)
         Assert.NotEqual( svc1.Id, svc2.Id );
 
-        var svc1Copy = (MyService)((Channel)channel1).ServiceProvider.GetServices<IChannelService>().Single();
-        var svc2Copy = (MyService)((Channel)channel2).ServiceProvider.GetServices<IChannelService>().Single();
+        var svc1Copy = channel1.GetService<MyService>();
+        var svc2Copy = channel2.GetService<MyService>();
+
+        Assert.NotNull( svc1Copy );
+        Assert.NotNull( svc2Copy );
 
         // ids should match, since service is scoped to channel
         Assert.Equal( svc1.Id, svc1Copy.Id );
