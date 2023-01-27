@@ -3,6 +3,7 @@ using System.Collections;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Faactory.Channels;
 using Faactory.Channels.Adapters;
@@ -14,22 +15,34 @@ using Xunit;
 
 public class ScopedServiceTests
 {
-    private class MyService : IChannelService
+    private class MyService : ChannelService
     {
         public string Id { get; } = Guid.NewGuid().ToString( "N" );
         public string Status { get; private set; } = "unknown";
 
-        public void Dispose()
-        { }
-
-        public void Start( IChannel channel )
+        public override async Task StartAsync( IChannel channel, CancellationToken cancellationToken )
         {
-            Status = "started";
+            await base.StartAsync( channel, cancellationToken );
+
+            if ( !cancellationToken.IsCancellationRequested )
+            {
+                Status = "started";
+            }
         }
 
-        public void Stop()
+        public override async Task StopAsync( CancellationToken cancellationToken )
         {
+            await base.StopAsync( cancellationToken );
+
             Status = "stopped";
+        }
+
+        protected override async Task ExecuteAsync(CancellationToken cancellationToken)
+        {
+            while ( !cancellationToken.IsCancellationRequested )
+            {
+                await Task.Delay( 1000 );
+            }
         }
     }
 
