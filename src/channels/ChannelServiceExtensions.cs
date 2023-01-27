@@ -4,13 +4,13 @@ namespace Faactory.Channels;
 
 internal static class ChannelServiceExtensions
 {
-    public static void StartChannelServices( this Channel channel )
+    public static Task StartChannelServicesAsync( this Channel channel, CancellationToken cancellationToken = default )
         => channel.GetChannelServices()
-            .InvokeAll( x => x.Start( channel ) );
+            .InvokeAllAsync( x => x.StartAsync( channel, cancellationToken ) );
 
-    public static void StopChannelServices( this Channel channel )
+    public static Task StopChannelServicesAsync( this Channel channel, CancellationToken cancellationToken = default )
         => channel.GetChannelServices()
-            .InvokeAll( x => x.Stop() );
+            .InvokeAllAsync( x => x.StopAsync( cancellationToken ) );
 
     private static IEnumerable<IChannelService> GetChannelServices( this Channel channel )
         => channel.ServiceProvider.GetServices<IChannelService>();

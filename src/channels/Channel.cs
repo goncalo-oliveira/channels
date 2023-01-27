@@ -36,7 +36,7 @@ public abstract class Channel : ConnectedSocket, IChannel
 
         // notify channel created and start long-running services
         this.NotifyChannelCreated();
-        this.StartChannelServices();
+        Task.Run( () => this.StartChannelServicesAsync() );
     }
 
     internal IServiceProvider ServiceProvider => channelScope.ServiceProvider;
@@ -124,7 +124,10 @@ public abstract class Channel : ConnectedSocket, IChannel
 
         try
         {
-            this.StopChannelServices();
+            Task.Run( () => this.StopChannelServicesAsync() )
+                .ConfigureAwait( false )
+                .GetAwaiter()
+                .GetResult();
         }
         catch ( Exception )
         { }

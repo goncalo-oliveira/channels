@@ -28,7 +28,7 @@ internal sealed class IdleChannelService : IChannelService
         }
     }
 
-    public void Start( IChannel channel )
+    public Task StartAsync( IChannel channel, CancellationToken cancellationToken )
     {
         logger.LogDebug( "Starting..." );
 
@@ -37,7 +37,7 @@ internal sealed class IdleChannelService : IChannelService
             // not enabled
             logger.LogInformation( "Canceled. Idle detection mode is set to 'None'." );
 
-            return;
+            return Task.CompletedTask;
         }
 
         var dueTime = ( detectionMode == IdleDetectionMode.Auto )
@@ -53,9 +53,11 @@ internal sealed class IdleChannelService : IChannelService
             , dueTime, intervalTime );
 
         logger.LogInformation( "Started." );
+
+        return Task.CompletedTask;
     }
 
-    public void Stop()
+    public Task StopAsync( CancellationToken cancellationToken )
     {
         logger.LogDebug( "Stopping..." );
 
@@ -64,7 +66,7 @@ internal sealed class IdleChannelService : IChannelService
             // not active
             logger.LogDebug( "Already stopped." );
 
-            return;
+            return Task.CompletedTask;
         }
 
         try
@@ -80,6 +82,8 @@ internal sealed class IdleChannelService : IChannelService
         }
 
         logger.LogInformation( "Stopped." );
+
+        return Task.CompletedTask;
     }
 
     public void Dispose()
@@ -97,7 +101,10 @@ internal sealed class IdleChannelService : IChannelService
         {
             logger.LogWarning( $"Channel doesn't seem to be active anymore. Closing..." );
 
-            Stop();
+            StopAsync( CancellationToken.None )
+                .ConfigureAwait( false )
+                .GetAwaiter()
+                .GetResult();
 
             channel.CloseAsync()
                 .ConfigureAwait( false )
@@ -149,7 +156,10 @@ internal sealed class IdleChannelService : IChannelService
             var seconds = (int)timeout.TotalSeconds;
             logger.LogWarning( $"Channel has been idle for more than {seconds} seconds. Closing..." );
 
-            Stop();
+            StopAsync( CancellationToken.None )
+                .ConfigureAwait( false )
+                .GetAwaiter()
+                .GetResult();
 
             channel.CloseAsync()
                 .ConfigureAwait( false )

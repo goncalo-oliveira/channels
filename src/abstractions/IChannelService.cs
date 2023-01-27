@@ -8,10 +8,10 @@ public interface IChannelService : IDisposable
     /// <summary>
     /// Starts the service. Invoked when a channel is created.
     /// </summary>
-    void Start( IChannel channel );
+    Task StartAsync( IChannel channel, CancellationToken cancellationToken = default );
 
     /// <summary>
     /// Stops the service. Invoked when a channel is closed.
     /// </summary>
-    void Stop();
+    Task StopAsync( CancellationToken cancellationToken = default );
 }

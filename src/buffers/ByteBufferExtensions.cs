@@ -6,8 +6,9 @@ public static class ByteBufferExtensions
     /// Creates a read-only buffer from the given source
     /// </summary>
     /// <param name="source">The source buffer</param>
+    /// <param name="endianness">The buffer instance endianness; if null, the source buffer endianness is used.</param>
     /// <returns>A read-only buffer instance</returns>
-    public static IByteBuffer MakeReadOnly( this IByteBuffer source )
+    public static IByteBuffer MakeReadOnly( this IByteBuffer source, Endianness? endianness = null )
     {
         if ( source.IsReadable && !source.IsWritable )
         {
@@ -15,22 +16,23 @@ public static class ByteBufferExtensions
             return ( source );
         }
 
-        return new WrappedByteBuffer( source.ToArray(), source.Endianness );
+        return new WrappedByteBuffer( source.ToArray(), endianness ?? source.Endianness );
     }
 
     /// <summary>
     /// Creates a writable buffer from the given source
     /// </summary>
     /// <param name="source">The source buffer</param>
+    /// <param name="endianness">The buffer instance endianness; if null, the source buffer endianness is used.</param>
     /// <returns>A writable buffer instance</returns>
-    public static IByteBuffer MakeWritable( this IByteBuffer source )
+    public static IByteBuffer MakeWritable( this IByteBuffer source, Endianness? endianness = null )
     {
         if ( source.IsWritable )
         {
             return ( source );
         }
 
-        return new WritableByteBuffer( source.ToArray(), source.Endianness );
+        return new WritableByteBuffer( source.ToArray(), endianness ?? source.Endianness );
     }
 
     /// <summary>

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Faactory.Channels;
 using Faactory.Channels.Adapters;
@@ -22,14 +23,18 @@ public class ScopedServiceTests
         public void Dispose()
         { }
 
-        public void Start( IChannel channel )
+        public Task StartAsync( IChannel channel, CancellationToken cancellationToken )
         {
             Status = "started";
+
+            return Task.CompletedTask;
         }
 
-        public void Stop()
+        public Task StopAsync( CancellationToken cancellationToken )
         {
             Status = "stopped";
+
+            return Task.CompletedTask;
         }
     }
 
