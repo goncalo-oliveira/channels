@@ -3,6 +3,7 @@ namespace Faactory.Channels.Buffers;
 /// <summary>
 /// A buffer handling interface
 /// </summary>
+[Serialization.ByteBufferJsonConverter]
 public interface IByteBuffer
 {
     public Endianness Endianness { get; }
