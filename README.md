@@ -196,53 +196,34 @@ Install the package from NuGet
 dotnet add package Faactory.Channels
 ```
 
-To quickly bootstrap a server, we need an `HostBuilder` to inject a *hosted service*. Then we need to configure the listening options and set up the input and output pipelines. Here's an example
+To quickly bootstrap a server, we need to inject a *hosted service*. Then we need to configure the listening options and set up the input and output pipelines. Here's an example
 
 ```csharp
-var builder = new HostBuilder()
-    .ConfigureServices( ( context, services) =>
+IServiceCollection services = ...;
+
+// add our hosted service
+services.AddChannelsHostedService( builder =>
+{
+    // configure options
+    builder.Configure( options =>
     {
-        // add logging
-        services.AddLogging( loggingBuilder =>
-        {
-            loggingBuilder.AddConsole()
-                .SetMinimumLevel( LogLevel.Debug );
-        } );
+        options.Port = 8080;
+        options.Backlog = 30;
+    } );
 
-        // add our hosted service
-        services.AddChannelsHostedService( builder =>
-        {
-            // configure options
-            builder.Configure( options =>
-            {
-                options.Port = 8080;
-                options.Backlog = 30;
-            } );
+    // set up input pipeline
+    builder.AddInputAdapter<ExampleDecoderChannelAdapter>()
+        .AddInputHandler<MyChannelHandler>();
 
-            // set up input pipeline
-            builder.AddInputAdapter<ExampleDecoderChannelAdapter>()
-                .AddInputHandler<MyChannelHandler>();
-
-            // set up output pipeline
-            builder.AddOutputAdapter<ExampleEncoderAdapter>();
-        } );
-    } )
-    .UseConsoleLifetime();
-
-await builder.Build().RunAsync();
+    // set up output pipeline
+    builder.AddOutputAdapter<ExampleEncoderAdapter>();
+} );
 ```
 
 To boostrap the client, we'll need to register the factory with a service provider. Then, similarly to the server, we need to configure the channel options and set up the input and output pipelines. Here's an example
 
 ```csharp
 IServiceCollection services = ...
-
-// add logging
-services.AddLogging( loggingBuilder =>
-{
-    loggingBuilder.AddConsole()
-        .SetMinimumLevel( LogLevel.Debug );
-} );
 
 // add our client factory
 services.AddChannelsClient( builder =>
@@ -261,9 +242,12 @@ services.AddChannelsClient( builder =>
     // set up output pipeline
     builder.AddOutputAdapter<ExampleEncoderAdapter>();
 } );
+```
 
-var provider = services.BuildServiceProvider();
-var channelFactory = provider.GetRequiredService<IClientChannelFactory>();
+Then where needed, we can create a channel by using the factory
+
+```csharp
+IClientChannelFactory channelFactory = ...;
 var channel = await channelFactory.CreateAsync();
 
 await channel.WriteAsync( new MyData
