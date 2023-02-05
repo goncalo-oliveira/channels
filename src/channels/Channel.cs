@@ -120,7 +120,16 @@ public abstract class Channel : ConnectedSocket, IChannel
 
     protected override void OnDisconnected()
     {
+        IsClosed = true;
+
         logger.LogInformation( "Closed." );
+
+        try
+        {
+            this.NotifyChannelClosed();
+        }
+        catch ( Exception )
+        { }
 
         try
         {
@@ -131,15 +140,6 @@ public abstract class Channel : ConnectedSocket, IChannel
         }
         catch ( Exception )
         { }
-
-        try
-        {
-            this.NotifyChannelClosed();
-        }
-        catch ( Exception )
-        { }
-
-        IsClosed = true;
 
         Dispose();
     }
