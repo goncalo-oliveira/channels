@@ -3,11 +3,10 @@ using System.Net.Sockets;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Faactory.Channels;
 
-namespace Faactory.Channels.Hosting;
+namespace Faactory.Channels;
 
-internal sealed class ChannelsHostedService : IHostedService
+internal sealed class ChannelHostedService : IHostedService
 {
     private readonly ILoggerFactory loggerFactory;
     private readonly ILogger logger;
@@ -20,14 +19,14 @@ internal sealed class ChannelsHostedService : IHostedService
     private readonly IServiceChannelFactory channelFactory;
     private Socket? listener;
 
-    public ChannelsHostedService( ILoggerFactory loggerFactory
+    public ChannelHostedService( ILoggerFactory loggerFactory
         , IHostApplicationLifetime hostApplicationLifetime
         , IServiceChannelFactory channelFactory
         , IOptions<ServiceChannelOptions> optionsAccessor )
     {
         this.loggerFactory = loggerFactory;
         this.channelFactory = channelFactory;
-        logger = loggerFactory.CreateLogger<ChannelsHostedService>();
+        logger = loggerFactory.CreateLogger<ChannelHostedService>();
         appLifetime = hostApplicationLifetime;
 
         var options = optionsAccessor.Value;

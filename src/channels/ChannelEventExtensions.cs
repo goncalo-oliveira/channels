@@ -20,6 +20,10 @@ internal static class ChannelEventExtensions
         => channel.GetEventServices()
             .InvokeAll( x => x.DataSent( channel.Info, sent ) );
 
+    public static void NotifyCustomEvent( this Channel channel, string name, object? data )
+        => channel.GetEventServices()
+            .InvokeAll( x => x.CustomEvent( channel.Info, name, data ) );
+
     private static IEnumerable<IChannelEvents> GetEventServices( this Channel channel )
         => channel.ServiceProvider.GetServices<IChannelEvents>();
 }

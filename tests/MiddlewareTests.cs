@@ -16,7 +16,7 @@ public class ChannelMiddlewareTests
     [Fact]
     public async Task TestTypeCheckAsync()
     {
-        var context = new TestAdapterContext( NullLoggerFactory.Instance );
+        var context = new TestAdapterContext();
         var handler = new IdentityHandler();
 
         await handler.ExecuteAsync( context, new object() );

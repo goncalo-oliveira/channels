@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Faactory.Channels.Handlers;
 
-internal class OutputChannelHandler : ChannelHandler<byte[]>
+internal sealed class OutputChannelHandler : ChannelHandler<byte[]>
 {
     private readonly ILogger logger;
 

@@ -1,9 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Faactory.Channels.Adapters;
-using Faactory.Channels.Hosting;
-using Faactory.Sockets;
 
 namespace Faactory.Channels;
 
@@ -23,18 +19,10 @@ internal class ServiceChannelFactory : IServiceChannelFactory
     public IChannel CreateChannel( System.Net.Sockets.Socket socket )
     {
         var serviceScope = serviceProvider.CreateScope();
-        var inputAdapters = serviceScope.ServiceProvider.GetAdapters<IInputChannelAdapter>();
-        var outputAdapters = serviceScope.ServiceProvider.GetAdapters<IOutputChannelAdapter>();
-        var inputHandlers = serviceScope.ServiceProvider.GetHandlers();
 
-        var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-
-        var channel = new ServiceChannel( serviceScope
-            , loggerFactory
+        var channel = new ServiceChannel(
+              serviceScope
             , socket
-            , inputAdapters
-            , outputAdapters
-            , inputHandlers
             , options.BufferEndianness );
 
         channel.BeginReceive();

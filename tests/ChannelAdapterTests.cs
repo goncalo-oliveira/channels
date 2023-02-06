@@ -23,7 +23,7 @@ public class ChannelAdapterTests
             Guid.NewGuid().ToString( "N" )
         };
 
-        var context = new TestAdapterContext( NullLoggerFactory.Instance );
+        var context = new TestAdapterContext();
         IChannelAdapter adapter = new ObjectAdapter();
 
         await adapter.ExecuteAsync( context, data );
@@ -42,7 +42,7 @@ public class ChannelAdapterTests
     {
         var data = Guid.NewGuid().ToString( "N" );
 
-        var context = new TestAdapterContext( NullLoggerFactory.Instance );
+        var context = new TestAdapterContext();
         IChannelAdapter adapter = new ObjectArrayAdapter();
 
         await adapter.ExecuteAsync( context, data );
@@ -66,7 +66,7 @@ public class ChannelAdapterTests
     {
         var data = Encoding.ASCII.GetBytes( Guid.NewGuid().ToString( "N" ) );
 
-        var context = new TestAdapterContext( NullLoggerFactory.Instance );
+        var context = new TestAdapterContext();
         IChannelAdapter adapter = new BufferAdapter();
 
         await adapter.ExecuteAsync( context, data );
@@ -84,7 +84,7 @@ public class ChannelAdapterTests
     {
         var data = new WrappedByteBuffer( Encoding.ASCII.GetBytes( Guid.NewGuid().ToString( "N" ) ) );
 
-        var context = new TestAdapterContext( NullLoggerFactory.Instance );
+        var context = new TestAdapterContext();
         IChannelAdapter adapter = new ByteArrayAdapter();
 
         await adapter.ExecuteAsync( context, data );

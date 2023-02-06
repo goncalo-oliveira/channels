@@ -6,8 +6,8 @@ internal class AdapterContext : ChannelContext, IAdapterContext
 {
     private readonly List<object> forwardedData = new List<object>();
 
-    public AdapterContext( ILoggerFactory loggerFactory, IChannel channel )
-        : base( loggerFactory, channel )
+    public AdapterContext( IChannel channel )
+        : base( channel )
     {}
 
     public void Forward( object data )
