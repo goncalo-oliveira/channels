@@ -143,8 +143,6 @@ internal abstract class Channel : ConnectedSocket, IChannel
             .ConfigureAwait( false );
 
         Dispose();
-
-        logger.LogInformation( "done" );
     }
 
     internal Task StartServicesAsync()
