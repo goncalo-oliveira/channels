@@ -139,8 +139,6 @@ internal abstract class Channel : ConnectedSocket, IChannel
         catch ( Exception )
         { }
 
-        await Task.Yield();
-
         await StopServicesAsync()
             .ConfigureAwait( false );
 
