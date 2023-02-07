@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace Faactory.Channels;
 
-internal sealed class ChannelHostedService : IHostedService
+internal sealed class ChannelsHostedService : IHostedService
 {
     private readonly ILoggerFactory loggerFactory;
     private readonly ILogger logger;
@@ -19,14 +19,14 @@ internal sealed class ChannelHostedService : IHostedService
     private readonly IServiceChannelFactory channelFactory;
     private Socket? listener;
 
-    public ChannelHostedService( ILoggerFactory loggerFactory
+    public ChannelsHostedService( ILoggerFactory loggerFactory
         , IHostApplicationLifetime hostApplicationLifetime
         , IServiceChannelFactory channelFactory
         , IOptions<ServiceChannelOptions> optionsAccessor )
     {
         this.loggerFactory = loggerFactory;
         this.channelFactory = channelFactory;
-        logger = loggerFactory.CreateLogger<ChannelHostedService>();
+        logger = loggerFactory.CreateLogger<ChannelsHostedService>();
         appLifetime = hostApplicationLifetime;
 
         var options = optionsAccessor.Value;
