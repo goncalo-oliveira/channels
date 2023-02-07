@@ -26,9 +26,4 @@ public interface IChannelEvents
     void DataSent( IChannelInfo channelInfo, int sent );
 
     void CustomEvent( IChannelInfo channelInfo, string name, object? data );
-    // chI, "channel-created", null
-    // chI, "channel-closed", null
-    // chI, "data-received", byte[]
-    // chI, "data-sent", byte[]
-    // chI, "user-event", object?
 }
