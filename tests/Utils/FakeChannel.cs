@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Faactory.Channels;
 using Faactory.Channels.Buffers;
@@ -19,6 +21,8 @@ public class FakeChannel : IChannel
     public IByteBuffer Buffer { get; } = new WritableByteBuffer();
 
     public bool IsClosed { get; private set; }
+
+    public IEnumerable<IChannelService> Services { get; } = Enumerable.Empty<IChannelService>();
 
     public Task CloseAsync()
     {

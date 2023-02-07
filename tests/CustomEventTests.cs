@@ -80,7 +80,7 @@ public class CustomEventTests
 
         var ev = Assert.Single<KeyValuePair<string, object?>>( events.CustomEvents );
 
-        Assert.Equal( ev.Key, "custom-event" );
-        Assert.Equal( ev.Value, data );
+        Assert.Equal( "custom-event", ev.Key );
+        Assert.Equal( data, ev.Value );
     }
 }

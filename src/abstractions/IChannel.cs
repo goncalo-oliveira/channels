@@ -44,6 +44,11 @@ public interface IChannel : IDisposable
     DateTimeOffset? LastSent { get; }
 
     /// <summary>
+    /// Gets long-running channel services
+    /// </summary>
+    IEnumerable<IChannelService> Services { get; }
+
+    /// <summary>
     /// Sends data through the Output pipeline
     /// </summary>
     Task WriteAsync( object data );

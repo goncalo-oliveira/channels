@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
-internal abstract class Channel : ConnectedSocket, IChannel, IServiceScope
+internal abstract class Channel : ConnectedSocket, IChannel
 {
     protected readonly ILogger logger;
     private readonly IDisposable? loggerScope;
@@ -24,6 +24,8 @@ internal abstract class Channel : ConnectedSocket, IChannel, IServiceScope
 
         loggerScope = logger.BeginScope( $"Channel_{Id.Substring( 0, 7 )}" );
 
+        Info = new ChannelInfo( this );
+
         Input = EmptyChannelPipeline.Instance;
         Output = EmptyChannelPipeline.Instance;
 
@@ -38,8 +40,10 @@ internal abstract class Channel : ConnectedSocket, IChannel, IServiceScope
         Task.Run( () => this.StartChannelServicesAsync() );
     }
 
-    public IServiceProvider ServiceProvider => channelScope.ServiceProvider;
-    internal IChannelInfo Info => new ChannelInfo( this );
+    public IEnumerable<IChannelService> Services => channelScope.ServiceProvider.GetServices<IChannelService>();
+
+    internal IServiceProvider ServiceProvider => channelScope.ServiceProvider;
+    internal IChannelInfo Info { get; }
 
     public bool IsClosed { get; private set; }
     public IByteBuffer Buffer { get; private set; }

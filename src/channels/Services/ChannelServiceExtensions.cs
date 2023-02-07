@@ -5,10 +5,8 @@ namespace Faactory.Channels;
 public static class ChannelServiceControlExtensions
 {
     internal static Task StartChannelServicesAsync( this Channel channel, CancellationToken cancellationToken = default )
-        => channel.GetServices()
-            .InvokeAllAsync( x => x.StartAsync( channel, cancellationToken ) );
+        => channel.Services.InvokeAllAsync( x => x.StartAsync( channel, cancellationToken ) );
 
     internal static Task StopChannelServicesAsync( this Channel channel, CancellationToken cancellationToken = default )
-        => channel.GetServices()
-            .InvokeAllAsync( x => x.StopAsync( cancellationToken ) );
+        => channel.Services.InvokeAllAsync( x => x.StopAsync( cancellationToken ) );
 }
