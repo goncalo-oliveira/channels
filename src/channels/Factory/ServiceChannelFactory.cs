@@ -16,7 +16,7 @@ internal class ServiceChannelFactory : IServiceChannelFactory
         options = optionsAccessor.Value;
     }
 
-    public IChannel CreateChannel( System.Net.Sockets.Socket socket )
+    public async Task<IChannel> CreateChannelAsync( System.Net.Sockets.Socket socket )
     {
         var serviceScope = serviceProvider.CreateScope();
 
@@ -24,6 +24,8 @@ internal class ServiceChannelFactory : IServiceChannelFactory
               serviceScope
             , socket
             , options.BufferEndianness );
+
+        await channel.InitializeAsync();
 
         channel.BeginReceive();
 

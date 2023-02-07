@@ -116,7 +116,7 @@ internal sealed class ChannelsHostedService : IHostedService
         logger.LogInformation( "Service stopped." );
     }
 
-    private void AcceptCallback( IAsyncResult ar )
+    private async void AcceptCallback( IAsyncResult ar )
     {
         logger.LogDebug( "Accepting incoming connection..." );
 
@@ -144,8 +144,7 @@ internal sealed class ChannelsHostedService : IHostedService
             return;
         }
 
-        logger.LogInformation( "Accepted incoming connection." );
-
-        var channel = channelFactory.CreateChannel( handler );
+        _ = await channelFactory.CreateChannelAsync( handler )
+            .ConfigureAwait( false );
     }
 }

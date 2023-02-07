@@ -36,6 +36,8 @@ internal class ClientChannelFactory : IClientChannelFactory
             , client
             , options.BufferEndianness );
 
+        await channel.InitializeAsync();
+
         channel.BeginReceive();
 
         return ( channel );

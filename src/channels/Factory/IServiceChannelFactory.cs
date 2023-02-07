@@ -6,7 +6,7 @@ namespace Faactory.Channels;
 internal interface IServiceChannelFactory
 {
     /// <summary>
-    /// Creates a new client channel instance
+    /// Creates a new service channel instance
     /// </summary>
-    IChannel CreateChannel( System.Net.Sockets.Socket socket );
+    Task<IChannel> CreateChannelAsync( System.Net.Sockets.Socket socket );
 }

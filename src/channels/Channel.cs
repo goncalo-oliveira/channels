@@ -32,14 +32,6 @@ internal abstract class Channel : ConnectedSocket, IChannel
         Buffer = new WritableByteBuffer( bufferEndianness );
 
         channelScope = serviceScope;
-
-        logger.LogInformation( "Created" );
-
-        // notify channel created
-        this.NotifyChannelCreated();
-
-        // TODO: find a better way to do this
-        Task.Run( StartServicesAsync );
     }
 
     public IEnumerable<IChannelService> Services => channelScope.ServiceProvider.GetServices<IChannelService>();
@@ -60,6 +52,17 @@ internal abstract class Channel : ConnectedSocket, IChannel
     public IChannelPipeline Output { get; protected set; }
 
     public abstract Task CloseAsync();
+
+    public virtual async Task InitializeAsync()
+    {
+        logger.LogInformation( "Created" );
+
+        // notify channel created
+        this.NotifyChannelCreated();
+
+        // start long-running services
+        await StartServicesAsync();
+    }
 
     public virtual async Task WriteAsync( object data )
     {
