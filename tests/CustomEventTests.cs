@@ -67,8 +67,8 @@ public class CustomEventTests
             } );
 
         var options = new Microsoft.Extensions.Options.OptionsWrapper<ServiceChannelOptions>( new ServiceChannelOptions() );
-        var channel = new ServiceChannelFactory( provider, options )
-            .CreateChannel( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
+        var channel = await new ServiceChannelFactory( provider, options )
+            .CreateChannelAsync( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
 
         var data = Guid.NewGuid().ToString( "N" );
         await pipeline.ExecuteAsync( channel, data );

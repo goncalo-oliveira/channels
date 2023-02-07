@@ -58,7 +58,7 @@ public class ScopedServiceTests
     }
 
     [Fact]
-    public void TestScopedService()
+    public async Task TestScopedService()
     {
         IServiceCollection services = new ServiceCollection()
             .AddLogging()
@@ -70,8 +70,8 @@ public class ScopedServiceTests
 
         var channelFactory = provider.GetRequiredService<IServiceChannelFactory>();
 
-        var channel1 = channelFactory.CreateChannel( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
-        var channel2 = channelFactory.CreateChannel( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
+        var channel1 = await channelFactory.CreateChannelAsync( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
+        var channel2 = await channelFactory.CreateChannelAsync( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
 
         var adapter1 = (MyAdapter)((Channel)channel1).ServiceProvider.GetServices<IInputChannelAdapter>().Single();
         var adapter2 = (MyAdapter)((Channel)channel1).ServiceProvider.GetServices<IInputChannelAdapter>().Single();
@@ -107,8 +107,8 @@ public class ScopedServiceTests
 
         var channelFactory = provider.GetRequiredService<IServiceChannelFactory>();
 
-        var channel1 = channelFactory.CreateChannel( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
-        var channel2 = channelFactory.CreateChannel( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
+        var channel1 = await channelFactory.CreateChannelAsync( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
+        var channel2 = await channelFactory.CreateChannelAsync( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
 
         var svc1 = channel1.GetService<MyService>();
         var svc2 = channel2.GetService<MyService>();
