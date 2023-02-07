@@ -1,45 +1,44 @@
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using Faactory.Channels.Buffers;
-using Faactory.Channels.Adapters;
-using Faactory.Channels.Handlers;
 using Faactory.Channels.Sockets;
 using Faactory.Collections;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
-public abstract class Channel : ConnectedSocket, IChannel
+internal abstract class Channel : ConnectedSocket, IChannel, IServiceScope
 {
     protected readonly ILogger logger;
     private readonly IDisposable? loggerScope;
     private readonly IServiceScope channelScope;
 
-    public Channel( IServiceScope serviceScope
-        , ILoggerFactory loggerFactory
+    internal Channel( 
+          IServiceScope serviceScope
         , Socket socket
         , Buffers.Endianness bufferEndianness )
-        : base( loggerFactory, socket )
+        : base( serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>(), socket )
     {
-        logger = loggerFactory.CreateLogger<IChannel>();
-        loggerScope = logger.BeginScope( $"channel-{Id.Substring( 0, 6 )}" );
+        logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
+            .CreateLogger<IChannel>();
 
-        Input = new ChannelPipeline( loggerFactory, Array.Empty<IChannelAdapter>(), Array.Empty<IChannelHandler>() );
-        Output = new ChannelPipeline( loggerFactory, Array.Empty<IChannelAdapter>(), new IChannelHandler[]
-        {
-            new OutputChannelHandler( loggerFactory )
-        } );
+        loggerScope = logger.BeginScope( $"Channel_{Id.Substring( 0, 7 )}" );
+
+        Input = EmptyChannelPipeline.Instance;
+        Output = EmptyChannelPipeline.Instance;
 
         Buffer = new WritableByteBuffer( bufferEndianness );
 
         channelScope = serviceScope;
+
+        logger.LogInformation( "Created" );
 
         // notify channel created and start long-running services
         this.NotifyChannelCreated();
         Task.Run( () => this.StartChannelServicesAsync() );
     }
 
-    internal IServiceProvider ServiceProvider => channelScope.ServiceProvider;
+    public IServiceProvider ServiceProvider => channelScope.ServiceProvider;
     internal IChannelInfo Info => new ChannelInfo( this );
 
     public bool IsClosed { get; private set; }
@@ -72,14 +71,12 @@ public abstract class Channel : ConnectedSocket, IChannel
 
     public virtual void Dispose()
     {
-        //this.StopChannelServices();
-
         Input.Dispose();
         Output.Dispose();
-
         Socket.Dispose();
 
         logger.LogDebug( "Disposed." );
+
         loggerScope?.Dispose();
         channelScope.Dispose();
     }

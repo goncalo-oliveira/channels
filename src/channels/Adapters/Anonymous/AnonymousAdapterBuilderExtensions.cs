@@ -1,11 +1,10 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Faactory.Channels.Adapters;
 using Faactory.Channels.Handlers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
-public static class ChannelBuilderAnonymousExtensions
+public static class AnonymousAdapterChannelBuilderExtensions
 {
     /// <summary>
     /// Adds a transient service for the anonymous channel adapter to the input pipeline

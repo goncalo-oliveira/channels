@@ -1,6 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Faactory.Channels.Adapters;
-using Faactory.Channels.Hosting;
 
 namespace Faactory.Channels;
 

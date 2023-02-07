@@ -3,10 +3,10 @@ using Microsoft.Extensions.Hosting;
 
 var builder = Host.CreateApplicationBuilder( args );
 
-builder.Services.AddChannelsHostedService( channels =>
+builder.Services.AddChannelsHostedService( channel =>
 {
     // configure options
-    channels.Configure( options =>
+    channel.Configure( options =>
     {
         options.Port = 8080;
         options.Backlog = 10;
@@ -14,14 +14,14 @@ builder.Services.AddChannelsHostedService( channels =>
 
     // set up long-running services
     // since v0.5 idle monitoring is a channel service
-    channels.AddIdleChannelService();
+    channel.AddIdleChannelService();
 
     // set up input pipeline
-    channels.AddInputAdapter<WordAdapter>()
+    channel.AddInputAdapter<WordAdapter>()
         .AddInputHandler<WordHandler>();
 
     // set up output pipeline
-    channels.AddOutputAdapter<UTFEncoderAdapter>();
+    channel.AddOutputAdapter<UTFEncoderAdapter>();
 } );
 
 var app = builder.Build();

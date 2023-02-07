@@ -5,21 +5,15 @@ using Microsoft.Extensions.Logging;
 
 public class TestAdapterContext : IAdapterContext
 {
-    public TestAdapterContext( ILoggerFactory loggerFactory )
-    {
-        LoggerFactory = loggerFactory;
-    }
-
-    public ILoggerFactory LoggerFactory { get; }
-
     public IChannel Channel => new FakeChannel();
 
     public IWritableBuffer Output => new FakeWritableBuffer();
 
+    public void NotifyCustomEvent( string name, object? data )
+    { }
+
     public void Forward( object data )
-    {
-        Data.Add( data );
-    }
+        => Data.Add( data );
 
     public List<object> Data { get; } = new List<object>();
 }

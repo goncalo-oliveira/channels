@@ -18,6 +18,9 @@ public interface IChannel : IDisposable
     /// </summary>
     bool IsClosed { get; }
 
+    /// <summary>
+    /// Gets the channel's input buffer
+    /// </summary>
     IByteBuffer Buffer { get; }
 
     /// <summary>

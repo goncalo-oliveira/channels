@@ -5,46 +5,25 @@ using Microsoft.Extensions.Logging;
 namespace Faactory.Channels;
 
 /// <summary>
-/// Base class for channel middleware. Do not inherit from this class directly.
+/// Base class for channel middleware. Inherited by handler and adapter base classes.
 /// </summary>
 /// <typeparam name="T">The data type</typeparam>
 public abstract class ChannelMiddleware<T>
 {
-    public ChannelMiddleware()
+    internal ChannelMiddleware()
     { }
 
-    public ChannelMiddleware( ILoggerFactory loggerFactory )
-    {
-        Logger = loggerFactory.CreateLogger( GetType() );
-    }
-
-    public ChannelMiddleware( ILogger logger )
-    {
-        Logger = logger;
-    }
-
-    protected ILogger? Logger { get; private set;}
-
-    protected virtual void OnDataNotSuitable( IChannelContext context, object data )
-    {
-        Logger?.LogDebug( $"Data type '{data.GetType().Name}' is not suitable for this middleware." );
-    }
+    protected abstract void OnDataNotSuitable( IChannelContext context, object data );
 
     public abstract Task ExecuteAsync( IChannelContext context, T data );
 
     public Task ExecuteAsync( IChannelContext context, object data )
     {
-        Logger = Logger ?? context.LoggerFactory.CreateLogger( GetType() );
-
         if ( data == null )
         {
             // no data...
-            Logger.LogDebug( $"Received 'null' data." );
-
             return Task.CompletedTask;
         }
-
-        Logger.LogDebug( $"Received '{data.GetType().Name}' data." );
 
         if ( data is T )
         {
@@ -99,8 +78,6 @@ public abstract class ChannelMiddleware<T>
         // attempt a byte[] to IByteBuffer transformation
         if ( type.IsAssignableFrom( typeof( IByteBuffer ) ) && ( data is byte[] ) )
         {
-            Logger?.LogDebug( "Transformed from 'Byte[]' to 'IByteBuffer'." );
-
             result = (T)(IByteBuffer)new WrappedByteBuffer( (byte[])data, context.Channel.Buffer.Endianness );
 
             return ( true );
@@ -110,8 +87,6 @@ public abstract class ChannelMiddleware<T>
         if ( ( type.IsArray && type.GetElementType() == typeof( byte ) ) 
             && data.GetType().IsAssignableTo( typeof( IByteBuffer ) ) )
         {
-            Logger?.LogDebug( "Transformed from 'IByteBuffer' to 'Byte[]'." );
-
             var buffer = (IByteBuffer)data;
             result = (T)(object)buffer.ReadBytes( buffer.ReadableBytes );
 

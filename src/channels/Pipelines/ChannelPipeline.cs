@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Faactory.Channels.Buffers;
 using Faactory.Channels.Adapters;
 using Faactory.Channels.Handlers;
 
@@ -7,7 +6,6 @@ namespace Faactory.Channels;
 
 internal class ChannelPipeline : IChannelPipeline
 {
-    private readonly ILoggerFactory loggerFactory;
     private readonly ILogger logger;
     private readonly IEnumerable<IChannelAdapter> adapters;
     private readonly IEnumerable<IChannelHandler>? handlers;
@@ -16,7 +14,6 @@ internal class ChannelPipeline : IChannelPipeline
         , IEnumerable<IChannelAdapter> channelAdapters
         , IEnumerable<IChannelHandler>? channelHandlers )
     {
-        this.loggerFactory = loggerFactory;
         logger = loggerFactory.CreateLogger<ChannelPipeline>();
         adapters = channelAdapters;
         handlers = channelHandlers;
@@ -35,7 +32,7 @@ internal class ChannelPipeline : IChannelPipeline
 
     public async Task ExecuteAsync( IChannel channel, object data )
     {
-        var adapterContext = new AdapterContext( loggerFactory, channel );
+        var adapterContext = new AdapterContext( channel );
 
         adapterContext.Forward( data );
 

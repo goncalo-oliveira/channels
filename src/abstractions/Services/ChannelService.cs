@@ -1,12 +1,22 @@
 namespace Faactory.Channels;
 
+/// <summary>
+/// Base class for implementing a long-running service with the same lifespan of a channel.
+/// </summary>
 public abstract class ChannelService : IChannelService
 {
     private Task? task;
     private CancellationTokenSource? cancellationTokenSource;
 
-    public IChannel? Channel { get; private set; }
+    /// <summary>
+    /// Gets the channel that owns the service.
+    /// </summary>
+    /// <returns>The channel instance that owns the service; null if the service hasn't started yet.</returns>
+    protected IChannel? Channel { get; private set; }
 
+    /// <summary>
+    /// Triggered when the channel is created and ready to start the service.
+    /// </summary>
     public virtual Task StartAsync( IChannel channel, CancellationToken cancellationToken )
     {
         Channel = channel;
@@ -20,6 +30,9 @@ public abstract class ChannelService : IChannelService
             : Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Triggered when the channel is performing a graceful shutdown.
+    /// </summary>
     public virtual async Task StopAsync( CancellationToken cancellationToken )
     {
         if ( task is null )
@@ -49,5 +62,8 @@ public abstract class ChannelService : IChannelService
         Channel = null;
     }
 
+    /// <summary>
+    /// Called when the service starts. Should return a task that represents the lifetime of the long-running operation.
+    /// </summary>
     protected abstract Task ExecuteAsync( CancellationToken cancellationToken );
 }

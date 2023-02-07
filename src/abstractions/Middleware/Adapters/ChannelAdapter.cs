@@ -1,11 +1,9 @@
 using Microsoft.Extensions.Logging;
-using Faactory.Channels.Buffers;
-using System.Collections;
 
 namespace Faactory.Channels.Adapters;
 
 /// <summary>
-/// Base class for a channel adapter
+/// Base class for implementing a channel adapter
 /// </summary>
 /// <typeparam name="T">The data type</typeparam>
 public abstract class ChannelAdapter<T> : ChannelMiddleware<T>, IChannelAdapter
@@ -13,10 +11,9 @@ public abstract class ChannelAdapter<T> : ChannelMiddleware<T>, IChannelAdapter
     public ChannelAdapter()
     {}
 
-    public ChannelAdapter( ILoggerFactory loggerFactory )
-    : base( loggerFactory )
-    { }
-
+    /// <summary>
+    /// Called when matching data (T) is received by the adapter
+    /// </summary>
     public abstract Task ExecuteAsync( IAdapterContext context, T data );
 
     public override Task ExecuteAsync( IChannelContext context, T data )
@@ -26,9 +23,5 @@ public abstract class ChannelAdapter<T> : ChannelMiddleware<T>, IChannelAdapter
         => base.ExecuteAsync( context, data );
 
     protected override void OnDataNotSuitable( IChannelContext context, object data )
-    {
-        Logger?.LogDebug( $"Data type '{data.GetType().Name}' is not suitable for this adapter." );
-
-        ( (IAdapterContext)context ).Forward( data );
-    }
+        => ( (IAdapterContext)context ).Forward( data );
 }

@@ -1,7 +1,5 @@
 using System.Net.Sockets;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Faactory.Channels.Adapters;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
@@ -26,11 +24,6 @@ internal class ClientChannelFactory : IClientChannelFactory
         var options = optionsMonitor.Get( name );
 
         var serviceScope = serviceProvider.CreateScope();
-        var inputAdapters = serviceScope.ServiceProvider.GetAdapters<IInputChannelAdapter>();
-        var outputAdapters = serviceScope.ServiceProvider.GetAdapters<IOutputChannelAdapter>();
-        var inputHandlers = serviceScope.ServiceProvider.GetHandlers();
-
-        var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
 
         // create a TCP/IP socket
         var client = new Socket( SocketType.Stream, ProtocolType.Tcp );
@@ -38,12 +31,9 @@ internal class ClientChannelFactory : IClientChannelFactory
         await client.ConnectAsync( options.Host, options.Port, cancellationToken )
             .ConfigureAwait( false );
 
-        var channel = new ClientChannel( serviceScope
-            , loggerFactory
+        var channel = new ClientChannel(
+              serviceScope
             , client
-            , inputAdapters
-            , outputAdapters
-            , inputHandlers
             , options.BufferEndianness );
 
         channel.BeginReceive();

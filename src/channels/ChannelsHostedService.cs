@@ -3,9 +3,8 @@ using System.Net.Sockets;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Faactory.Channels;
 
-namespace Faactory.Channels.Hosting;
+namespace Faactory.Channels;
 
 internal sealed class ChannelsHostedService : IHostedService
 {

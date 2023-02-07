@@ -16,7 +16,6 @@ Take note that this adapter is an `IInputChannelAdapter`.
 
 public class WordAdapter : ChannelAdapter<byte[]>, IInputChannelAdapter
 {
-    //
     public override Task ExecuteAsync( IAdapterContext context, byte[] data )
     {
         var phrase = Encoding.UTF8.GetString( data );
