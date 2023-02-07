@@ -3,10 +3,9 @@ using Microsoft.Extensions.Options;
 
 namespace Faactory.Channels;
 
-internal sealed class IdleChannelService : IChannelService
+internal sealed class IdleChannelService : ChannelService
 {
     private readonly ILogger logger;
-    private Timer? timer;
     private readonly IdleDetectionMode detectionMode;
     private readonly TimeSpan timeout;
 
@@ -20,98 +19,86 @@ internal sealed class IdleChannelService : IChannelService
 
         detectionMode = options.DetectionMode;
         timeout = options.Timeout;
-
-        if ( ( timeout == TimeSpan.Zero ) && ( detectionMode != IdleDetectionMode.Auto ) )
-        {
-            // no hard timeout is only allowed with Auto mode
-            throw new ArgumentOutOfRangeException( nameof( timeout ) );
-        }
     }
 
-    public Task StartAsync( IChannel channel, CancellationToken cancellationToken )
+    public override async Task StartAsync( IChannel channel, CancellationToken cancellationToken )
     {
         logger.LogDebug( "Starting..." );
 
         if ( detectionMode == IdleDetectionMode.None )
         {
             // not enabled
-            logger.LogInformation( "Canceled. Idle detection mode is set to 'None'." );
+            logger.LogInformation( "Canceled; detection mode is set to 'None'." );
 
-            return Task.CompletedTask;
+            return;
         }
 
-        var dueTime = ( detectionMode == IdleDetectionMode.Auto )
-            ? TimeSpan.FromSeconds( 5 )
-            : timeout;
+        if ( ( timeout == TimeSpan.Zero ) && ( detectionMode != IdleDetectionMode.Auto ) )
+        {
+            // no hard timeout is only allowed with Auto mode
+            logger.LogWarning( "Canceled; no hard timeout option requires 'Auto' detection mode." );
 
-        var intervalTime = ( detectionMode == IdleDetectionMode.Auto )
-            ? dueTime
-            : ( timeout / 2 );
+            return;
+        }
 
-        timer = new Timer( IdleDetectionTimeoutCallback
-            , channel
-            , dueTime, intervalTime );
+        await base.StartAsync( channel, cancellationToken );
 
         logger.LogInformation( "Started." );
-
-        return Task.CompletedTask;
     }
 
-    public Task StopAsync( CancellationToken cancellationToken )
+    public override async Task StopAsync( CancellationToken cancellationToken )
     {
         logger.LogDebug( "Stopping..." );
 
-        if ( timer == null )
-        {
-            // not active
-            logger.LogDebug( "Already stopped." );
-
-            return Task.CompletedTask;
-        }
-
-        try
-        {
-            timer?.Change( Timeout.Infinite, Timeout.Infinite );
-            timer?.Dispose();
-        }
-        catch ( ObjectDisposedException )
-        { }
-        finally
-        {
-            timer = null;
-        }
+        await base.StopAsync( cancellationToken );
 
         logger.LogInformation( "Stopped." );
-
-        return Task.CompletedTask;
     }
 
-    public void Dispose()
+    protected override async Task ExecuteAsync( CancellationToken cancellationToken )
     {
-        timer?.Dispose();
-        timer = null;
+        var interval = ( detectionMode == IdleDetectionMode.Auto )
+            ? TimeSpan.FromSeconds( 5 )
+            : timeout;
+
+        var timer = new PeriodicTimer( interval );
+
+        while ( !cancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync( cancellationToken ) )
+        {
+            await CheckIdleStateAsync()
+                .ConfigureAwait( false );
+        }
     }
 
-    private void IdleDetectionTimeoutCallback( object? state )
+    private bool IsChannelSocketConnected()
     {
-        var channel = (Channel)state!;
+        if ( Channel is Sockets.ConnectedSocket)
+        {
+            return ((Sockets.ConnectedSocket)Channel).IsConnected();
+        }
+
+        // since we can't ask the socket, we assume it is
+        return ( true );
+    }
+
+    private async Task CheckIdleStateAsync()
+    {
+        if ( Channel == null )
+        {
+            // not supposed to happen, but to be on the safe side...
+            return;
+        }
 
         // attempt to poll channel socket if auto mode is being used
-        if ( ( detectionMode == IdleDetectionMode.Auto ) && !channel.IsConnected() )
+        if ( ( detectionMode == IdleDetectionMode.Auto ) && !IsChannelSocketConnected() )
         {
             logger.LogWarning( $"Channel doesn't seem to be active anymore. Closing..." );
 
-            StopAsync( CancellationToken.None )
-                .ConfigureAwait( false )
-                .GetAwaiter()
-                .GetResult();
+            // await StopAsync( CancellationToken.None )
+            //     .ConfigureAwait( false );
 
-            channel.CloseAsync()
-                .ConfigureAwait( false )
-                .GetAwaiter()
-                .GetResult();
-
-            return;
+            await Channel.CloseAsync()
+                .ConfigureAwait( false );
         }
 
         if ( timeout == TimeSpan.Zero )
@@ -121,11 +108,12 @@ internal sealed class IdleChannelService : IChannelService
             return;
         }
 
-        var lastReceived = channel.LastReceived ?? channel.Created;
-        var lastSent = channel.LastSent ?? channel.Created;
+        var lastReceived = Channel.LastReceived ?? Channel.Created;
+        var lastSent = Channel.LastSent ?? Channel.Created;
 
-        var idleReceived = DateTimeOffset.UtcNow - lastReceived;
-        var idleSent = DateTimeOffset.UtcNow - lastSent;
+        var utcNow = DateTimeOffset.UtcNow;
+        var idleReceived = utcNow - lastReceived;
+        var idleSent = utcNow - lastSent;
         var idleMin = TimeSpan.FromSeconds( Math.Min( idleReceived.TotalSeconds, idleSent.TotalSeconds ) );
 
         var isIdle = false;
@@ -156,15 +144,11 @@ internal sealed class IdleChannelService : IChannelService
             var seconds = (int)timeout.TotalSeconds;
             logger.LogWarning( $"Channel has been idle for more than {seconds} seconds. Closing..." );
 
-            StopAsync( CancellationToken.None )
-                .ConfigureAwait( false )
-                .GetAwaiter()
-                .GetResult();
+            // await StopAsync( CancellationToken.None )
+            //     .ConfigureAwait( false );
 
-            channel.CloseAsync()
-                .ConfigureAwait( false )
-                .GetAwaiter()
-                .GetResult();
+            await Channel.CloseAsync()
+                .ConfigureAwait( false );
         }
     }
 }

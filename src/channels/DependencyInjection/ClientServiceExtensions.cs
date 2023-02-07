@@ -1,12 +1,13 @@
 using Faactory.Channels;
-using Faactory.Channels.Adapters;
-using Faactory.Channels.Handlers;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
-public static class ChannelsClientServiceExtensions
+public static class ChannelClientFactoryServiceExtensions
 {
-    public static IServiceCollection AddChannelsClient( this IServiceCollection services, Action<IClientChannelBuilder> configure )
+    /// <summary>
+    /// Adds the channel client factory to the specified service IServiceCollection
+    /// </summary>
+    public static IServiceCollection AddClientChannelFactory( this IServiceCollection services, Action<IClientChannelBuilder> configure )
     {
         services.AddTransient<IClientChannelFactory, ClientChannelFactory>();
 
@@ -14,9 +15,6 @@ public static class ChannelsClientServiceExtensions
 
         configure( builder );
 
-        //builder.Services.AddTransient<IChannelHandler, OutputChannelHandler>();
-
         return ( services );
-
     }
 }

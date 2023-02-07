@@ -33,7 +33,7 @@ graph LR;
 
 ## Middleware Characteristics
 
-Unless you have very specific needs, middleware components should inherit from the abstract classes provided instead of implementing the interfaces directly. The base class for all middleware components (adapters and handlers) do a few things for us that won't be available when implementing the interfaces directly. This includes
+Unless you have very specific needs, middleware components should inherit from the abstract classes provided instead of implementing the interfaces directly. The base class for all middleware components (adapters and handlers) does a few things for us that won't be available when implementing the interfaces directly. This includes
 
 - Type checking
 - Type mutation
@@ -57,9 +57,9 @@ An adapter is expected to *forward* data to next component in the pipeline, alth
 
 Unless you have very specific needs, you should inherit your adapter from the `ChannelAdapter<T>` abstract class instead of implementing the `IChannelAdapter` interface directly.
 
-Since version 0.3 we also need to indicate whether the adapter is meant for the input or/and the output pipelines. We do that by adding the interfaces `IInputChannelAdapter` or/and `IOutputChannelAdapter` respectively.
+We also need to indicate whether the adapter is meant for the input or/and the output pipelines. We do that by adding the interfaces `IInputChannelAdapter` or/and `IOutputChannelAdapter` respectively.
 
-Here's an example on how to implement an adapter that adapts from an `IByteBuffer` (or `Byte[]`). This adapter can only be added to the input pipeline.
+Here's an example of how to implement an adapter that adapts from an `IByteBuffer` (or `Byte[]`). This adapter can only be added to the input pipeline.
 
 ```csharp
 public class MyChannelAdapter : ChannelAdapter<IByteBuffer>, IInputChannelAdapter
@@ -77,7 +77,7 @@ public class MyChannelAdapter : ChannelAdapter<IByteBuffer>, IInputChannelAdapte
 
 ### Ready-made Adapters
 
-In addition to the abstract `ChannelAdapter<T>` adapter, you have a few more ready-made adapters that you can use.
+In addition to the abstract `ChannelAdapter<T>` adapter, you have a few ready-made adapters that you can use.
 
 | Adapter                 | Target       | Description                                        |
 |-------------------------|--------------|----------------------------------------------------|
@@ -90,7 +90,7 @@ Although handlers are very similar to adapters, their conceptual purpose is diff
 
 ```mermaid
 graph LR;
-    in[/Data In/] --> Handler
+    in[/Data In/] --> H[Handler]
 ```
 
 ### Implementing an Handler
@@ -196,40 +196,28 @@ Install the package from NuGet
 dotnet add package Faactory.Channels
 ```
 
-To quickly bootstrap a server, we need an `HostBuilder` to inject a *hosted service*. Then we need to configure the listening options and set up the input and output pipelines. Here's an example
+To quickly bootstrap a server, we need to inject a *hosted service*. Then we need to configure the listening options and set up the input and output pipelines. Here's an example
 
 ```csharp
-var builder = new HostBuilder()
-    .ConfigureServices( ( context, services) =>
+IServiceCollection services = ...;
+
+// add our hosted service
+services.AddChannelsHostedService( channel =>
+{
+    // configure options
+    channel.Configure( options =>
     {
-        // add logging
-        services.AddLogging( loggingBuilder =>
-        {
-            loggingBuilder.AddConsole()
-                .SetMinimumLevel( LogLevel.Debug );
-        } );
+        options.Port = 8080;
+        options.Backlog = 30;
+    } );
 
-        // add our hosted service
-        services.AddChannelsHostedService( builder =>
-        {
-            // configure options
-            builder.Configure( options =>
-            {
-                options.Port = 8080;
-                options.Backlog = 30;
-            } );
+    // set up input pipeline
+    channel.AddInputAdapter<ExampleDecoderChannelAdapter>()
+        .AddInputHandler<MyChannelHandler>();
 
-            // set up input pipeline
-            builder.AddInputAdapter<ExampleDecoderChannelAdapter>()
-                .AddInputHandler<MyChannelHandler>();
-
-            // set up output pipeline
-            builder.AddOutputAdapter<ExampleEncoderAdapter>();
-        } );
-    } )
-    .UseConsoleLifetime();
-
-await builder.Build().RunAsync();
+    // set up output pipeline
+    channel.AddOutputAdapter<ExampleEncoderAdapter>();
+} );
 ```
 
 To boostrap the client, we'll need to register the factory with a service provider. Then, similarly to the server, we need to configure the channel options and set up the input and output pipelines. Here's an example
@@ -237,33 +225,29 @@ To boostrap the client, we'll need to register the factory with a service provid
 ```csharp
 IServiceCollection services = ...
 
-// add logging
-services.AddLogging( loggingBuilder =>
-{
-    loggingBuilder.AddConsole()
-        .SetMinimumLevel( LogLevel.Debug );
-} );
-
 // add our client factory
-services.AddChannelsClient( builder =>
+services.AddClientChannelFactory( channel =>
 {
     // configure options
-    builder.Configure( options =>
+    channel.Configure( options =>
     {
         options.Host = "localhost";
         options.Port = 8080;
     } );
     
     // set up input pipeline
-    builder.AddInputAdapter<ExampleDecoderChannelAdapter>()
+    channel.AddInputAdapter<ExampleDecoderChannelAdapter>()
         .AddInputHandler<MyChannelHandler>();
 
     // set up output pipeline
-    builder.AddOutputAdapter<ExampleEncoderAdapter>();
+    channel.AddOutputAdapter<ExampleEncoderAdapter>();
 } );
+```
 
-var provider = services.BuildServiceProvider();
-var channelFactory = provider.GetRequiredService<IClientChannelFactory>();
+Then, where needed, we can create a client channel by using the factory
+
+```csharp
+IClientChannelFactory channelFactory = ...;
 var channel = await channelFactory.CreateAsync();
 
 await channel.WriteAsync( new MyData
@@ -276,7 +260,9 @@ await channel.WriteAsync( new MyData
 
 Although raw data handling in the adapters can be done with `Byte[]`, it is recommended to use a `IByteBuffer` instance instead, particularly for reading data. You can read more about it [here](src/buffers/README.md).
 
-## Service Scope
+Data received in the adapters that is not read will remain in the channel's input buffer. When more data is received, it is delivered again along with the newly received data. If an adapter uses `Byte[]` instead, the data in the input buffer is automatically marked as read and discarded.
+
+## Service Scope per Channel
 
 Every channel instance (client or service) uses a new `IServiceScope`. This means that if you add a scoped service to the DI container and use it in an adapter or handler, you'll have a unique instance per channel.
 
@@ -321,7 +307,7 @@ public class MyService : ChannelService
             here we have access to the channel instance through the Channel property
             */
 
-            // Channel.WriteAsync( ... );
+            // await Channel.WriteAsync( ... );
 
             await Task.Delay( 1000 );
         }
@@ -361,9 +347,9 @@ builder.AddService<MyService>();
 
 ## Idle Channels
 
-> On previous releases, the idle detection mechanism was available and active by default. Since version 0.5 this is no longer true and the idle detection service needs to be added.
+> On previous releases, the idle detection mechanism was available and active by default. Since version 0.5 this is no longer true and the idle detection service needs to be added explicitly.
 
-There's a ready-made service that monitors channels activity and detects if a channel has become idle or unresponsive. When that happens, the underlying socket is disconnected and the channel closed.
+There's a ready-made service that monitors channel activity and detects if a channel has become idle or unresponsive. When that happens, the underlying socket is disconnected and the channel closed.
 
 To enable this service, just add it as a channel service using the builder extensions
 

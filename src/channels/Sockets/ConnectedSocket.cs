@@ -4,18 +4,21 @@ using Microsoft.Extensions.Logging;
 
 namespace Faactory.Channels.Sockets;
 
-public class ConnectedSocket
+/// <summary>
+/// A connected channel TCP socket
+/// </summary>
+public abstract class ConnectedSocket
 {
     public const int DefaultBufferLength = 13312;
 
     private readonly byte[] socketBuffer = new byte[DefaultBufferLength];
 
-    public ConnectedSocket( ILoggerFactory loggerFactory, Socket socket )
+    internal ConnectedSocket( ILoggerFactory loggerFactory, Socket socket )
     {
         Id = Guid.NewGuid().ToString( "N" );
         Socket = socket;
 
-        Logger = loggerFactory.CreateLogger( $"socket-{Id.Substring( 0, 6 )}" );
+        Logger = loggerFactory.CreateLogger( $"ConnectedSocket_{Id.Substring( 0, 7 )}" );
     }
 
     private ILogger Logger { get; init; }

@@ -2,7 +2,7 @@ using Faactory.Channels;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
-public static class ChannelBuilderServiceExtensions
+public static class IdleChannelServiceChannelBuilderExtensions
 {
     /// <summary>
     /// Adds idle channel service

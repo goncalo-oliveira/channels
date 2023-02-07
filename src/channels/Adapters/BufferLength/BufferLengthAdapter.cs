@@ -1,29 +1,8 @@
-using System.Text;
-using Faactory.Channels.Adapters;
 using Faactory.Channels.Buffers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Faactory.Channels.Adapters;
-
-public class BufferLengthAdapterOptions
-{
-    public BufferLengthAdapterOptions()
-    {
-        MaxLength = 1024 * 1024;
-        CloseChannel = true;
-    }
-
-    /// <summary>
-    /// The maximum length for the input IByteBuffer. Default is 1 MB.
-    /// </summary>
-    public int MaxLength { get; set; }
-
-    /// <summary>
-    /// If true, the channel is closed when the maximum length is exceeded. Default is true.
-    /// </summary>
-    public bool CloseChannel { get; set; }
-}
 
 /// <summary>
 /// This adapter ensures the length of the input buffer doesn't exceed a maximum value. Configure with BufferLengthAdapterOptions.

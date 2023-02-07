@@ -10,18 +10,20 @@ public class FakeChannel : IChannel
 
     public IMetadata Data => throw new NotImplementedException();
 
-    public DateTimeOffset Created => throw new NotImplementedException();
+    public DateTimeOffset Created { get; } = DateTimeOffset.UtcNow;
 
-    public DateTimeOffset? LastReceived => throw new NotImplementedException();
+    public DateTimeOffset? LastReceived { get; } = DateTimeOffset.UtcNow;
 
-    public DateTimeOffset? LastSent => throw new NotImplementedException();
+    public DateTimeOffset? LastSent { get; } = DateTimeOffset.UtcNow;
 
     public IByteBuffer Buffer { get; } = new WritableByteBuffer();
 
-    public bool IsClosed => false;
+    public bool IsClosed { get; private set; }
 
     public Task CloseAsync()
     {
+        IsClosed = true;
+
         return Task.CompletedTask;
     }
 

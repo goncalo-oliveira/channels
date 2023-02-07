@@ -1,9 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
-using Faactory.Channels.Handlers;
 
 namespace Faactory.Channels;
 
-public static class ChannelBuilderOptionsExtensions
+public static class ChannelBuilderConfigureExtensions
 {
     /// <summary>
     /// Registers an action used to configure a particular type of options.
