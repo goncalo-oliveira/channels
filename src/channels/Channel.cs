@@ -35,9 +35,11 @@ internal abstract class Channel : ConnectedSocket, IChannel
 
         logger.LogInformation( "Created" );
 
-        // notify channel created and start long-running services
+        // notify channel created
         this.NotifyChannelCreated();
-        Task.Run( () => this.StartChannelServicesAsync() );
+
+        // TODO: find a better way to do this
+        Task.Run( StartServicesAsync );
     }
 
     public IEnumerable<IChannelService> Services => channelScope.ServiceProvider.GetServices<IChannelService>();
@@ -119,12 +121,17 @@ internal abstract class Channel : ConnectedSocket, IChannel
         this.NotifyDataSent( bytesSent );
     }
 
-    protected override void OnDisconnected()
+    protected override async void OnDisconnected()
     {
+        if ( IsClosed )
+        {
+            return;
+        }
+
         IsClosed = true;
 
         logger.LogInformation( "Closed." );
-
+        
         try
         {
             this.NotifyChannelClosed();
@@ -132,16 +139,47 @@ internal abstract class Channel : ConnectedSocket, IChannel
         catch ( Exception )
         { }
 
-        try
-        {
-            Task.Run( () => this.StopChannelServicesAsync() )
-                .ConfigureAwait( false )
-                .GetAwaiter()
-                .GetResult();
-        }
-        catch ( Exception )
-        { }
+        await Task.Yield();
+
+        await StopServicesAsync()
+            .ConfigureAwait( false );
 
         Dispose();
+
+        logger.LogInformation( "done" );
+    }
+
+    internal Task StartServicesAsync()
+    {
+        var tasks = Services.Select( async service =>
+        {
+            try
+            {
+                await service.StartAsync( this );
+            }
+            catch ( Exception ex )
+            {
+                logger.LogError( ex, $"Failed to start '{service.GetType().Name}' channel service. {ex.Message}" );
+            }
+        } );
+
+        return Task.WhenAll( tasks );
+    }
+
+    private Task StopServicesAsync()
+    {
+        var tasks = Services.Select( async service =>
+        {
+            try
+            {
+                await service.StopAsync();
+            }
+            catch ( Exception ex )
+            {
+                logger.LogError( ex, $"Failed to stop '{service.GetType().Name}' channel service. {ex.Message}" );
+            }
+        } );
+
+        return Task.WhenAll( tasks );
     }
 }
