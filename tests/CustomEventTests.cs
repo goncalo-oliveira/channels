@@ -66,8 +66,12 @@ public class CustomEventTests
                 new MyAdapter()
             } );
 
+        var options = new Microsoft.Extensions.Options.OptionsWrapper<ServiceChannelOptions>( new ServiceChannelOptions() );
+        var channel = new ServiceChannelFactory( provider, options )
+            .CreateChannel( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
+
         var data = Guid.NewGuid().ToString( "N" );
-        await pipeline.ExecuteAsync( new FakeChannel(), data );
+        await pipeline.ExecuteAsync( channel, data );
 
         var events = provider.GetServices<IChannelEvents>()
             .Where( x => x.GetType() == typeof( MyEvents ) )
