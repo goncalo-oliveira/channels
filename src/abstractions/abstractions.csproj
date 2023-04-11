@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
     <RootNamespace>Faactory.Channels</RootNamespace>
     <AssemblyName>faactory.channels.abstractions</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageId>Faactory.Channels.Abstractions</PackageId>
-    <Version>0.6.1</Version>
+    <Version>0.7.0</Version>
     <Authors>Goncalo Oliveira</Authors>
     <Description>Channels</Description>
     <RepositoryUrl>https://github.com/goncalo-oliveira/channels</RepositoryUrl>
@@ -18,8 +18,8 @@
 
   <ItemGroup>
     <PackageReference Include="Faactory.Types" Version="1.6.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="6.0.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
   </ItemGroup>
 
   <ItemGroup>
