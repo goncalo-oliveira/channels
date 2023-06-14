@@ -202,7 +202,7 @@ To quickly bootstrap a server, we need to inject a *hosted service*. Then we nee
 IServiceCollection services = ...;
 
 // add our hosted service
-services.AddChannelsHostedService( channel =>
+services.AddChannels( channel =>
 {
     // configure options
     channel.Configure( options =>
@@ -264,7 +264,7 @@ Data received in the adapters that is not read will remain in the channel's inpu
 
 ## Service Scope per Channel
 
-Every channel instance (client or service) uses a new `IServiceScope`. This means that if you add a scoped service to the DI container and use it in an adapter or handler, you'll have a unique instance per channel.
+Every channel instance (client or service) uses a new `IServiceScope`. This means that if you add a scoped service to the DI container and use it in an adapter or handler, you'll have an unique instance per channel.
 
 ## Channel Events
 
@@ -340,9 +340,30 @@ public class MyService : IChannelService
 To set up the service we can use the channel builder extensions
 
 ```csharp
-IChannelBuilder builder = ...;
+IChannelBuilder channel = ...;
 
-builder.AddService<MyService>();
+chanel.AddChannelService<MyService>();
+```
+
+## Channel Data
+
+It is possible to store custom data on a channel instance. The `IChannel` interface exposes a `Data` property, which is essentially a case-insensitive string dictionary. This can be useful for storing data that is used later by other adapters and handlers.
+
+```csharp
+public class SampleIdentityHandler : ChannelHandler<IdentityInformation>
+{
+    public override Task ExecuteAsync( IChannelContext context, IdentityInformation data )
+    {
+        if ( !IsAuthorized( data ) )
+        {
+            return context.Channel.CloseAsync();
+        }
+
+        context.Channel.Data["uuid"] = data.UUId;
+
+        return Task.CompletedTask;
+    }
+}
 ```
 
 ## Idle Channels
@@ -354,9 +375,9 @@ There's a ready-made service that monitors channel activity and detects if a cha
 To enable this service, just add it as a channel service using the builder extensions
 
 ```csharp
-IChannelBuilder builder = ...;
+IChannelBuilder channel = ...;
 
-builder.AddIdleChannelService();
+channel.AddIdleChannelService();
 ```
 
 The default detection mode is `IdleDetectionMode.Auto`. This mode attempts to actively verify if the underlying socket is still connected and if not, closes the channel.
@@ -364,9 +385,9 @@ The default detection mode is `IdleDetectionMode.Auto`. This mode attempts to ac
 There's also an idle timeout of 60 seconds by default; if no data is received or sent through the underlying socket before the timeout, the channel is closed. This timeout can be disabled when using the `IdleDetectionMode.Auto` method by setting its value to `TimeSpan.Zero`.
 
 ```csharp
-IChannelBuilder builder = ...;
+IChannelBuilder channel = ...;
 
-builder.AddIdleChannelService( options =>
+channel.AddIdleChannelService( options =>
 {
     // these are the default settings; added here just for clarity
     options.DetectionMode = IdleDetectionMode.Auto;
@@ -379,9 +400,9 @@ builder.AddIdleChannelService( options =>
 Other detection modes only use the timeout on received or sent data (or both).
 
 ```csharp
-IChannelBuilder builder = ...;
+IChannelBuilder channel = ...;
 
-builder.AddIdleChannelService( options =>
+channel.AddIdleChannelService( options =>
 {
     // timeout (30s) to both received and sent data
     options.DetectionMode = IdleDetectionMode.Both;
@@ -389,9 +410,10 @@ builder.AddIdleChannelService( options =>
 } );
 ```
 
-## Protocol Extensions
+## Related Projects
 
-The following are available as protocol extensions built for Channels.
+The following are projects that extend the functionality of this library.
 
-- [Parcel](https://github.com/goncalo-oliveira/channels-parcel)
-- [Teltonika](https://www.nuget.org/packages/Faactory.Channels.Teltonika)
+- [Parcel Protocol](https://github.com/goncalo-oliveira/channels-parcel)
+- [Prometheus Metrics](https://github.com/goncalo-oliveira/channels-prometheus)
+- [Teltonika Protocol](https://www.nuget.org/packages/Faactory.Channels.Teltonika)
