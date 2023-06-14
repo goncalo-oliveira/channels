@@ -34,7 +34,7 @@ public class ChannelBuilder : IChannelBuilder
         return ( this );
     }
 
-    public IChannelBuilder AddService<TService>() where TService : class, IChannelService
+    public IChannelBuilder AddChannelService<TService>() where TService : class, IChannelService
     {
         Services.AddScoped<IChannelService, TService>();
 

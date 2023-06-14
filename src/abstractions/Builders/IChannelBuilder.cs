@@ -36,5 +36,5 @@ public interface IChannelBuilder
     /// Adds a long-running service to the channel
     /// </summary>
     /// <typeparam name="TService">The type of the service implementation</typeparam>
-    IChannelBuilder AddService<TService>() where TService : class, IChannelService;
+    IChannelBuilder AddChannelService<TService>() where TService : class, IChannelService;
 }

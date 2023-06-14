@@ -7,15 +7,15 @@ public static class IdleChannelServiceChannelBuilderExtensions
     /// <summary>
     /// Adds idle channel service
     /// </summary>
-    public static IChannelBuilder AddIdleChannelService( this IChannelBuilder builder, Action<IdleChannelServiceOptions>? configure = null )
+    public static IChannelBuilder AddIdleChannelService( this IChannelBuilder channel, Action<IdleChannelServiceOptions>? configure = null )
     {
-        builder.AddService<IdleChannelService>();
+        channel.AddChannelService<IdleChannelService>();
 
         if ( configure != null )
         {
-            builder.Services.Configure( configure );
+            channel.Services.Configure( configure );
         }
 
-        return ( builder );
+        return ( channel );
     }
 }

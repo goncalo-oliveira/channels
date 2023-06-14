@@ -7,7 +7,7 @@ public static class ChannelsHostedServiceExtensions
     /// <summary>
     /// Adds the channel hosted service to the specified service IServiceCollection
     /// </summary>
-    public static IServiceCollection AddChannelsHostedService( this IServiceCollection services, Action<IServiceChannelBuilder> configure )
+    public static IServiceCollection AddChannels( this IServiceCollection services, Action<IServiceChannelBuilder> configure )
     {
         services.AddHostedService<ChannelsHostedService>()
             .AddTransient<IServiceChannelFactory, ServiceChannelFactory>();
