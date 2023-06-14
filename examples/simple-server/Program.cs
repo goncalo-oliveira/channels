@@ -3,7 +3,7 @@ using Microsoft.Extensions.Hosting;
 
 var builder = Host.CreateApplicationBuilder( args );
 
-builder.Services.AddChannelsHostedService( channel =>
+builder.Services.AddChannels( channel =>
 {
     // configure options
     channel.Configure( options =>
