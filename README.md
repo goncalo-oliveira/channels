@@ -1,8 +1,17 @@
 # Channels
 
-A TCP communication library based on middleware components.
+A TCP communication library based on middleware components. Read the [official docs](https://channels.docs.faactory.io) to learn more.
 
 ![dotnet workflow](https://github.com/goncalo-oliveira/channels/actions/workflows/dotnet.yml/badge.svg)
+![read the docs](https://img.shields.io/badge/read%20the%20docs-33466b)
+
+## Related Projects
+
+The following are projects that extend the functionality of this library.
+
+- [Parcel Protocol](https://github.com/goncalo-oliveira/channels-parcel)
+- [Prometheus Metrics](https://github.com/goncalo-oliveira/channels-prometheus)
+- [Teltonika Protocol](https://www.nuget.org/packages/Faactory.Channels.Teltonika)
 
 ## Design
 
@@ -409,11 +418,3 @@ channel.AddIdleChannelService( options =>
     options.Timeout = TimeSpan.FromSeconds( 30 );
 } );
 ```
-
-## Related Projects
-
-The following are projects that extend the functionality of this library.
-
-- [Parcel Protocol](https://github.com/goncalo-oliveira/channels-parcel)
-- [Prometheus Metrics](https://github.com/goncalo-oliveira/channels-prometheus)
-- [Teltonika Protocol](https://www.nuget.org/packages/Faactory.Channels.Teltonika)
