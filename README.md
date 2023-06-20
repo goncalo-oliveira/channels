@@ -3,6 +3,7 @@
 A TCP communication library based on middleware components. Read the [official docs](https://channels.docs.faactory.io) to learn more.
 
 ![dotnet workflow](https://github.com/goncalo-oliveira/channels/actions/workflows/dotnet.yml/badge.svg)
+[![read the docs](https://img.shields.io/badge/read%20the%20docs-33466b)](https://channels.docs.faactory.io)
 
 ## Related Projects
 
