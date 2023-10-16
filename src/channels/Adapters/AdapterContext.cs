@@ -4,7 +4,7 @@ namespace Faactory.Channels.Adapters;
 
 internal class AdapterContext : ChannelContext, IAdapterContext
 {
-    private readonly List<object> forwardedData = new List<object>();
+    private readonly List<object> forwardedData = new();
 
     public AdapterContext( IChannel channel )
         : base( channel )

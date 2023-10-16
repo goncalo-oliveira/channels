@@ -89,7 +89,11 @@ internal class ChannelPipeline : IChannelPipeline
                 }
                 catch ( Exception ex )
                 {
-                    logger.LogError( ex, $"Failed to execute '{adapter.GetType().Name}' adapter. Pipeline interrupted." );
+                    logger.LogError(
+                        ex,
+                        "Failed to execute '{TypeName}' adapter. Pipeline interrupted.",
+                        adapter.GetType().Name
+                    );
 
                     return ( false );
                 }
@@ -141,7 +145,11 @@ internal class ChannelPipeline : IChannelPipeline
                 }
                 catch ( Exception ex )
                 {
-                    logger.LogError( ex, $"Failed to execute '{handler.GetType().Name}' handler. Pipeline interrupted." );
+                    logger.LogError(
+                        ex,
+                        "Failed to execute '{TypeName}' handler. Pipeline interrupted.",
+                        handler.GetType().Name
+                    );
 
                     return ( false );
                 }

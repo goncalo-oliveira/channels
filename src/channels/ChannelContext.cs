@@ -14,9 +14,9 @@ internal class ChannelContext : IChannelContext
 
     public void NotifyCustomEvent( string name, object? data )
     {
-        if ( Channel is Channel )
+        if ( Channel is Channel channel)
         {
-            ((Channel)Channel).NotifyCustomEvent( name, data );
+            channel.NotifyCustomEvent( name, data );
         }
     }
 }

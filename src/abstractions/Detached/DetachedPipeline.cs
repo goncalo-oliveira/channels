@@ -1,6 +1,8 @@
 using Faactory.Channels.Adapters;
 using Faactory.Channels.Buffers;
 
+namespace Faactory.Channels;
+
 /// <summary>
 /// A detached pipeline to use outside a Channels context
 /// </summary>

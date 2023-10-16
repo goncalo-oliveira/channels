@@ -139,7 +139,11 @@ internal sealed class ChannelsHostedService : IHostedService
         }
         catch ( Exception ex )
         {
-            logger.LogError( ex, $"failed to accept incoming connection. {ex.Message}" );
+            logger.LogError(
+                ex,
+                "failed to accept incoming connection. {Message}",
+                ex.Message
+            );
 
             return;
         }

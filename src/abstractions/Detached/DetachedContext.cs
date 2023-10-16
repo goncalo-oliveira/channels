@@ -1,12 +1,13 @@
-using Faactory.Channels;
 using Faactory.Channels.Adapters;
+
+namespace Faactory.Channels;
 
 /// <summary>
 /// An adapter context to be used outside a Channels context
 /// </summary>
 public sealed class DetachedContext : IAdapterContext
 {
-    private readonly List<object> forwarded = new List<object>();
+    private readonly List<object> forwarded = new();
 
     public IChannel Channel { get; } = new DetachedChannel();
 

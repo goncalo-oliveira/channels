@@ -12,7 +12,7 @@ public abstract class ChannelService : IChannelService
     /// Gets the channel that owns the service.
     /// </summary>
     /// <returns>The channel instance that owns the service; null if the service hasn't started yet.</returns>
-    protected IChannel? Channel { get; private set; }
+    protected IChannel Channel { get; private set; } = NullChannel.Instance;
 
     /// <summary>
     /// Triggered when the channel is created and ready to start the service.
@@ -48,18 +48,21 @@ public abstract class ChannelService : IChannelService
         {
             var taskCompletion = new TaskCompletionSource<object>();
 
-            using ( CancellationTokenRegistration tokenRegistration = cancellationToken.Register( x => ((TaskCompletionSource<object>?)x)?.SetCanceled(), taskCompletion ) )
-            {
-                await Task.WhenAny( task, taskCompletion.Task )
-                    .ConfigureAwait( false );
-            }
+            using CancellationTokenRegistration tokenRegistration = cancellationToken.Register(
+                x => ( (TaskCompletionSource<object>?)x )?.SetCanceled(),
+                taskCompletion
+            );
+            await Task.WhenAny( task, taskCompletion.Task )
+                .ConfigureAwait( false );
         }
     }
 
     public virtual void Dispose()
     {
+        GC.SuppressFinalize( this );
+
         cancellationTokenSource?.Cancel();
-        Channel = null;
+        Channel = NullChannel.Instance;
     }
 
     /// <summary>

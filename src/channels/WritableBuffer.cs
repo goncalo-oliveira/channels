@@ -2,7 +2,7 @@ namespace Faactory.Channels;
 
 internal class WritableBuffer : IWritableBuffer
 {
-    private readonly List<object> outputData = new List<object>();
+    private readonly List<object> outputData = new();
 
     public void Write( object data )
     {

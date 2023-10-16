@@ -22,7 +22,7 @@ internal abstract class Channel : ConnectedSocket, IChannel
         logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger<IChannel>();
 
-        loggerScope = logger.BeginScope( $"Channel_{Id.Substring( 0, 7 )}" );
+        loggerScope = logger.BeginScope( $"Channel_{Id[..7]}" );
 
         Info = new ChannelInfo( this );
 
@@ -113,7 +113,7 @@ internal abstract class Channel : ConnectedSocket, IChannel
 
         if ( Buffer.Length > 0 )
         {
-            logger.LogDebug( $"Remaining buffer length: {Buffer.Length} byte(s)." );
+            logger.LogDebug( "Remaining buffer length: {Length} byte(s).", Buffer.Length );
         }
     }
 
@@ -158,7 +158,12 @@ internal abstract class Channel : ConnectedSocket, IChannel
             }
             catch ( Exception ex )
             {
-                logger.LogError( ex, $"Failed to start '{service.GetType().Name}' channel service. {ex.Message}" );
+                logger.LogError(
+                    ex,
+                    "Failed to start '{TypeName}' channel service. {Message}",
+                    service.GetType().Name,
+                    ex.Message
+                );
             }
         } );
 
@@ -175,7 +180,12 @@ internal abstract class Channel : ConnectedSocket, IChannel
             }
             catch ( Exception ex )
             {
-                logger.LogError( ex, $"Failed to stop '{service.GetType().Name}' channel service. {ex.Message}" );
+                logger.LogError(
+                    ex,
+                    "Failed to stop '{TypeName}' channel service. {Message}",
+                    service.GetType().Name,
+                    ex.Message
+                );
             }
         } );
 

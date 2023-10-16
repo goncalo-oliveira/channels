@@ -18,7 +18,7 @@ public abstract class ConnectedSocket
         Id = Guid.NewGuid().ToString( "N" );
         Socket = socket;
 
-        Logger = loggerFactory.CreateLogger( $"ConnectedSocket_{Id.Substring( 0, 7 )}" );
+        Logger = loggerFactory.CreateLogger( $"ConnectedSocket_{Id[..7]}" );
     }
 
     private ILogger Logger { get; init; }
@@ -134,7 +134,11 @@ public abstract class ConnectedSocket
         }
         catch ( Exception ex )
         {
-            connection.Logger.LogError( ex, $"Failed to receive data. {ex.Message}" );
+            connection.Logger.LogError(
+                ex, 
+                "Failed to receive data. {Message}",
+                ex.Message
+                );
 
             handler.TryDisconnect();
             handler.TryClose();
@@ -155,7 +159,7 @@ public abstract class ConnectedSocket
         }
 
         // trigger data received
-        connection.Logger.LogTrace( $"received {bytesReceived} bytes" );
+        connection.Logger.LogTrace( "received {bytesReceived} bytes", bytesReceived );
 
         connection.OnDataReceived( 
             connection.socketBuffer.Take( bytesReceived )
@@ -183,13 +187,13 @@ public abstract class ConnectedSocket
             var bytesSent = handler.EndSend( ar );
 
             // trigger data sent
-            connection.Logger.LogTrace( $"sent {bytesSent} bytes" );
+            connection.Logger.LogTrace( "sent {bytesSent} bytes", bytesSent );
 
             connection.OnDataSent( bytesSent );
         }
         catch ( Exception ex )
         {
-            connection.Logger.LogError( ex, $"Failed to send data. {ex.Message}" );
+            connection.Logger.LogError( ex, "Failed to send data. {Message}", ex.Message );
         }
     }
 }

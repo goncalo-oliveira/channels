@@ -72,9 +72,9 @@ internal sealed class IdleChannelService : ChannelService
 
     private bool IsChannelSocketConnected()
     {
-        if ( Channel is Sockets.ConnectedSocket)
+        if ( Channel is Sockets.ConnectedSocket socket)
         {
-            return ((Sockets.ConnectedSocket)Channel).IsConnected();
+            return socket.IsConnected();
         }
 
         // since we can't ask the socket, we assume it is
@@ -116,8 +116,7 @@ internal sealed class IdleChannelService : ChannelService
         var idleSent = utcNow - lastSent;
         var idleMin = TimeSpan.FromSeconds( Math.Min( idleReceived.TotalSeconds, idleSent.TotalSeconds ) );
 
-        var isIdle = false;
-
+        bool isIdle;
         switch ( detectionMode )
         {
             case IdleDetectionMode.Read:
@@ -141,8 +140,10 @@ internal sealed class IdleChannelService : ChannelService
 
         if ( isIdle )
         {
-            var seconds = (int)timeout.TotalSeconds;
-            logger.LogWarning( $"Channel has been idle for more than {seconds} seconds. Closing..." );
+            logger.LogWarning(
+                "Channel has been idle for more than {seconds} seconds. Closing...",
+                (int)timeout.TotalSeconds
+            );
 
             // await StopAsync( CancellationToken.None )
             //     .ConfigureAwait( false );

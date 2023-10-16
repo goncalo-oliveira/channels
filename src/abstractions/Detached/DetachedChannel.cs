@@ -1,6 +1,7 @@
-using Faactory.Channels;
 using Faactory.Channels.Buffers;
 using Faactory.Collections;
+
+namespace Faactory.Channels;
 
 /// <summary>
 /// A detached channel instance to be used outside a Channels context

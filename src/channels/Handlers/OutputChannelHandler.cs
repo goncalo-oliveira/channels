@@ -15,7 +15,7 @@ internal sealed class OutputChannelHandler : ChannelHandler<byte[]>
     {
         ((Sockets.ConnectedSocket)context.Channel).Send( data );
 
-        logger.LogDebug( $"Written {data.Length} bytes to the channel." );
+        logger.LogDebug( "Written {length} bytes to the channel.", data.Length );
 
         return Task.CompletedTask;
     }
