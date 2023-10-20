@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageId>Faactory.Channels</PackageId>
-    <Version>0.8.0-preview-1</Version>
+    <Version>0.8.0</Version>
     <Authors>Goncalo Oliveira</Authors>
     <Description>Channels</Description>
     <RepositoryUrl>https://github.com/goncalo-oliveira/channels</RepositoryUrl>
