@@ -11,10 +11,7 @@ public static class ByteBufferSearchExtensions
     /// <returns>The index of the beginning of the sequence; -1 if the sequence wasn't found.</returns>
     public static int FindBytes( this IByteBuffer source, byte[] sequence, int offset = -1 )
     {
-        if ( !source.IsReadable )
-        {
-            throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );
-        }
+        NonReadableBufferException.ThrowIfNotReadable( source );
 
         if ( offset < 0 )
         {
@@ -42,10 +39,7 @@ public static class ByteBufferSearchExtensions
     /// <returns>True if the sequence matches; false otherwise.</returns>
     public static bool MatchBytes( this IByteBuffer source, byte[] sequence, int offset = -1 )
     {
-        if ( !source.IsReadable )
-        {
-            throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );
-        }
+        NonReadableBufferException.ThrowIfNotReadable( source );
 
         if ( offset < 0 )
         {

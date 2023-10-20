@@ -11,10 +11,7 @@ public static class ByteBufferReplaceExtensions
     /// <returns>The same writable buffer.</returns>
     public static IByteBuffer ReplaceBytes( this IByteBuffer source, byte[] sequence, byte[] replacement )
     {
-        if ( !source.IsWritable )
-        {
-            throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
-        }
+        NonWritableBufferException.ThrowIfNotWritable( source );
 
         var readableSource = source.MakeReadOnly();
         var escapeIndex = -1;

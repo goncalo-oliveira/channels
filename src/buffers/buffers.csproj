@@ -7,17 +7,17 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageId>Faactory.Channels.Buffers</PackageId>
-    <Version>0.7.2-preview-1</Version>
+    <Version>0.8.0-preview-1</Version>
     <Authors>Goncalo Oliveira</Authors>
     <Description>Channels Buffers</Description>
     <RepositoryUrl>https://github.com/goncalo-oliveira/channels</RepositoryUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReadmeFile>README.buffers.md</PackageReadmeFile>
     <PackageIcon>faactory.png</PackageIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="README.md" Pack="true" PackagePath="/"/>
+    <None Include="../../README.buffers.md" Pack="true" PackagePath="/" />
     <None Include="../../faactory.png" Pack="true" PackagePath="/"/>
   </ItemGroup>
 

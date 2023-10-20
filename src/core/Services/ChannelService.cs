@@ -68,5 +68,5 @@ public abstract class ChannelService : IChannelService
     /// <summary>
     /// Called when the service starts. Should return a task that represents the lifetime of the long-running operation.
     /// </summary>
-    protected abstract Task ExecuteAsync( CancellationToken cancellationToken );
+    protected abstract Task ExecuteAsync( CancellationToken stoppingToken );
 }

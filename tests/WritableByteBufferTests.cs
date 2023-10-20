@@ -34,7 +34,7 @@ public class WritableByteBufferTests
             0x00, 0x01, 0x11, 0x02, 0x22, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
         } ) );
 
-        Assert.Throws<InvalidOperationException>( () =>
+        Assert.Throws<NonWritableBufferException>( () =>
         {
             var readable = buffer.MakeReadOnly();
 

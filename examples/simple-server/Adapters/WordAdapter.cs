@@ -2,6 +2,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Faactory.Channels.Adapters;
 
+namespace Faactory.Channels.Examples;
+
 /*
 This adapters reads from a buffer and counts the number of words.
 It then forwards a structure with that information for the handler to deal with.
@@ -14,17 +16,20 @@ The word matching algorithm uses a regular expression.
 Take note that this adapter is an `IInputChannelAdapter`.
 */
 
-public class WordAdapter : ChannelAdapter<byte[]>, IInputChannelAdapter
+public partial class WordAdapter : ChannelAdapter<byte[]>, IInputChannelAdapter
 {
     public override Task ExecuteAsync( IAdapterContext context, byte[] data )
     {
         var phrase = Encoding.UTF8.GetString( data );
 
-        var matches = Regex.Matches( phrase, "[\\S]+" );
+        var matches = MyRegex().Matches(phrase);
 
         // we forward the matches found
         context.Forward( matches );
 
         return Task.CompletedTask;
     }
+
+    [GeneratedRegex("[\\S]+")]
+    private static partial Regex MyRegex();
 }

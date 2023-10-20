@@ -3,11 +3,11 @@
   <PropertyGroup>
     <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
     <RootNamespace>Faactory.Channels</RootNamespace>
-    <AssemblyName>faactory.channels.abstractions</AssemblyName>
+    <AssemblyName>faactory.channels.core</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <PackageId>Faactory.Channels.Abstractions</PackageId>
-    <Version>0.7.2-preview-1</Version>
+    <PackageId>Faactory.Channels.Core</PackageId>
+    <Version>0.8.0-preview-1</Version>
     <Authors>Goncalo Oliveira</Authors>
     <Description>Channels</Description>
     <RepositoryUrl>https://github.com/goncalo-oliveira/channels</RepositoryUrl>

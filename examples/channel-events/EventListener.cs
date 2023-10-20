@@ -1,6 +1,8 @@
 using Faactory.Channels;
 using Microsoft.Extensions.Logging;
 
+namespace Faactory.Channels.Examples;
+
 public class EventListener : IChannelEvents
 {
     private readonly ILogger logger;
@@ -22,11 +24,25 @@ public class EventListener : IChannelEvents
 
     public void DataReceived( IChannelInfo channelInfo, byte[] data )
     {
-        logger.LogInformation( $"Channel received {data.Length} bytes." );
+        logger.LogInformation(
+            "Channel received {Length} bytes.",
+            data.Length
+        );
     }
 
     public void DataSent( IChannelInfo channelInfo, int sent )
     {
-        logger.LogInformation( $"Channel sent {sent} bytes." );
+        logger.LogInformation(
+            "Channel sent {sent} bytes.",
+            sent
+        );
+    }
+
+    public void CustomEvent( IChannelInfo channelInfo, string name, object? data )
+    {
+        logger.LogInformation(
+            "Channel received custom event {name}.",
+            name
+        );
     }
 }

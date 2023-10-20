@@ -3,7 +3,7 @@ if [ $# -eq 0 ]
   then
     echo "use: nuget-push <api-key> [component]"
     echo
-    echo "example: nuget-push my-secret-api-key abstractions"
+    echo "example: nuget-push my-secret-api-key core"
     echo
     exit 1
 fi
@@ -22,11 +22,11 @@ if [ $# -eq 2 ]
   else
     # pack and push all component packages
 
-    # pack abstractions
-    dotnet pack -c release src/abstractions
+    # pack core
+    dotnet pack -c release src/core
 
-    # retrieve latest abstractions package
-    package=`ls -Art src/abstractions/bin/release/*.nupkg | tail -n 1`
+    # retrieve latest core package
+    package=`ls -Art src/core/bin/release/*.nupkg | tail -n 1`
 
     dotnet nuget push -s nuget.org -k $1 $package
 

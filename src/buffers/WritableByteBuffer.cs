@@ -32,10 +32,10 @@ public sealed class WritableByteBuffer : IByteBuffer
     public bool IsWritable => true;
     public int Length => buffer.Count;
     public int ReadableBytes
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );
+        => throw new NonReadableBufferException();
 
     public int Offset
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );
+        => throw new NonReadableBufferException();
 
     public IByteBuffer DiscardAll()
     {
@@ -45,88 +45,88 @@ public sealed class WritableByteBuffer : IByteBuffer
     }
 
     public IByteBuffer DiscardReadBytes()
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );
+        => throw new NonReadableBufferException();
 
     public bool GetBoolean( int offset )
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );
+        => throw new NonReadableBufferException();
 
     public byte GetByte( int offset )
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );
+        => throw new NonReadableBufferException();
 
     public byte[] GetBytes( int offset, int length )
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public IByteBuffer GetByteBuffer( int offset, int length )
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public double GetDouble( int offset )
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public float GetSingle( int offset )
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public short GetInt16( int offset )
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public int GetInt32( int offset )
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public long GetInt64( int offset )
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public ushort GetUInt16( int offset )
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public uint GetUInt32( int offset )
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public ulong GetUInt64( int offset )
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
-    private T Read<T>( Func<int,T> read, int size )
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+    // private T Read<T>( Func<int,T> read, int size )
+    //     => throw new NonReadableBufferException();
 
     public bool ReadBoolean()
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public byte ReadByte()
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public byte[] ReadBytes( int length )
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public IByteBuffer ReadByteBuffer( int length )
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public double ReadDouble()
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public float ReadSingle()
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public short ReadInt16()
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public int ReadInt32()
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public long ReadInt64()
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public ushort ReadUInt16()
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public uint ReadUInt32()
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );        
+        => throw new NonReadableBufferException();
 
     public ulong ReadUInt64()
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );
+        => throw new NonReadableBufferException();
 
     public IByteBuffer ResetOffset()
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );
+        => throw new NonReadableBufferException();
 
     public IByteBuffer SkipBytes( int length )
-        => throw new InvalidOperationException( "Invalid operation over a non-readable IByteBuffer." );
+        => throw new NonReadableBufferException();
 
     public byte[] ToArray() => buffer.ToArray();
 

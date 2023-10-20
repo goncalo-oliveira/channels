@@ -1,6 +1,8 @@
 using System.Text;
 using Faactory.Channels.Adapters;
 
+namespace Faactory.Channels.Examples;
+
 /*
 This adapters receives a string and encodes it as an UTF8 buffer.
 

@@ -253,38 +253,38 @@ public sealed class WrappedByteBuffer : IByteBuffer
     public byte[] ToArray() => buffer;
 
     public IByteBuffer WriteBoolean( bool value )
-        => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
+        => throw new NonWritableBufferException();
 
     public IByteBuffer WriteByte( byte value )
-        => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
+        => throw new NonWritableBufferException();
 
     public IByteBuffer WriteBytes( byte[] value, int startIndex, int length )
-        => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
+        => throw new NonWritableBufferException();
 
     public IByteBuffer WriteByteBuffer( IByteBuffer value )
-        => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
+        => throw new NonWritableBufferException();
 
     public IByteBuffer WriteDouble( double value )
-        => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
+        => throw new NonWritableBufferException();
 
     public IByteBuffer WriteSingle( float value )
-        => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
+        => throw new NonWritableBufferException();
 
     public IByteBuffer WriteInt16( Int16 value )
-        => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
+        => throw new NonWritableBufferException();
 
     public IByteBuffer WriteInt32( Int32 value )
-        => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
+        => throw new NonWritableBufferException();
 
     public IByteBuffer WriteInt64( Int64 value )
-        => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
+        => throw new NonWritableBufferException();
 
     public IByteBuffer WriteUInt16( UInt16 value )
-        => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
+        => throw new NonWritableBufferException();
 
     public IByteBuffer WriteUInt32( UInt32 value )
-        => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
+        => throw new NonWritableBufferException();
 
     public IByteBuffer WriteUInt64( UInt64 value )
-        => throw new InvalidOperationException( "Invalid operation over a non-writable IByteBuffer." );
+        => throw new NonWritableBufferException();
 }

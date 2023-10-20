@@ -2,6 +2,8 @@ using System.Text.RegularExpressions;
 using Faactory.Channels;
 using Faactory.Channels.Handlers;
 
+namespace Faactory.Channels.Examples;
+
 /*
 The handler receives the words in the phrase and replies back.
 This is where we'd do operational tasks, such as logging the words for example

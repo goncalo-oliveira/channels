@@ -76,7 +76,7 @@ public class WrappedByteBufferTests
             0x00, 0x01
         }, 1 ) );
 
-        Assert.Throws<InvalidOperationException>( () =>
+        Assert.Throws<NonReadableBufferException>( () =>
         {
             var writable = buffer.MakeWritable();
 
@@ -105,7 +105,7 @@ public class WrappedByteBufferTests
             0x02, 0x03
         }, 3 ) );
 
-        Assert.Throws<InvalidOperationException>( () =>
+        Assert.Throws<NonReadableBufferException>( () =>
         {
             var writable = buffer.MakeWritable();
 

@@ -24,7 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\src\buffers\buffers.csproj" />
-    <ProjectReference Include="..\src\abstractions\abstractions.csproj" />
+    <ProjectReference Include="..\src\core\core.csproj" />
     <ProjectReference Include="..\src\channels\channels.csproj" />
   </ItemGroup>
 

@@ -6,6 +6,9 @@ namespace Faactory.Channels.Buffers;
 [Serialization.ByteBufferJsonConverter]
 public interface IByteBuffer
 {
+    /// <summary>
+    /// Gets the endianness of the buffer
+    /// </summary>
     public Endianness Endianness { get; }
 
     /// <summary>
