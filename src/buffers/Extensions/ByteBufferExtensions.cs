@@ -12,7 +12,16 @@ public static class ByteBufferExtensions
     {
         if ( source.IsReadable && !source.IsWritable )
         {
-            // already read-only
+            /*
+            the source buffer is already read-only.
+            we might still need to change the endianness, though.
+            */
+            if ( ( endianness != null ) && endianness != source.Endianness )
+            {
+                return new WrappedByteBuffer( source.ToArray(), endianness.Value );
+            }
+
+            // no need to create a new buffer wrapper
             return ( source );
         }
 
@@ -29,6 +38,15 @@ public static class ByteBufferExtensions
     {
         if ( source.IsWritable )
         {
+            /*
+            the source buffer is already writable.
+            we might still need to change the endianness, though.
+            */
+            if ( ( endianness != null ) && endianness != source.Endianness )
+            {
+                return new WritableByteBuffer( source.ToArray(), endianness.Value );
+            }
+
             return ( source );
         }
 
