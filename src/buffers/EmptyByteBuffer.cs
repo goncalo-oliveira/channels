@@ -3,7 +3,7 @@ namespace Faactory.Channels.Buffers;
 /// <summary>
 /// A static class that provides an empty <see cref="IByteBuffer"/> instance.
 /// </summary>
-internal static class EmptyByteBuffer
+public static class EmptyByteBuffer
 {
     private static readonly Lazy<IByteBuffer> lazyInstance = new(
         () => new WrappedByteBuffer( Array.Empty<byte>() )
