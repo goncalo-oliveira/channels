@@ -98,4 +98,34 @@ public class ByteBufferTests
         Assert.True( writable.IsWritable );
         Assert.False( writable.IsReadable );
     }
+
+    [Fact]
+    public void TestFindBytes()
+    {
+        IByteBuffer source = new WrappedByteBuffer(
+            new byte[] { 0x00, 0x01, 0x02, 0x03 }
+        );
+
+        Assert.Equal( 0, source.IndexOf( new byte[] { 0x00, 0x01 } ) );
+        Assert.Equal( 1, source.IndexOf( new byte[] { 0x01, 0x02 } ) );
+        Assert.Equal( 2, source.IndexOf( new byte[] { 0x02, 0x03 } ) );
+        Assert.Equal( 3, source.IndexOf( new byte[] { 0x03 } ) );
+
+        Assert.Equal( 0, source.IndexOf( 0x00 ) );
+        Assert.Equal( 1, source.IndexOf( 0x01 ) );
+        Assert.Equal( 2, source.IndexOf( 0x02 ) );
+        Assert.Equal( 3, source.IndexOf( 0x03 ) );
+
+        source.SkipBytes( 1 );
+
+        Assert.Equal( 1, source.IndexOf( new byte[] { 0x01, 0x02 } ) );
+        Assert.Equal( 2, source.IndexOf( new byte[] { 0x02, 0x03 } ) );
+        Assert.Equal( 3, source.IndexOf( new byte[] { 0x03 } ) );
+        Assert.Equal( 3, source.IndexOf( new byte[] { 0x03 }, 3 ) );
+
+        Assert.Equal( -1, source.IndexOf( 0x00 ) );
+        Assert.Equal( 1, source.IndexOf( 0x01 ) );
+        Assert.Equal( 2, source.IndexOf( 0x02 ) );
+        Assert.Equal( 3, source.IndexOf( 0x03 ) );
+    }
 }
