@@ -95,12 +95,12 @@ public class WrappedByteBufferTests
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
         } );
 
-        Assert.Equal( 2, buffer.FindBytes( new byte[]
+        Assert.Equal( 2, buffer.IndexOf( new byte[]
         {
             0x02, 0x03
         } ) );
 
-        Assert.Equal( -1, buffer.FindBytes( new byte[]
+        Assert.Equal( -1, buffer.IndexOf( new byte[]
         {
             0x02, 0x03
         }, 3 ) );
@@ -109,7 +109,7 @@ public class WrappedByteBufferTests
         {
             var writable = buffer.MakeWritable();
 
-            writable.FindBytes( new byte[]
+            writable.IndexOf( new byte[]
             { 
                 0x02, 0x03
             } );

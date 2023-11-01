@@ -17,7 +17,7 @@ public static class ByteBufferReplaceExtensions
         var escapeIndex = -1;
         do
         {
-            escapeIndex = readableSource.FindBytes( sequence, escapeIndex );
+            escapeIndex = readableSource.IndexOf( sequence, escapeIndex );
 
             if ( escapeIndex > -1 )
             {
