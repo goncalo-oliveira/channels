@@ -128,4 +128,60 @@ public class ByteBufferTests
         Assert.Equal( 2, source.IndexOf( 0x02 ) );
         Assert.Equal( 3, source.IndexOf( 0x03 ) );
     }
+
+    [Fact]
+    public void TestIndexOf()
+    {
+        var buffer = new WrappedByteBuffer( new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05 } );
+
+        Assert.Equal( -1, buffer.IndexOf( 0xff ) );
+        Assert.Equal( -1, buffer.IndexOf( 0xff, 0 ) );
+        Assert.Equal( -1, buffer.IndexOf( 0xff, 5 ) );
+
+        Assert.Equal( -1, buffer.IndexOf( new byte[] { 0xff } ) );
+        Assert.Equal( -1, buffer.IndexOf( new byte[] { 0xff }, 5 ) );
+        Assert.Equal( -1, buffer.IndexOf( new byte[] { 0xff }, 0 ) );
+
+        Assert.Equal( -1, buffer.IndexOf( new byte[] { 0xff, 0xff } ) );
+        Assert.Equal( -1, buffer.IndexOf( new byte[] { 0xff, 0xff }, 4 ) );
+        Assert.Equal( -1, buffer.IndexOf( new byte[] { 0xff, 0xff }, 5 ) );
+        Assert.Equal( -1, buffer.IndexOf( new byte[] { 0xff, 0xff }, 0 ) );
+
+        Assert.Equal( 1, buffer.IndexOf( new byte[] { 0x01, 0x02 } ) );
+        Assert.Equal( 1, buffer.IndexOf( new byte[] { 0x01, 0x02 }, 0 ) );
+        Assert.Equal( 1, buffer.IndexOf( new byte[] { 0x01, 0x02 }, 1 ) );
+
+        Assert.Equal( 0, buffer.IndexOf( new byte[] { 0x00 } ) );
+        Assert.Equal( 0, buffer.IndexOf( new byte[] { 0x00 }, 0 ) );
+        
+        Assert.Equal( 1, buffer.IndexOf( new byte[] { 0x01 } ) );
+        Assert.Equal( 1, buffer.IndexOf( new byte[] { 0x01 }, 0 ) );
+        Assert.Equal( 1, buffer.IndexOf( new byte[] { 0x01 }, 1 ) );
+
+        Assert.Equal( 2, buffer.IndexOf( new byte[] { 0x02 } ) );
+        Assert.Equal( 2, buffer.IndexOf( new byte[] { 0x02 }, 0 ) );
+        Assert.Equal( 2, buffer.IndexOf( new byte[] { 0x02 }, 1 ) );
+        Assert.Equal( 2, buffer.IndexOf( new byte[] { 0x02 }, 2 ) );
+
+        Assert.Equal( 3, buffer.IndexOf( new byte[] { 0x03 } ) );
+        Assert.Equal( 3, buffer.IndexOf( new byte[] { 0x03 }, 0 ) );
+        Assert.Equal( 3, buffer.IndexOf( new byte[] { 0x03 }, 1 ) );
+        Assert.Equal( 3, buffer.IndexOf( new byte[] { 0x03 }, 2 ) );
+        Assert.Equal( 3, buffer.IndexOf( new byte[] { 0x03 }, 3 ) );
+
+        Assert.Equal( 4, buffer.IndexOf( new byte[] { 0x04 } ) );
+        Assert.Equal( 4, buffer.IndexOf( new byte[] { 0x04 }, 0 ) );
+        Assert.Equal( 4, buffer.IndexOf( new byte[] { 0x04 }, 1 ) );
+        Assert.Equal( 4, buffer.IndexOf( new byte[] { 0x04 }, 2 ) );
+        Assert.Equal( 4, buffer.IndexOf( new byte[] { 0x04 }, 3 ) );
+        Assert.Equal( 4, buffer.IndexOf( new byte[] { 0x04 }, 4 ) );
+
+        Assert.Equal( 5, buffer.IndexOf( new byte[] { 0x05 } ) );
+        Assert.Equal( 5, buffer.IndexOf( new byte[] { 0x05 }, 0 ) );
+        Assert.Equal( 5, buffer.IndexOf( new byte[] { 0x05 }, 1 ) );
+        Assert.Equal( 5, buffer.IndexOf( new byte[] { 0x05 }, 2 ) );
+        Assert.Equal( 5, buffer.IndexOf( new byte[] { 0x05 }, 3 ) );
+        Assert.Equal( 5, buffer.IndexOf( new byte[] { 0x05 }, 4 ) );
+        Assert.Equal( 5, buffer.IndexOf( new byte[] { 0x05 }, 5 ) );
+    }
 }

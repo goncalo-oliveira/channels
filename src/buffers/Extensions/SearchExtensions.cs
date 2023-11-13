@@ -18,7 +18,12 @@ public static class ByteBufferSearchExtensions
             offset = source.Offset;
         }
 
-        var maxOffset = source.ReadableBytes + offset;
+        var maxOffset = source.ReadableBytes;
+
+        if ( offset >= maxOffset )
+        {
+            return ( - 1 );
+        }
 
         // look for a byte match
         for ( int idx = offset; idx < maxOffset; idx++ )
@@ -48,7 +53,12 @@ public static class ByteBufferSearchExtensions
             offset = source.Offset;
         }
 
-        var maxOffset = source.ReadableBytes + offset - ( sequence.Length - 1 );
+        var maxOffset = source.ReadableBytes - ( sequence.Length - 1 );
+
+        if ( offset >= maxOffset )
+        {
+            return ( - 1 );
+        }
 
         // look for a sequence match
         for ( int idx = offset; idx < maxOffset; idx++ )
