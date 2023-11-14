@@ -18,15 +18,13 @@ public static class ByteBufferSearchExtensions
             offset = source.Offset;
         }
 
-        var maxOffset = source.ReadableBytes;
-
-        if ( offset >= maxOffset )
+        if ( offset >= source.Length )
         {
             return ( - 1 );
         }
 
         // look for a byte match
-        for ( int idx = offset; idx < maxOffset; idx++ )
+        for ( int idx = offset; idx < source.Length; idx++ )
         {
             if ( source.GetByte( idx ) == b )
             {
@@ -53,7 +51,7 @@ public static class ByteBufferSearchExtensions
             offset = source.Offset;
         }
 
-        var maxOffset = source.ReadableBytes - ( sequence.Length - 1 );
+        var maxOffset = source.Length - sequence.Length + 1;
 
         if ( offset >= maxOffset )
         {
