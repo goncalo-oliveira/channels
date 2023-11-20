@@ -184,4 +184,14 @@ public class ByteBufferTests
         Assert.Equal( 5, buffer.IndexOf( new byte[] { 0x05 }, 4 ) );
         Assert.Equal( 5, buffer.IndexOf( new byte[] { 0x05 }, 5 ) );
     }
+
+    [Fact]
+    public void TestAny()
+    {
+        var buffer = new WrappedByteBuffer( new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05 } );
+
+        Assert.True( buffer.Any( b => b == 0x03 ) );
+        Assert.True( buffer.Any( b => b > 0x00 ) );
+        Assert.False( buffer.Any( b => b == 0xff ) );
+    }
 }

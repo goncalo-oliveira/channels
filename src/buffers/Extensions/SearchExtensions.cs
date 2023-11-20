@@ -3,6 +3,38 @@ namespace Faactory.Channels.Buffers;
 public static class ByteBufferSearchExtensions
 {
     /// <summary>
+    /// Determines whether any byte in the buffer satisfies the condition.
+    /// </summary>
+    /// <param name="source">The source buffer</param>
+    /// <param name="predicate">A function to test each byte for a condition.</param>
+    /// <param name="offset">The offset in the buffer to start looking; if -1 it uses the buffer's current offset</param>
+    /// <returns>True if any byte satisfies the condition; false otherwise.</returns>
+    public static bool Any( this IByteBuffer source, Func<byte,bool> predicate, int offset = -1 )
+    {
+        NonReadableBufferException.ThrowIfNotReadable( source );
+
+        if ( offset < 0 )
+        {
+            offset = source.Offset;
+        }
+
+        if ( offset >= source.Length )
+        {
+            return ( false );
+        }
+
+        for ( int idx = offset; idx < source.Length; idx++ )
+        {
+            if ( predicate( source.GetByte( idx ) ) )
+            {
+                return ( true );
+            }
+        }
+
+        return ( false );
+    }
+
+    /// <summary>
     /// Finds a byte
     /// </summary>
     /// <param name="source">The source buffer</param>
@@ -20,7 +52,7 @@ public static class ByteBufferSearchExtensions
 
         if ( offset >= source.Length )
         {
-            return ( - 1 );
+            return ( -1 );
         }
 
         // look for a byte match
@@ -32,7 +64,7 @@ public static class ByteBufferSearchExtensions
             }
         }
 
-        return ( - 1 );
+        return ( -1 );
     }
 
     /// <summary>
