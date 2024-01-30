@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net7.0</TargetFrameworks>
+    <TargetFrameworks>net6.0;net7.0;net8.0</TargetFrameworks>
     <RootNamespace>Faactory.Channels.Buffers</RootNamespace>
     <AssemblyName>faactory.channels.buffers</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <PackageId>Faactory.Channels.Buffers</PackageId>
-    <Version>0.8.5</Version>
+    <Version>0.9.0</Version>
     <Authors>Goncalo Oliveira</Authors>
     <Description>Channels Buffers</Description>
     <RepositoryUrl>https://github.com/goncalo-oliveira/channels</RepositoryUrl>
