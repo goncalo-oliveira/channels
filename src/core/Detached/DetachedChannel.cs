@@ -8,6 +8,8 @@ namespace Faactory.Channels;
 /// </summary>
 public sealed class DetachedChannel : IChannel
 {
+    private readonly List<IChannelService> services = new();
+
     public string Id { get; } = Guid.NewGuid().ToString( "N" );
 
     public IMetadata Data { get; } = new Metadata();
@@ -22,7 +24,7 @@ public sealed class DetachedChannel : IChannel
 
     public bool IsClosed => false;
 
-    public IEnumerable<IChannelService> Services { get; } = Enumerable.Empty<IChannelService>();
+    public IEnumerable<IChannelService> Services => services.ToArray();
 
     public Task CloseAsync()
     {
@@ -36,4 +38,9 @@ public sealed class DetachedChannel : IChannel
 
     public void Dispose()
     { }
+
+    internal void AddChannelService( IChannelService service )
+    {
+        services.Add( service );
+    }
 }

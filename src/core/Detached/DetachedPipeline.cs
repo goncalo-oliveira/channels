@@ -18,6 +18,13 @@ public sealed class DetachedPipeline
         return ( this );
     }
 
+    public DetachedPipeline AddChannelService( IChannelService service )
+    {
+        ( (DetachedChannel)Context.Channel ).AddChannelService( service );
+
+        return ( this );
+    }
+
     public async Task RunAsync( IByteBuffer buffer )
     {
         var data = new object[]
