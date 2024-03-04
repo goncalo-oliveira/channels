@@ -17,13 +17,13 @@ public sealed class ChannelPipelineFactory
         provider = serviceProvider;
     }
 
-    public IEnumerable<IChannelAdapter> GetInputAdapters()
+    public IChannelAdapter[] GetInputAdapters()
         => provider.GetAdapters<IInputChannelAdapter>();
 
-    public IEnumerable<IChannelHandler> GetInputHandlers()
+    public IChannelHandler[] GetInputHandlers()
         => provider.GetHandlers();
 
-    public IEnumerable<IChannelAdapter> GetOutputAdapters()
+    public IChannelAdapter[] GetOutputAdapters()
         => provider.GetAdapters<IOutputChannelAdapter>();
 
     public IChannelPipeline CreateInputPipeline()
@@ -46,7 +46,7 @@ public sealed class ChannelPipelineFactory
         return new ChannelPipeline( loggerFactory, adapters, handlers );
     }
 
-    public IChannelPipeline CreatePipeline( IEnumerable<IChannelAdapter> adapters, IEnumerable<IChannelHandler>? handlers = null )
+    public IChannelPipeline CreatePipeline( IChannelAdapter[] adapters, IChannelHandler[]? handlers = null )
     {
         var loggerFactory = provider.GetService<ILoggerFactory>()
             ?? Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance;
@@ -54,6 +54,6 @@ public sealed class ChannelPipelineFactory
         return new ChannelPipeline( loggerFactory, adapters, handlers );
     }
 
-    public static IChannelPipeline CreatePipeline( ILoggerFactory loggerFactory, IEnumerable<IChannelAdapter> adapters, IEnumerable<IChannelHandler>? handlers = null )
+    public static IChannelPipeline CreatePipeline( ILoggerFactory loggerFactory, IChannelAdapter[] adapters, IChannelHandler[]? handlers = null )
         => new ChannelPipeline( loggerFactory, adapters, handlers );
 }

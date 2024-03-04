@@ -15,11 +15,11 @@ public sealed class DetachedContext : IAdapterContext, IWritableBuffer
 
     public IWritableBuffer Output => this;
 
-    public IEnumerable<object> Forwarded => forwarded.ToArray();
+    public object[] Forwarded => forwarded.ToArray();
 
-    public IEnumerable<object> Written => written.ToArray();
+    public object[] Written => written.ToArray();
 
-    public IEnumerable<KeyValuePair<string, object?>> CustomEvents => customEvents.ToArray();
+    public KeyValuePair<string, object?>[] CustomEvents => customEvents.ToArray();
 
     public void Forward( object data )
         => forwarded.Add( data );

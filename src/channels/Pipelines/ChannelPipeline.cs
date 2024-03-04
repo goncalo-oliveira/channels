@@ -7,16 +7,16 @@ namespace Faactory.Channels;
 internal class ChannelPipeline : IChannelPipeline
 {
     private readonly ILogger logger;
-    private readonly IEnumerable<IChannelAdapter> adapters;
-    private readonly IEnumerable<IChannelHandler>? handlers;
+    private readonly IChannelAdapter[] adapters;
+    private readonly IChannelHandler[] handlers;
 
     public ChannelPipeline( ILoggerFactory loggerFactory
-        , IEnumerable<IChannelAdapter> channelAdapters
-        , IEnumerable<IChannelHandler>? channelHandlers )
+        , IChannelAdapter[] channelAdapters
+        , IChannelHandler[]? channelHandlers = null )
     {
         logger = loggerFactory.CreateLogger<ChannelPipeline>();
         adapters = channelAdapters;
-        handlers = channelHandlers;
+        handlers = channelHandlers ?? Array.Empty<IChannelHandler>();
     }
 
     public void Dispose()
@@ -67,15 +67,20 @@ internal class ChannelPipeline : IChannelPipeline
 
     private async Task<bool> ExecuteAdaptersAsync( AdapterContext context )
     {
-        foreach ( var adapter in adapters )
+        for ( int adapterIndex = 0; adapterIndex < adapters.Length; adapterIndex++ )
         {
+            var adapter = adapters[adapterIndex];
             var adapterData = context.Flush();
 
             if ( !adapterData.Any() )
             {
                 // no data available on the pipeline
                 // interrupt the workflow
-                logger.LogWarning( $"No data forwarded from the previous adapter. Pipeline interrupted." );
+                var previousAdapter = adapterIndex > 0 ? adapters[adapterIndex - 1] : null;
+
+                logger.LogDebug( "No data forwarded from {Type} adapter. Pipeline interrupted.",
+                    previousAdapter?.GetType().Name ?? "previous"
+                );
 
                 return ( false );
             }
@@ -116,7 +121,7 @@ internal class ChannelPipeline : IChannelPipeline
         if ( !handlerData.Any() )
         {
             // no data forwarded from the adapters
-            logger.LogWarning( $"No data forwarded from the adapters." );
+            logger.LogDebug( $"No data forwarded from the adapters." );
             return ( true );
         }
 
@@ -136,7 +141,7 @@ internal class ChannelPipeline : IChannelPipeline
                     await handler.ExecuteAsync( adapterContext, dataItem )
                         .ConfigureAwait( false );
                 }
-                catch ( System.ObjectDisposedException )
+                catch ( ObjectDisposedException )
                 {
                     // socket was disposed
                     logger.LogError( "Channel is closed." );

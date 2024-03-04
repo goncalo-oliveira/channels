@@ -6,12 +6,12 @@ namespace Faactory.Channels;
 
 internal static class ServiceProviderPipelineExtensions
 {
-    public static IEnumerable<IChannelAdapter> GetAdapters<TPipeline>( this IServiceProvider serviceProvider )
+    public static IChannelAdapter[] GetAdapters<TPipeline>( this IServiceProvider serviceProvider )
         => serviceProvider.GetServices<TPipeline>()
             .Cast<IChannelAdapter>()
             .ToArray();
 
-    public static IEnumerable<IChannelHandler> GetHandlers( this IServiceProvider serviceProvider )
+    public static IChannelHandler[] GetHandlers( this IServiceProvider serviceProvider )
         => serviceProvider.GetServices<IChannelHandler>()
             .ToArray();
 }
