@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using Faactory.Channels;
 using Faactory.Channels.Handlers;
 
 namespace Faactory.Channels.Examples;

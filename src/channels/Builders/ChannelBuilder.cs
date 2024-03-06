@@ -4,14 +4,9 @@ using Faactory.Channels.Handlers;
 
 namespace Faactory.Channels;
 
-public class ChannelBuilder : IChannelBuilder
+public class ChannelBuilder( IServiceCollection services ) : IChannelBuilder
 {
-    public ChannelBuilder( IServiceCollection services )
-    {
-        Services = services;
-    }
-
-    public IServiceCollection Services { get; }
+    public IServiceCollection Services { get; } = services;
 
     public IChannelBuilder AddInputAdapter<TAdapter>() where TAdapter : class, IChannelAdapter, IInputChannelAdapter
     {

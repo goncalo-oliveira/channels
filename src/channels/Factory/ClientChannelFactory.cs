@@ -4,17 +4,10 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
-internal class ClientChannelFactory : IClientChannelFactory
+internal class ClientChannelFactory( IServiceProvider serviceProvider, IOptionsMonitor<ClientChannelOptions> optionsMonitor ) : IClientChannelFactory
 {
-    private readonly IServiceProvider serviceProvider;
-    private readonly IOptionsMonitor<ClientChannelOptions> optionsMonitor;
-
-    public ClientChannelFactory( IServiceProvider serviceProvider
-        , IOptionsMonitor<ClientChannelOptions> optionsMonitor )
-    {
-        this.serviceProvider = serviceProvider;
-        this.optionsMonitor = optionsMonitor;
-    }
+    private readonly IServiceProvider serviceProvider = serviceProvider;
+    private readonly IOptionsMonitor<ClientChannelOptions> optionsMonitor = optionsMonitor;
 
     public Task<IChannel> CreateAsync( CancellationToken cancellationToken )
         => CreateAsync( "_default", cancellationToken );
@@ -34,12 +27,13 @@ internal class ClientChannelFactory : IClientChannelFactory
         var channel = new ClientChannel(
               serviceScope
             , client
-            , options.BufferEndianness );
+            , options.BufferEndianness
+        );
 
         await channel.InitializeAsync();
 
         channel.BeginReceive();
 
-        return ( channel );
+        return channel;
     }
 }

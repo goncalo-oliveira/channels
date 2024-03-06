@@ -1,4 +1,5 @@
-﻿using Faactory.Channels.Examples;
+﻿using Faactory.Channels;
+using Faactory.Channels.Examples;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -29,13 +30,13 @@ builder.Services.AddChannels( channel =>
     Nothing required
     */
 
-    // set up channel event listeners
+    // set up channel monitor
     /*
-    We can add as many listeners as we want.
+    We can add as many monitors as we want.
     We're adding this one as singleton but that's not a requirement;
     transient and scoped are valid as well, depending on our needs.
     */
-    channel.Services.AddSingleton<Faactory.Channels.IChannelEvents, EventListener>();
+    channel.Services.AddSingleton<IChannelEvents, ChannelMonitor>();
 } );
 
 var app = builder.Build();

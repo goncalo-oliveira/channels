@@ -1,17 +1,14 @@
 using System;
-using System.Collections;
 using System.Linq;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Faactory.Channels;
 using Faactory.Channels.Adapters;
-using Faactory.Channels.Buffers;
-using Faactory.Channels.Handlers;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
+
+namespace Faactory.Channels.Tests;
 
 public class ScopedServiceTests
 {

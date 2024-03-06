@@ -7,7 +7,7 @@ namespace Faactory.Channels.Sockets;
 /// <summary>
 /// A connected channel TCP socket
 /// </summary>
-public abstract class ConnectedSocket
+internal abstract class ConnectedSocket
 {
     public const int DefaultBufferLength = 13312;
 

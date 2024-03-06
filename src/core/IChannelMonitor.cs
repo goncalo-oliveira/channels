@@ -3,7 +3,7 @@ namespace Faactory.Channels;
 /// <summary>
 /// Channel event listener
 /// </summary>
-public interface IChannelEvents
+public interface IChannelMonitor
 {
     /// <summary>
     /// Triggered when the channel is created
@@ -25,5 +25,8 @@ public interface IChannelEvents
     /// </summary>
     void DataSent( IChannelInfo channelInfo, int sent );
 
+    /// <summary>
+    /// Triggered when a custom event is raised
+    /// </summary>
     void CustomEvent( IChannelInfo channelInfo, string name, object? data );
 }

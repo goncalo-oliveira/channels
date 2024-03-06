@@ -1,18 +1,13 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
-using Faactory.Channels;
 using Faactory.Channels.Adapters;
-using Faactory.Channels.Buffers;
-using Faactory.Channels.Handlers;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
+
+namespace Faactory.Channels.Tests;
 
 public class CustomEventTests
 {
@@ -29,7 +24,7 @@ public class CustomEventTests
         }
     }
 
-    private class MyEvents : IChannelEvents
+    private class MyEvents : IChannelMonitor
     {
         public void ChannelClosed(IChannelInfo channelInfo)
         { }
@@ -56,15 +51,15 @@ public class CustomEventTests
     {
         IServiceCollection services = new ServiceCollection()
             .AddLogging()
-            .AddSingleton<IChannelEvents, MyEvents>();
+            .AddSingleton<IChannelMonitor, MyEvents>();
 
         var provider = services.BuildServiceProvider();
 
         var pipeline = new ChannelPipelineFactory( provider )
-            .CreatePipeline( new IChannelAdapter[]
-            {
+            .CreatePipeline(
+            [
                 new MyAdapter()
-            } );
+            ] );
 
         var options = new Microsoft.Extensions.Options.OptionsWrapper<ServiceChannelOptions>( new ServiceChannelOptions() );
         var channel = await new ServiceChannelFactory( provider, options )
@@ -73,7 +68,7 @@ public class CustomEventTests
         var data = Guid.NewGuid().ToString( "N" );
         await pipeline.ExecuteAsync( channel, data );
 
-        var events = provider.GetServices<IChannelEvents>()
+        var events = provider.GetServices<IChannelMonitor>()
             .Where( x => x.GetType() == typeof( MyEvents ) )
             .Cast<MyEvents>()
             .Single();

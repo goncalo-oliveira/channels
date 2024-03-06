@@ -2,14 +2,9 @@ using Microsoft.Extensions.Logging;
 
 namespace Faactory.Channels.Handlers;
 
-internal sealed class OutputChannelHandler : ChannelHandler<byte[]>
+internal sealed class OutputChannelHandler( ILoggerFactory loggerFactory ) : ChannelHandler<byte[]>
 {
-    private readonly ILogger logger;
-
-    public OutputChannelHandler( ILoggerFactory loggerFactory )
-    {
-        logger = loggerFactory.CreateLogger<OutputChannelHandler>();
-    }
+    private readonly ILogger logger = loggerFactory.CreateLogger<OutputChannelHandler>();
 
     public override Task ExecuteAsync( IChannelContext context, byte[] data )
     {

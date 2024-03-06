@@ -11,7 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "echo-server", "examples\ech
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "simple-server", "examples\simple-server\simple-server.csproj", "{07AA0ED3-4E78-464F-8153-6AC88E5791BC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "channel-events", "examples\channel-events\channel-events.csproj", "{1CD915EC-8FDE-4477-9E4C-1D266C26E929}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "channel-monitor", "examples\channel-monitor\channel-monitor.csproj", "{1CD915EC-8FDE-4477-9E4C-1D266C26E929}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{19EDD421-BE87-45A5-9D2D-17450725EA81}"
 EndProject

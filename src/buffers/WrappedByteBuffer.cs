@@ -26,18 +26,18 @@ public sealed class WrappedByteBuffer : IByteBuffer
 
     public IByteBuffer DiscardAll()
     {
-        Array.Resize<byte>( ref buffer, 0 );
+        Array.Resize( ref buffer, 0 );
 
         ResetOffset();
 
-        return ( this );
+        return this;
     }
 
     public IByteBuffer DiscardReadBytes()
     {
         if ( Offset <= 0 )
         {
-            return ( this );
+            return this;
         }
 
         var dest = new byte[buffer.Length - Offset];
@@ -47,18 +47,12 @@ public sealed class WrappedByteBuffer : IByteBuffer
 
         ResetOffset();
 
-        return ( this );
+        return this;
     }
 
-    public bool GetBoolean( int offset )
-    {
-        return BitConverter.ToBoolean( buffer, offset );
-    }
+    public bool GetBoolean( int offset ) => BitConverter.ToBoolean( buffer, offset );
 
-    public byte GetByte( int offset )
-    {
-        return buffer[offset];
-    }
+    public byte GetByte( int offset ) => buffer[offset];
 
     public byte[] GetBytes( int offset, int length )
     {
@@ -66,7 +60,7 @@ public sealed class WrappedByteBuffer : IByteBuffer
 
         Array.Copy( buffer, offset, dest, 0, length );
 
-        return ( dest );
+        return dest;
     }
 
     public IByteBuffer GetByteBuffer( int offset, int length )

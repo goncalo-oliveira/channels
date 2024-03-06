@@ -8,22 +8,17 @@ namespace Faactory.Channels;
 /// <summary>
 /// Channel pipeline factory
 /// </summary>
-public sealed class ChannelPipelineFactory
+public sealed class ChannelPipelineFactory( IServiceProvider serviceProvider )
 {
-    private readonly IServiceProvider provider;
+    private readonly IServiceProvider provider = serviceProvider;
 
-    public ChannelPipelineFactory( IServiceProvider serviceProvider )
-    {
-        provider = serviceProvider;
-    }
-
-    public IChannelAdapter[] GetInputAdapters()
+    public IEnumerable<IChannelAdapter> GetInputAdapters()
         => provider.GetAdapters<IInputChannelAdapter>();
 
-    public IChannelHandler[] GetInputHandlers()
+    public IEnumerable<IChannelHandler> GetInputHandlers()
         => provider.GetHandlers();
 
-    public IChannelAdapter[] GetOutputAdapters()
+    public IEnumerable<IChannelAdapter> GetOutputAdapters()
         => provider.GetAdapters<IOutputChannelAdapter>();
 
     public IChannelPipeline CreateInputPipeline()
@@ -46,7 +41,7 @@ public sealed class ChannelPipelineFactory
         return new ChannelPipeline( loggerFactory, adapters, handlers );
     }
 
-    public IChannelPipeline CreatePipeline( IChannelAdapter[] adapters, IChannelHandler[]? handlers = null )
+    public IChannelPipeline CreatePipeline( IEnumerable<IChannelAdapter> adapters, IEnumerable<IChannelHandler>? handlers = null )
     {
         var loggerFactory = provider.GetService<ILoggerFactory>()
             ?? Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance;

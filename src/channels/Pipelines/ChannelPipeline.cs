@@ -7,16 +7,16 @@ namespace Faactory.Channels;
 internal class ChannelPipeline : IChannelPipeline
 {
     private readonly ILogger logger;
-    private readonly IChannelAdapter[] adapters;
-    private readonly IChannelHandler[] handlers;
+    private readonly IEnumerable<IChannelAdapter> adapters;
+    private readonly IEnumerable<IChannelHandler> handlers;
 
     public ChannelPipeline( ILoggerFactory loggerFactory
-        , IChannelAdapter[] channelAdapters
-        , IChannelHandler[]? channelHandlers = null )
+        , IEnumerable<IChannelAdapter> channelAdapters
+        , IEnumerable<IChannelHandler>? channelHandlers = null )
     {
         logger = loggerFactory.CreateLogger<ChannelPipeline>();
         adapters = channelAdapters;
-        handlers = channelHandlers ?? Array.Empty<IChannelHandler>();
+        handlers = channelHandlers ?? Enumerable.Empty<IChannelHandler>();
     }
 
     public void Dispose()
@@ -67,22 +67,21 @@ internal class ChannelPipeline : IChannelPipeline
 
     private async Task<bool> ExecuteAdaptersAsync( AdapterContext context )
     {
-        for ( int adapterIndex = 0; adapterIndex < adapters.Length; adapterIndex++ )
+        IChannelAdapter? previousAdapter = null;
+        foreach ( var adapter in adapters )
         {
-            var adapter = adapters[adapterIndex];
             var adapterData = context.Flush();
 
             if ( !adapterData.Any() )
             {
                 // no data available on the pipeline
                 // interrupt the workflow
-                var previousAdapter = adapterIndex > 0 ? adapters[adapterIndex - 1] : null;
 
                 logger.LogDebug( "No data forwarded from {Type} adapter. Pipeline interrupted.",
                     previousAdapter?.GetType().Name ?? "previous"
                 );
 
-                return ( false );
+                return false;
             }
 
             foreach ( var dataItem in adapterData )
@@ -100,9 +99,11 @@ internal class ChannelPipeline : IChannelPipeline
                         adapter.GetType().Name
                     );
 
-                    return ( false );
+                    return false;
                 }
             }
+
+            previousAdapter = adapter;
         }
 
         return ( true );

@@ -27,7 +27,7 @@ public sealed class NullChannel : IChannel
 
     public DateTimeOffset? LastSent { get; }
 
-    public IEnumerable<IChannelService> Services { get; } = Enumerable.Empty<IChannelService>();
+    public IEnumerable<IChannelService> Services { get; } = [];
 
     public Task CloseAsync() => Task.CompletedTask;
 

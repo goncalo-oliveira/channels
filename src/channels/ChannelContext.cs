@@ -1,20 +1,14 @@
 namespace Faactory.Channels;
 
-internal class ChannelContext : IChannelContext
+internal class ChannelContext( IChannel channel ) : IChannelContext
 {
-    public ChannelContext( IChannel channel )
-    {
-        Channel = channel;
-        Output = new WritableBuffer();
-    }
+    public IChannel Channel { get; } = channel;
 
-    public IChannel Channel { get; }
-
-    public IWritableBuffer Output { get; }
+    public IWritableBuffer Output { get; } = new WritableBuffer();
 
     public void NotifyCustomEvent( string name, object? data )
     {
-        if ( Channel is Channel channel)
+        if ( Channel is Channel channel )
         {
             channel.NotifyCustomEvent( name, data );
         }

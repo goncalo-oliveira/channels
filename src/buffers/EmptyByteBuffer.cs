@@ -6,7 +6,7 @@ namespace Faactory.Channels.Buffers;
 public static class EmptyByteBuffer
 {
     private static readonly Lazy<IByteBuffer> lazyInstance = new(
-        () => new WrappedByteBuffer( Array.Empty<byte>() )
+        () => new WrappedByteBuffer( [] )
     );
 
     /// <summary>

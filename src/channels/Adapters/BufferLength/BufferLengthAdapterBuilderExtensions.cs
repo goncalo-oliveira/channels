@@ -13,9 +13,9 @@ public static class BufferLengthAdapterChannelBuilderExtensions
 
         if ( configure != null )
         {
-            builder.Configure<BufferLengthAdapterOptions>( configure );
+            builder.Configure( configure );
         }
 
-        return ( builder );
+        return builder;
     }
 }

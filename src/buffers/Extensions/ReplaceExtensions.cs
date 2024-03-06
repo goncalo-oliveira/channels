@@ -34,6 +34,6 @@ public static class ByteBufferReplaceExtensions
 
         } while ( escapeIndex > -1 );
 
-        return ( source );
+        return source;
     }
 }

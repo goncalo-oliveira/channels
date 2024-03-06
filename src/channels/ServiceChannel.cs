@@ -1,9 +1,5 @@
 using System.Net.Sockets;
-using Microsoft.Extensions.Logging;
 using Faactory.Channels.Buffers;
-using Faactory.Channels;
-using Faactory.Channels.Adapters;
-using Faactory.Channels.Handlers;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;

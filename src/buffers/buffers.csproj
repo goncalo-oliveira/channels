@@ -6,6 +6,7 @@
     <AssemblyName>faactory.channels.buffers</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
     <PackageId>Faactory.Channels.Buffers</PackageId>
     <Version>0.9.2</Version>
     <Authors>Goncalo Oliveira</Authors>

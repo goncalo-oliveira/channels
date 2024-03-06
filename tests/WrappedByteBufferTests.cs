@@ -1,25 +1,19 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using Faactory.Channels;
 using Faactory.Channels.Buffers;
-using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
+
+namespace Faactory.Channels.Tests;
 
 public class WrappedByteBufferTests
 {
     [Fact]
     public void TestDiscardRead()
     {
-        var buffer = new WrappedByteBuffer( new byte[]
-        {
+        var buffer = new WrappedByteBuffer(
+        [
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
-        } );
+        ] );
 
         buffer.SkipBytes( 9 );
         buffer.DiscardReadBytes();
@@ -31,10 +25,10 @@ public class WrappedByteBufferTests
     [Fact]
     public void TestDiscardAll()
     {
-        var buffer = new WrappedByteBuffer( new byte[]
-        {
+        var buffer = new WrappedByteBuffer(
+        [
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
-        } );
+        ] );
 
         buffer.SkipBytes( 5 );
         buffer.DiscardAll();
@@ -46,83 +40,83 @@ public class WrappedByteBufferTests
     [Fact]
     public void TestMatches()
     {
-        var buffer = new WrappedByteBuffer( new byte[]
-        {
+        var buffer = new WrappedByteBuffer(
+        [
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
-        } );
+        ] );
 
-        Assert.True( buffer.MatchBytes( new byte[]
-        { 
+        Assert.True( buffer.MatchBytes(
+        [
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
-        } ) );
+        ] ) );
 
-        Assert.True( buffer.MatchBytes( new byte[]
-        { 
+        Assert.True( buffer.MatchBytes(
+        [
             0x00, 0x01
-        } ) );
+        ] ) );
 
-        Assert.False( buffer.MatchBytes( new byte[]
-        { 
+        Assert.False( buffer.MatchBytes(
+        [
             0x00, 0x09
-        } ) );
+        ] ) );
 
-        Assert.True( buffer.MatchBytes( new byte[]
-        { 
+        Assert.True( buffer.MatchBytes(
+        [
             0x01, 0x02
-        }, 1 ) );
+        ], 1 ) );
 
-        Assert.False( buffer.MatchBytes( new byte[]
-        { 
+        Assert.False( buffer.MatchBytes(
+        [
             0x00, 0x01
-        }, 1 ) );
+        ], 1 ) );
 
         Assert.Throws<NonReadableBufferException>( () =>
         {
             var writable = buffer.MakeWritable();
 
-            writable.MatchBytes( new byte[]
-            { 
+            writable.MatchBytes(
+            [
                 0x00, 0x01
-            } );
+            ] );
         } );
     }
 
     [Fact]
     public void TestFind()
     {
-        var buffer = new WrappedByteBuffer( new byte[]
-        {
+        var buffer = new WrappedByteBuffer(
+        [
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
-        } );
+        ] );
 
-        Assert.Equal( 2, buffer.IndexOf( new byte[]
-        {
+        Assert.Equal( 2, buffer.IndexOf(
+        [
             0x02, 0x03
-        } ) );
+        ] ) );
 
-        Assert.Equal( -1, buffer.IndexOf( new byte[]
-        {
+        Assert.Equal( -1, buffer.IndexOf(
+        [
             0x02, 0x03
-        }, 3 ) );
+        ], 3 ) );
 
         Assert.Throws<NonReadableBufferException>( () =>
         {
             var writable = buffer.MakeWritable();
 
-            writable.IndexOf( new byte[]
-            { 
+            writable.IndexOf(
+            [
                 0x02, 0x03
-            } );
+            ] );
         } );
     }
 
     [Fact]
     public void TestBufferSerializationBase64()
     {
-        IByteBuffer buffer = new WrappedByteBuffer( new byte[]
-        {
+        IByteBuffer buffer = new WrappedByteBuffer(
+        [
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
-        } );
+        ] );
 
         var json = JsonSerializer.Serialize( buffer );
 
@@ -136,10 +130,10 @@ public class WrappedByteBufferTests
         {
             Id = Guid.NewGuid().ToString( "N" ),
             Number = Random.Shared.Next(),
-            Buffer = (IByteBuffer)new WrappedByteBuffer( new byte[]
-            {
+            Buffer = (IByteBuffer)new WrappedByteBuffer(
+            [
                 0x00, 0x01, 0x02, 0x03, 0x04, 0x05
-            } )
+            ] )
         };
 
         var json = JsonSerializer.Serialize( obj );
@@ -150,10 +144,10 @@ public class WrappedByteBufferTests
     [Fact]
     public void TestBufferSerializationHex()
     {
-        IByteBuffer buffer = new WrappedByteBuffer( new byte[]
-        {
+        IByteBuffer buffer = new WrappedByteBuffer(
+        [
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
-        } );
+        ] );
 
         var options = new JsonSerializerOptions();
         options.Converters.Add( 
@@ -172,10 +166,10 @@ public class WrappedByteBufferTests
         {
             Id = Guid.NewGuid().ToString( "N" ),
             Number = Random.Shared.Next(),
-            Buffer = new WrappedByteBuffer( new byte[]
-            {
+            Buffer = new WrappedByteBuffer(
+            [
                 0x00, 0x01, 0x02, 0x03, 0x04, 0x05
-            } )
+            ] )
         };
 
         var json = JsonSerializer.Serialize( obj );

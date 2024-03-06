@@ -1,14 +1,13 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Faactory.Channels;
 using Faactory.Channels.Adapters;
 using Faactory.Channels.Buffers;
-using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
+
+namespace Faactory.Channels.Tests;
 
 public class ChannelAdapterTests
 {
@@ -23,16 +22,16 @@ public class ChannelAdapterTests
             Guid.NewGuid().ToString( "N" )
         };
 
-        var context = new TestAdapterContext();
+        var context = new DetachedContext();
         IChannelAdapter adapter = new ObjectAdapter();
 
         await adapter.ExecuteAsync( context, data );
 
-        Assert.Equal( data.Length, context.Data.Count );
+        Assert.Equal( data.Length, context.Forwarded.Count() );
 
         for ( int idx = 0; idx < data.Length; idx++ )
         {
-            Assert.Equal( data[idx], (string)context.Data[idx] );
+            Assert.Equal( data[idx], (string)context.Forwarded.ElementAt( idx ) );
         }
     }
 
@@ -42,14 +41,14 @@ public class ChannelAdapterTests
     {
         var data = Guid.NewGuid().ToString( "N" );
 
-        var context = new TestAdapterContext();
+        var context = new DetachedContext();
         IChannelAdapter adapter = new ObjectArrayAdapter();
 
         await adapter.ExecuteAsync( context, data );
 
-        Assert.Single( context.Data );
+        Assert.Single( context.Forwarded );
 
-        var contextData = context.Data.Single();
+        var contextData = context.Forwarded.Single();
 
         Assert.True( contextData.GetType().IsEnumerable() );
 
@@ -66,14 +65,14 @@ public class ChannelAdapterTests
     {
         var data = Encoding.ASCII.GetBytes( Guid.NewGuid().ToString( "N" ) );
 
-        var context = new TestAdapterContext();
+        var context = new DetachedContext();
         IChannelAdapter adapter = new BufferAdapter();
 
         await adapter.ExecuteAsync( context, data );
 
-        Assert.Single( context.Data );
+        Assert.Single( context.Forwarded );
 
-        var contextData = Assert.IsType<WrappedByteBuffer>( context.Data.Single() );
+        var contextData = Assert.IsType<WrappedByteBuffer>( context.Forwarded.Single() );
 
         Assert.True( data.SequenceEqual( contextData.ToArray() ) );
     }
@@ -84,14 +83,14 @@ public class ChannelAdapterTests
     {
         var data = new WrappedByteBuffer( Encoding.ASCII.GetBytes( Guid.NewGuid().ToString( "N" ) ) );
 
-        var context = new TestAdapterContext();
+        var context = new DetachedContext();
         IChannelAdapter adapter = new ByteArrayAdapter();
 
         await adapter.ExecuteAsync( context, data );
 
-        Assert.Single( context.Data );
+        Assert.Single( context.Forwarded );
 
-        var contextData = Assert.IsType<byte[]>( context.Data.Single() );
+        var contextData = Assert.IsType<byte[]>( context.Forwarded.Single() );
 
         Assert.True( data.ToArray().SequenceEqual( contextData ) );
     }

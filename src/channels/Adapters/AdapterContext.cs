@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Logging;
-
 namespace Faactory.Channels.Adapters;
 
 internal class AdapterContext : ChannelContext, IAdapterContext

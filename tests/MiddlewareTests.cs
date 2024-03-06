@@ -1,22 +1,16 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Faactory.Channels;
-using Faactory.Channels.Adapters;
-using Faactory.Channels.Buffers;
 using Faactory.Channels.Handlers;
-using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
+
+namespace Faactory.Channels.Tests;
 
 public class ChannelMiddlewareTests
 {
     [Fact]
     public async Task TestTypeCheckAsync()
     {
-        var context = new TestAdapterContext();
+        var context = new DetachedContext();
         var handler = new IdentityHandler();
 
         await handler.ExecuteAsync( context, new object() );

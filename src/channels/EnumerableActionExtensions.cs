@@ -1,3 +1,5 @@
+namespace Faactory.Channels;
+
 internal static class EnumerableActionExtensions
 {
     /// <summary>

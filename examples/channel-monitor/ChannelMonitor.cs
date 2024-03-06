@@ -1,16 +1,10 @@
-using Faactory.Channels;
 using Microsoft.Extensions.Logging;
 
 namespace Faactory.Channels.Examples;
 
-public class EventListener : IChannelEvents
+public class ChannelMonitor( ILogger<ChannelMonitor> logger ) : IChannelEvents
 {
-    private readonly ILogger logger;
-
-    public EventListener( ILogger<EventListener> logger )
-    {
-        this.logger = logger;
-    }
+    private readonly ILogger logger = logger;
 
     public void ChannelCreated( IChannelInfo channelInfo )
     {

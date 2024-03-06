@@ -8,7 +8,7 @@ namespace Faactory.Channels;
 /// </summary>
 public sealed class DetachedChannel : IChannel
 {
-    private readonly List<IChannelService> services = new();
+    private readonly List<IChannelService> services = [];
 
     public string Id { get; } = Guid.NewGuid().ToString( "N" );
 
@@ -20,14 +20,16 @@ public sealed class DetachedChannel : IChannel
 
     public DateTimeOffset? LastSent { get; }
 
-    public IByteBuffer Buffer => throw new NotSupportedException();
+    public IByteBuffer Buffer { get; } = new WrappedByteBuffer( [] );
 
-    public bool IsClosed => false;
+    public bool IsClosed { get; private set; }
 
     public IEnumerable<IChannelService> Services => services.ToArray();
 
     public Task CloseAsync()
     {
+        IsClosed = true;
+
         return Task.CompletedTask;
     }
 

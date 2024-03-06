@@ -6,6 +6,7 @@
     <AssemblyName>faactory.channels.core</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
     <PackageId>Faactory.Channels.Core</PackageId>
     <Version>0.9.2</Version>
     <Authors>Goncalo Oliveira</Authors>

@@ -27,4 +27,4 @@ builder.Services.AddChannels( channel =>
 
 var app = builder.Build();
 
-await app.RunAsync();
+app.Run();

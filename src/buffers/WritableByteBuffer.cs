@@ -11,7 +11,7 @@ public sealed class WritableByteBuffer : IByteBuffer
 
     public WritableByteBuffer( Endianness endianness = Endianness.BigEndian )
     {
-        buffer = new List<byte>();
+        buffer = [];
         Endianness = endianness;
     }
 
@@ -82,9 +82,6 @@ public sealed class WritableByteBuffer : IByteBuffer
 
     public ulong GetUInt64( int offset )
         => throw new NonReadableBufferException();
-
-    // private T Read<T>( Func<int,T> read, int size )
-    //     => throw new NonReadableBufferException();
 
     public bool ReadBoolean()
         => throw new NonReadableBufferException();

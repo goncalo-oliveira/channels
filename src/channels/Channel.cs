@@ -16,7 +16,7 @@ internal abstract class Channel : ConnectedSocket, IChannel
     internal Channel( 
           IServiceScope serviceScope
         , Socket socket
-        , Buffers.Endianness bufferEndianness )
+        , Endianness bufferEndianness )
         : base( serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>(), socket )
     {
         logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
@@ -25,10 +25,8 @@ internal abstract class Channel : ConnectedSocket, IChannel
         loggerScope = logger.BeginScope( $"Channel_{Id[..7]}" );
 
         Info = new ChannelInfo( this );
-
         Input = EmptyChannelPipeline.Instance;
         Output = EmptyChannelPipeline.Instance;
-
         Buffer = new WritableByteBuffer( bufferEndianness );
 
         channelScope = serviceScope;

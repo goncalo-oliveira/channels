@@ -1,6 +1,6 @@
 namespace Faactory.Channels;
 
-public class IdleChannelServiceOptions
+public sealed class IdleChannelServiceOptions
 {
     /// <summary>
     /// Idle detection mode. Default is IdleDetectionMode.Auto

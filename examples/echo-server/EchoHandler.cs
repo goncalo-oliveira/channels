@@ -1,10 +1,9 @@
-using Faactory.Channels;
 using Faactory.Channels.Handlers;
 
 namespace Faactory.Channels.Examples;
 
 /*
-Since there are no adapters, the data gets to the handler as bytes.
+Since there are no adapters, the data gets to the handler as a byte array.
 We write the same data to the output buffer, to be sent at the end of the pipeline.
 */
 

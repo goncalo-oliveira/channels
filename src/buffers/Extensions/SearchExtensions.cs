@@ -9,7 +9,7 @@ public static class ByteBufferSearchExtensions
     /// <param name="predicate">A function to test each byte for a condition.</param>
     /// <param name="offset">The offset in the buffer to start looking; if -1 it uses the buffer's current offset</param>
     /// <returns>True if any byte satisfies the condition; false otherwise.</returns>
-    public static bool Any( this IByteBuffer source, Func<byte,bool> predicate, int offset = -1 )
+    public static bool Any( this IByteBuffer source, Func<byte, bool> predicate, int offset = -1 )
     {
         NonReadableBufferException.ThrowIfNotReadable( source );
 
@@ -20,18 +20,18 @@ public static class ByteBufferSearchExtensions
 
         if ( offset >= source.Length )
         {
-            return ( false );
+            return false ;
         }
 
         for ( int idx = offset; idx < source.Length; idx++ )
         {
             if ( predicate( source.GetByte( idx ) ) )
             {
-                return ( true );
+                return true ;
             }
         }
 
-        return ( false );
+        return false ;
     }
 
     /// <summary>
@@ -52,7 +52,7 @@ public static class ByteBufferSearchExtensions
 
         if ( offset >= source.Length )
         {
-            return ( -1 );
+            return -1 ;
         }
 
         // look for a byte match
@@ -60,11 +60,11 @@ public static class ByteBufferSearchExtensions
         {
             if ( source.GetByte( idx ) == b )
             {
-                return ( idx );
+                return idx ;
             }
         }
 
-        return ( -1 );
+        return -1 ;
     }
 
     /// <summary>
@@ -87,7 +87,7 @@ public static class ByteBufferSearchExtensions
 
         if ( offset >= maxOffset )
         {
-            return ( - 1 );
+            return - 1 ;
         }
 
         // look for a sequence match
@@ -95,11 +95,11 @@ public static class ByteBufferSearchExtensions
         {
             if ( MatchBytes( source, sequence, idx ) )
             {
-                return ( idx );
+                return idx ;
             }
         }
 
-        return ( - 1 );
+        return -1 ;
     }
 
     /// <summary>
@@ -120,18 +120,18 @@ public static class ByteBufferSearchExtensions
 
         if ( ( offset + sequence.Length - 1 ) > source.ReadableBytes )
         {
-            return ( false );
+            return false ;
         }
 
         for ( int idx = offset; idx < ( offset + sequence.Length ); idx++ )
         {
             if ( source.GetByte( idx ) != sequence[idx - offset] )
             {
-                return ( false );
+                return false ;
             }
         }
 
-        return ( true );
+        return true ;
     }
 
 }
