@@ -13,6 +13,9 @@ public abstract class ChannelMiddleware<T>
     internal ChannelMiddleware()
     { }
 
+    /// <summary>
+    /// Triggered when the received data is not suitable for the middleware
+    /// </summary>
     protected abstract void OnDataNotSuitable( IChannelContext context, object data );
 
     public abstract Task ExecuteAsync( IChannelContext context, T data );
@@ -25,10 +28,10 @@ public abstract class ChannelMiddleware<T>
             return Task.CompletedTask;
         }
 
-        if ( data is T )
+        if ( data is T t )
         {
             // execute type implementation
-            return ExecuteAsync( context, (T)data );
+            return ExecuteAsync( context, t );
         }
 
         var targetType = typeof( T );
@@ -54,8 +57,8 @@ public abstract class ChannelMiddleware<T>
             return ExecuteAsync( context, (T)(object)array );
         }
 
-        // attempt to convert the data
-        if ( ConvertData( context, data, out var convertedData ) 
+        // attempt to convert the data type
+        if ( ConvertType( context, data, out var convertedData ) 
             && ( convertedData != null )
             && ( convertedData.GetType() != data.GetType() )
            )
@@ -69,9 +72,9 @@ public abstract class ChannelMiddleware<T>
     }
 
     /// <summary>
-    /// Converts received data to expected type
+    /// Converts received data type to the expected type
     /// </summary>
-    protected virtual bool ConvertData( IChannelContext context, object data, out T? result )
+    protected virtual bool ConvertType( IChannelContext context, object data, out T? result )
     {
         var type = typeof( T );
 
@@ -84,8 +87,11 @@ public abstract class ChannelMiddleware<T>
         }
 
         // attempt an IByteBuffer to byte[] transformation
-        if ( ( type.IsArray && type.GetElementType() == typeof( byte ) ) 
-            && data.GetType().IsAssignableTo( typeof( IByteBuffer ) ) )
+        if (
+            type.IsArray && type.GetElementType() == typeof( byte )  
+            &&
+            data.GetType().IsAssignableTo( typeof( IByteBuffer ) )
+        )
         {
             var buffer = (IByteBuffer)data;
             result = (T)(object)buffer.ReadBytes( buffer.ReadableBytes );
@@ -93,8 +99,8 @@ public abstract class ChannelMiddleware<T>
             return ( true );
         }
 
-        result = default( T? );
+        result = default;
 
-        return ( false );
+        return  false ;
     }
 }

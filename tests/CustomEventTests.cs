@@ -17,7 +17,6 @@ public class CustomEventTests
         {
             context.Forward( data );
 
-            // can't notify here because IChannel is fake...... need an interface for notifications??? how???
             context.NotifyCustomEvent( "custom-event", data );
 
             return Task.CompletedTask;
@@ -43,7 +42,7 @@ public class CustomEventTests
             CustomEvents.Add( new KeyValuePair<string, object?>( name, data ) );
         }
 
-        public List<KeyValuePair<string, object?>> CustomEvents = new List<KeyValuePair<string, object?>>();
+        public List<KeyValuePair<string, object?>> CustomEvents = [];
     }
 
     [Fact]
@@ -73,7 +72,7 @@ public class CustomEventTests
             .Cast<MyEvents>()
             .Single();
 
-        var ev = Assert.Single<KeyValuePair<string, object?>>( events.CustomEvents );
+        var ev = Assert.Single( events.CustomEvents );
 
         Assert.Equal( "custom-event", ev.Key );
         Assert.Equal( data, ev.Value );
