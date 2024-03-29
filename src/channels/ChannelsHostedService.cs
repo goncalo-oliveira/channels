@@ -8,7 +8,6 @@ namespace Faactory.Channels;
 
 internal sealed class ChannelsHostedService : IHostedService
 {
-    private readonly ILoggerFactory loggerFactory;
     private readonly ILogger logger;
     private readonly IHostApplicationLifetime appLifetime;
     private readonly int listenPort;
@@ -21,11 +20,10 @@ internal sealed class ChannelsHostedService : IHostedService
 
     public ChannelsHostedService( ILoggerFactory loggerFactory
         , IHostApplicationLifetime hostApplicationLifetime
-        , IServiceChannelFactory channelFactory
+        , IServiceChannelFactory serviceChannelFactory
         , IOptions<ServiceChannelOptions> optionsAccessor )
     {
-        this.loggerFactory = loggerFactory;
-        this.channelFactory = channelFactory;
+        channelFactory = serviceChannelFactory;
         logger = loggerFactory.CreateLogger<ChannelsHostedService>();
         appLifetime = hostApplicationLifetime;
 
@@ -53,7 +51,7 @@ internal sealed class ChannelsHostedService : IHostedService
 
     private void OnStarted()
     {
-        logger.LogDebug( $"pid: {System.Diagnostics.Process.GetCurrentProcess().Id}" );
+        logger.LogDebug( "pid: {PID}", Environment.ProcessId );
 
         try
         {
@@ -63,7 +61,7 @@ internal sealed class ChannelsHostedService : IHostedService
             var ipAddress = IPAddress.Any;
             var localEndPoint = new IPEndPoint( ipAddress, listenPort );
 
-            logger.LogDebug( $"Attempting to listen on port {listenPort}..." );
+            logger.LogDebug( "Attempting to listen on port {Port}...", listenPort );
 
             // create a TCP streaming socket
             listener = new Socket( ipAddress.AddressFamily
@@ -73,7 +71,7 @@ internal sealed class ChannelsHostedService : IHostedService
             listener.Bind( localEndPoint );
             listener.Listen( so_backlog );
 
-            logger.LogInformation( $"Listening on port {listenPort}." );
+            logger.LogInformation( "Listening on port {Port}.", listenPort );
 
             while ( !listener.SafeHandle.IsClosed )
             {
@@ -87,11 +85,11 @@ internal sealed class ChannelsHostedService : IHostedService
                 allDone.WaitOne();
             }
 
-            logger.LogDebug( $"No longer listening on port {listenPort}." );
+            logger.LogDebug( "No longer listening on port {Port}.", listenPort );
         }
         catch ( Exception ex )
         {
-            logger.LogError( ex, $"Failed to start service. {ex.Message}." );
+            logger.LogError( ex, "Failed to start service. {Error}.", ex.Message );
 
             appLifetime.StopApplication();
         }
@@ -107,7 +105,7 @@ internal sealed class ChannelsHostedService : IHostedService
         }
         catch ( Exception ex )
         {
-            logger.LogError( ex, $"Failed to close listener. {ex.Message}." );
+            logger.LogError( ex, "Failed to close listener. {Error}.", ex.Message );
         }
     }
 
@@ -141,7 +139,7 @@ internal sealed class ChannelsHostedService : IHostedService
         {
             logger.LogError(
                 ex,
-                "failed to accept incoming connection. {Message}",
+                "Failed to accept incoming connection. {Message}",
                 ex.Message
             );
 

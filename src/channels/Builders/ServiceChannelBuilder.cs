@@ -2,16 +2,12 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
-internal class ServiceChannelBuilder : ChannelBuilder, IServiceChannelBuilder
+internal class ServiceChannelBuilder( IServiceCollection services ) : ChannelBuilder( services ), IServiceChannelBuilder
 {
-    public ServiceChannelBuilder( IServiceCollection services )
-        : base( services )
-    {}
-
     public IServiceChannelBuilder Configure( Action<ServiceChannelOptions> configure )
     {
         Services.Configure( configure );
 
-        return ( this );
+        return this;
     }
 }
