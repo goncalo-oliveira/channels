@@ -41,11 +41,11 @@ public sealed class ByteBufferJsonConverter : JsonConverter<IByteBuffer>
     {
         if ( Format == ByteBufferSerializerFormat.HexString )
         {
-            writer.WriteStringValue( string.Concat( value.ToArray().Select( b => string.Format( "{0:X2}", b ) ) ) );
+            writer.WriteStringValue( value.ToHexString() );
         }
         else
         {
-            writer.WriteStringValue( Convert.ToBase64String( value.ToArray() ) );
+            writer.WriteStringValue( value.ToBase64String() );
         }
     }
 }

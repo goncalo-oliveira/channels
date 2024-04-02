@@ -5,24 +5,51 @@ namespace Faactory.Channels.Buffers;
 /// <summary>
 /// A read-only ByteBuffer wrapping a byte[]
 /// </summary>
-public sealed class WrappedByteBuffer : IByteBuffer
+public sealed class WrappedByteBuffer( byte[] source, Endianness endianness = Endianness.BigEndian ) : IByteBuffer
 {
-    private byte[] buffer;
+    private byte[] buffer = source;
 
-    public WrappedByteBuffer( byte[] source, Endianness endianness = Endianness.BigEndian )
-    {
-        buffer = source;
-        Offset = 0;
-        Endianness = endianness;
-    }
+    /// <summary>
+    /// Creates a new read-only buffer instance from the given base64 encoded string
+    /// </summary>
+    /// <param name="value">The base64 encoded string</param>
+    /// <returns>A new read-only buffer instance</returns>
+    public static IByteBuffer FromBase64String( string value )
+        => new WrappedByteBuffer( Convert.FromBase64String( value ) );
 
-    public Endianness Endianness { get; }
+    /// <summary>
+    /// Creates a new read-only buffer instance from the given base64 encoded string
+    /// </summary>
+    /// <param name="value">The base64 encoded string</param>
+    /// <param name="endianness">The endianness of the buffer</param>
+    /// <returns>A new read-only buffer instance</returns>
+    public static IByteBuffer FromBase64String( string value, Endianness endianness )
+        => new WrappedByteBuffer( Convert.FromBase64String( value ), endianness );
+
+    /// <summary>
+    /// Creates a new read-only buffer instance from the given hex string
+    /// </summary>
+    /// <param name="value">The hex string</param>
+    /// <returns>A new read-only buffer instance</returns>
+    public static IByteBuffer FromHexString( string value )
+        => new WrappedByteBuffer( Convert.FromHexString( value ) );
+
+    /// <summary>
+    /// Creates a new read-only buffer instance from the given hex string
+    /// </summary>
+    /// <param name="value">The hex string</param>
+    /// <param name="endianness">The endianness of the buffer</param>
+    /// <returns>A new read-only buffer instance</returns>
+    public static IByteBuffer FromHexString( string value, Endianness endianness )
+        => new WrappedByteBuffer( Convert.FromHexString( value ), endianness );
+
+    public Endianness Endianness { get; } = endianness;
     public bool IsReadable => true;
     public bool IsWritable => false;
     public int Length => buffer.Length;
     public int ReadableBytes => Length - Offset;
 
-    public int Offset { get; private set; }
+    public int Offset { get; private set; } = 0;
 
     public IByteBuffer DiscardAll()
     {

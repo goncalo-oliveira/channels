@@ -60,4 +60,20 @@ public static class ByteBufferExtensions
     /// <param name="value">The byte[] value</param>
     public static IByteBuffer WriteBytes( this IByteBuffer source, byte[] value )
         => source.WriteBytes( value, 0, value.Length );
+
+    /// <summary>
+    /// Converts the buffer to a base64 encoded string
+    /// </summary>
+    /// <param name="source">The source buffer</param>
+    /// <returns>The base64 encoded string</returns>
+    public static string ToBase64String( this IByteBuffer source )
+        => Convert.ToBase64String( source.ToArray() );
+
+    /// <summary>
+    /// Converts the buffer to a hexadecimal string
+    /// </summary>
+    /// <param name="source">The source buffer</param>
+    /// <returns>The hexadecimal string</returns>
+    public static string ToHexString( this IByteBuffer source )
+        => string.Concat( source.ToArray().Select( b => string.Format( "{0:X2}", b ) ) );
 }
