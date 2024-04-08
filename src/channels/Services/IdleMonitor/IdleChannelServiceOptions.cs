@@ -1,5 +1,8 @@
 namespace Faactory.Channels;
 
+/// <summary>
+/// Options for the idle channel detection service
+/// </summary>
 public sealed class IdleChannelServiceOptions
 {
     /// <summary>

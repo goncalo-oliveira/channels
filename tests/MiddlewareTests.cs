@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Faactory.Channels.Adapters;
 using Faactory.Channels.Handlers;
 using Xunit;
 
@@ -16,6 +19,36 @@ public class ChannelMiddlewareTests
         await handler.ExecuteAsync( context, new object() );
 
         Assert.True( handler.notSuitable );
+    }
+
+    [Fact]
+    public async Task TestSequenceOrderAsync()
+    {
+        var data = new string[ 100 ];
+
+        for ( int i = 0; i < data.Length; i++ )
+        {
+            data[ i ] = ( i + 1 ).ToString();
+        }
+
+        var context = new DetachedContext();
+        var adapter = new NullAdapter();
+
+        /*
+        Since recent changes, sparsed data is no longer spawned in parallel tasks.
+        Instead, the data is aggregated and forwarded in the same order as received.
+        */
+
+        await adapter.ExecuteAsync( context, data );
+
+        // context.Forwarded should have 10 elements
+        // the order should be the same as the input data
+        Assert.Equal( data.Length, context.Forwarded.Length );
+
+        for ( int i = 0; i < data.Length; i++ )
+        {
+            Assert.Equal( data[ i ], context.Forwarded[ i ] );
+        }
     }
 
     private class IdentityHandler : ChannelHandler<DeviceIdentity>
@@ -54,5 +87,15 @@ public class ChannelMiddlewareTests
         public override string ToString() => value;
 
         public static implicit operator string( DeviceIdentity uuid ) => uuid.ToString();
+    }
+
+    private class NullAdapter : ChannelAdapter<string>, IInputChannelAdapter
+    {
+        public override Task ExecuteAsync( IAdapterContext context, string data )
+        {
+            context.Forward( data );
+
+            return Task.CompletedTask;
+        }
     }
 }

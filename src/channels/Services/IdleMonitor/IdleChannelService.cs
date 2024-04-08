@@ -83,7 +83,7 @@ internal sealed class IdleChannelService : ChannelService
 
     private async Task CheckIdleStateAsync()
     {
-        if ( Channel == null )
+        if ( Channel.IsClosed )
         {
             // not supposed to happen, but to be on the safe side...
             return;
@@ -93,9 +93,6 @@ internal sealed class IdleChannelService : ChannelService
         if ( ( detectionMode == IdleDetectionMode.Auto ) && !IsChannelSocketConnected() )
         {
             logger.LogWarning( "Channel doesn't seem to be active anymore. Closing..." );
-
-            // await StopAsync( CancellationToken.None )
-            //     .ConfigureAwait( false );
 
             await Channel.CloseAsync()
                 .ConfigureAwait( false );
@@ -116,27 +113,12 @@ internal sealed class IdleChannelService : ChannelService
         var idleSent = utcNow - lastSent;
         var idleMin = TimeSpan.FromSeconds( Math.Min( idleReceived.TotalSeconds, idleSent.TotalSeconds ) );
 
-        bool isIdle;
-        switch ( detectionMode )
+        var isIdle = detectionMode switch
         {
-            case IdleDetectionMode.Read:
-            {
-                isIdle = ( idleReceived > timeout );
-                break;
-            }
-
-            case IdleDetectionMode.Write:
-            {
-                isIdle = ( idleSent > timeout );
-                break;
-            }
-
-            default:
-            {
-                isIdle = ( idleMin > timeout );
-                break;
-            }
-        }
+            IdleDetectionMode.Read => idleReceived > timeout,
+            IdleDetectionMode.Write => idleSent > timeout,
+            _ => idleMin > timeout
+        };
 
         if ( isIdle )
         {
@@ -144,9 +126,6 @@ internal sealed class IdleChannelService : ChannelService
                 "Channel has been idle for more than {seconds} seconds. Closing...",
                 (int)timeout.TotalSeconds
             );
-
-            // await StopAsync( CancellationToken.None )
-            //     .ConfigureAwait( false );
 
             await Channel.CloseAsync()
                 .ConfigureAwait( false );

@@ -4,7 +4,7 @@ using Faactory.Channels.Handlers;
 
 namespace Faactory.Channels;
 
-public abstract class ChannelBuilder( IServiceCollection services ) : IChannelBuilder
+internal abstract class ChannelBuilder( IServiceCollection services ) : IChannelBuilder
 {
     public IServiceCollection Services { get; } = services;
 

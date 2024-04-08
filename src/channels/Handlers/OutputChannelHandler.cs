@@ -8,7 +8,7 @@ internal sealed class OutputChannelHandler( ILoggerFactory loggerFactory ) : Cha
 
     public override Task ExecuteAsync( IChannelContext context, byte[] data )
     {
-        ((Sockets.ConnectedSocket)context.Channel).Send( data );
+        ( (Sockets.ConnectedSocket)context.Channel ).Send( data );
 
         logger.LogDebug( "Written {length} bytes to the channel.", data.Length );
 

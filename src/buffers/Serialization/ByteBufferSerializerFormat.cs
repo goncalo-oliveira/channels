@@ -1,5 +1,8 @@
 namespace Faactory.Channels.Buffers.Serialization;
 
+/// <summary>
+/// Format used to serialize a byte buffer
+/// </summary>
 public enum ByteBufferSerializerFormat
 {
     /// <summary>

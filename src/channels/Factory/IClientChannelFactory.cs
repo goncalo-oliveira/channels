@@ -8,10 +8,10 @@ public interface IClientChannelFactory
     /// <summary>
     /// Creates a new client channel instance
     /// </summary>
-    Task<IChannel> CreateAsync( CancellationToken cancellationToken = default( CancellationToken ) );
+    Task<IChannel> CreateAsync( CancellationToken cancellationToken = default );
 
     /// <summary>
     /// Creates a new client channel instance using the given named options
     /// </summary>
-    Task<IChannel> CreateAsync( string name, CancellationToken cancellationToken = default( CancellationToken ) );
+    Task<IChannel> CreateAsync( string name, CancellationToken cancellationToken = default );
 }

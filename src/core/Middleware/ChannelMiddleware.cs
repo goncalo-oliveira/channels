@@ -1,6 +1,5 @@
 using System.Collections;
 using Faactory.Channels.Buffers;
-using Microsoft.Extensions.Logging;
 
 namespace Faactory.Channels;
 

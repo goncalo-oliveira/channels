@@ -7,9 +7,9 @@ namespace Faactory.Channels;
 /// </summary>
 public sealed class DetachedContext : IAdapterContext, IWritableBuffer
 {
-    private readonly List<object> forwarded = new();
-    private readonly List<object> written = new();
-    private readonly List<KeyValuePair<string, object?>> customEvents = new();
+    private readonly List<object> forwarded = [];
+    private readonly List<object> written = [];
+    private readonly List<KeyValuePair<string, object?>> customEvents = [];
 
     public IChannel Channel { get; } = new DetachedChannel();
 

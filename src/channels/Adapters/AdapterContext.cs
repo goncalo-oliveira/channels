@@ -1,12 +1,8 @@
 namespace Faactory.Channels.Adapters;
 
-internal class AdapterContext : ChannelContext, IAdapterContext
+internal class AdapterContext( IChannel channel ) : ChannelContext( channel ), IAdapterContext
 {
-    private readonly List<object> forwardedData = new();
-
-    public AdapterContext( IChannel channel )
-        : base( channel )
-    {}
+    private readonly List<object> forwardedData = [];
 
     public void Forward( object data )
     {
@@ -19,6 +15,6 @@ internal class AdapterContext : ChannelContext, IAdapterContext
 
         forwardedData.Clear();
 
-        return ( result );
+        return result;
     }
 }

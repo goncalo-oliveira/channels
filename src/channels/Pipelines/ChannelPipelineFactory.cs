@@ -8,7 +8,7 @@ namespace Faactory.Channels;
 /// <summary>
 /// Channel pipeline factory
 /// </summary>
-public sealed class ChannelPipelineFactory( IServiceProvider serviceProvider )
+internal sealed class ChannelPipelineFactory( IServiceProvider serviceProvider )
 {
     private readonly IServiceProvider provider = serviceProvider;
 

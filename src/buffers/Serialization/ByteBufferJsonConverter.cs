@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 namespace Faactory.Channels.Buffers.Serialization;
 
 /// <summary>
-/// Converts a IByteBuffer or value to or from JSON
+/// Converts a IByteBuffer value to or from JSON
 /// </summary>
 public sealed class ByteBufferJsonConverter : JsonConverter<IByteBuffer>
 {
