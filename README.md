@@ -134,42 +134,9 @@ graph LR;
 
 ## Enumerable type mutation and sequence order
 
-As said before, the base class for all middleware deals with `T` <--> `IEnumerable<T>` mutations. This is helpful to focus on how we want to deal with data (particularly in handlers), however, there are a few things to consider.
+Before version *0.10*, the base middleware split the execution of `IEnumerable<T>` <--> `T` spreads into multiple tasks. The reason for this was to improve the speed of execution, however, this also meant that the order of execution was not guaranteed.
 
-When the middleware expects `T` and receives `IEnumerable<T>` instead, by default, the execution is spawned through multiple tasks. The benefit of this is that the execution is usually faster, but the downside is that there's no guarantee the data is executed sequentially (FIFO).
-
-```csharp
-public class MyHandler : ChannelHandler<MyData>
-{
-    public override Task ExecuteAsync( IChannelContext context, MyData data )
-    {
-        /*
-        if MyData[] is sent to the handler, this method is spawned through multiple threads
-        to improve speed but there's no guarantee in the order of execution
-        */
-    }
-}
-```
-
-If the middleware we are implementing (adapter or handler) requires data to be processed sequentially (FIFO), it should instead implement `T[]` (or `IEnumerable<T>`) and manually cycle through the elements
-
-```csharp
-public class MyHandler : ChannelHandler<MyData[]>
-{
-    public override async Task ExecuteAsync( IChannelContext context, MyData[] data )
-    {
-        foreach ( var item in data )
-        {
-            await ExecuteSingleAsync( context, item );
-        }
-    }
-
-    private Task ExecuteSingleAsync( IChannelContext context, MyData data )
-    {
-        // ...
-    }
-}
-```
+Starting from version *0.10*, the base middleware now executes `IEnumerable<T>` <--> `T` spreads sequentially, guaranteeing the order of execution. This decision was made because on most cases, the performance gain was negligible and the task spawning caused some confusion to implementors.
 
 ## Writing to Channel Output
 

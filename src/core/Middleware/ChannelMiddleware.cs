@@ -38,13 +38,16 @@ public abstract class ChannelMiddleware<T>
         var sourceType = data.GetType();
 
         // T is not an enumerable but data is enumerable<T>
-        // deliver enumerable<T>.T spreaded
+        // deliver spreaded enumerable<T>.T as individual items
         if ( !targetType.IsEnumerable() && sourceType.IsEnumerable<T>() )
         {
-            var tasks = ( (IEnumerable)data ).OfType<T>()
-                .Select( x => ExecuteAsync( context, x ) );
+            var aggregatedTask = ( (IEnumerable)data ).OfType<T>()
+                .Aggregate(
+                    Task.CompletedTask,
+                    ( previousTask, item ) => previousTask.ContinueWith( async t => await ExecuteAsync( context, item ) ).Unwrap()
+                );
 
-            return Task.WhenAll( tasks );
+            return aggregatedTask;
         }
 
         // T is an enumerable but data is enumerable.type
