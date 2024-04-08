@@ -1,5 +1,4 @@
 using Faactory.Channels.Buffers;
-using Faactory.Collections;
 
 namespace Faactory.Channels;
 
@@ -19,7 +18,7 @@ public sealed class NullChannel : IChannel
 
     public IByteBuffer Buffer => throw new NotSupportedException();
 
-    public IMetadata Data => throw new NotSupportedException();
+    public ChannelData Data { get; } = [];
 
     public DateTimeOffset Created { get; } = DateTimeOffset.UtcNow;
 

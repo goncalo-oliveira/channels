@@ -1,5 +1,4 @@
 using Faactory.Channels.Buffers;
-using Faactory.Collections;
 
 namespace Faactory.Channels;
 
@@ -12,7 +11,7 @@ public sealed class DetachedChannel : IChannel
 
     public string Id { get; } = Guid.NewGuid().ToString( "N" );
 
-    public IMetadata Data { get; } = new Metadata();
+    public ChannelData Data { get; } = [];
 
     public DateTimeOffset Created { get; } = DateTimeOffset.UtcNow;
 

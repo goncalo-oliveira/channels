@@ -122,14 +122,14 @@ internal class ChannelPipeline : IChannelPipeline
         if ( !handlerData.Any() )
         {
             // no data forwarded from the adapters
-            logger.LogDebug( $"No data forwarded from the adapters." );
+            logger.LogDebug( "No data forwarded from the adapters." );
             return ( true );
         }
 
         if ( !handlers.Any() )
         {
             // no handlers
-            logger.LogWarning( $"No data handlers were registered." );
+            logger.LogWarning( "No data handlers were registered." );
             return ( true );
         }
 

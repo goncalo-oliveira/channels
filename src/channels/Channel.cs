@@ -2,7 +2,6 @@ using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using Faactory.Channels.Buffers;
 using Faactory.Channels.Sockets;
-using Faactory.Collections;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
@@ -44,7 +43,7 @@ internal abstract class Channel : ConnectedSocket, IChannel
     public DateTimeOffset? LastReceived { get; private set; }
     public DateTimeOffset? LastSent { get; private set; }
 
-    public IMetadata Data { get; } = new Metadata();
+    public ChannelData Data { get; } = [];
 
     public IChannelPipeline Input { get; protected set; }
     public IChannelPipeline Output { get; protected set; }

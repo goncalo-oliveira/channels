@@ -8,12 +8,12 @@ public class ChannelMonitor( ILogger<ChannelMonitor> logger ) : IChannelEvents
 
     public void ChannelCreated( IChannelInfo channelInfo )
     {
-        logger.LogInformation( $"Channel created." );
+        logger.LogInformation( "Channel created." );
     }
 
     public void ChannelClosed( IChannelInfo channelInfo )
     {
-        logger.LogInformation( $"Channel closed." );
+        logger.LogInformation( "Channel closed." );
     }
 
     public void DataReceived( IChannelInfo channelInfo, byte[] data )

@@ -1,5 +1,4 @@
 using Faactory.Channels.Buffers;
-using Faactory.Collections;
 
 namespace Faactory.Channels;
 
@@ -26,7 +25,7 @@ public interface IChannel : IDisposable
     /// <summary>
     /// Gets a data holder available throughout the entire channel session
     /// </summary>
-    IMetadata Data { get; }
+    ChannelData Data { get; }
 
     /// <summary>
     /// Gets channel creation date

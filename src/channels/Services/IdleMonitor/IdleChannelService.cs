@@ -92,7 +92,7 @@ internal sealed class IdleChannelService : ChannelService
         // attempt to poll channel socket if auto mode is being used
         if ( ( detectionMode == IdleDetectionMode.Auto ) && !IsChannelSocketConnected() )
         {
-            logger.LogWarning( $"Channel doesn't seem to be active anymore. Closing..." );
+            logger.LogWarning( "Channel doesn't seem to be active anymore. Closing..." );
 
             // await StopAsync( CancellationToken.None )
             //     .ConfigureAwait( false );
