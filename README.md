@@ -134,9 +134,9 @@ graph LR;
 
 ## Enumerable type mutation and sequence order
 
-Before version *0.10*, the base middleware split the execution of `IEnumerable<T>` <--> `T` spreads into multiple tasks. The reason for this was to improve the speed of execution, however, this also meant that the order of execution was not guaranteed.
+Before version *0.10*, the base middleware split the execution of `IEnumerable<T>` <--> `T` spreads into multiple tasks. The reason behind this was to improve the speed of execution, however, this also meant that the order of execution was not guaranteed.
 
-Starting from version *0.10*, the base middleware now executes `IEnumerable<T>` <--> `T` spreads sequentially, guaranteeing the order of execution. This decision was made because on most cases, the performance gain was negligible and the task spawning caused some confusion to implementors.
+Starting from version *0.10*, the base middleware executes `IEnumerable<T>` <--> `T` spreads sequentially, guaranteeing the order of execution. This decision was made because on most cases, the performance gain was negligible and the task spawning caused some confusion to implementors.
 
 ## Writing to Channel Output
 
