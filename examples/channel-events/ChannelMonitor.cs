@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Faactory.Channels.Examples;
 
-public class ChannelMonitor( ILogger<ChannelMonitor> logger ) : IChannelEvents
+public class ChannelMonitor( ILogger<ChannelMonitor> logger ) : IChannelMonitor
 {
     private readonly ILogger logger = logger;
 

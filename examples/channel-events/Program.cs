@@ -36,7 +36,7 @@ builder.Services.AddChannels( channel =>
     We're adding this one as singleton but that's not a requirement;
     transient and scoped are valid as well, depending on our needs.
     */
-    channel.Services.AddSingleton<IChannelEvents, ChannelMonitor>();
+    channel.Services.AddSingleton<IChannelMonitor, ChannelMonitor>();
 } );
 
 var app = builder.Build();
