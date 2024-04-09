@@ -25,11 +25,11 @@ public sealed class DetachedPipeline
         return ( this );
     }
 
-    public async Task RunAsync( IByteBuffer buffer )
+    public async Task RunAsync( object obj )
     {
         var data = new object[]
         {
-            buffer
+            obj
         };
 
         foreach ( var adapter in Adapters )
