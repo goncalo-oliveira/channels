@@ -16,6 +16,6 @@ public static class ChannelsHostedServiceExtensions
 
         configure( builder );
 
-        return ( services );
+        return services;
     }
 }

@@ -3,7 +3,7 @@ namespace Faactory.Channels;
 /// <summary>
 /// An interface for configuring a service channel
 /// </summary>
-public interface IServiceChannelBuilder : IChannelBuilder
+public interface IServiceChannelBuilder : IChannelBuilder<IServiceChannelBuilder>
 {
     /// <summary>
     /// Configure the builder with the service options

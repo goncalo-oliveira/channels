@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Hosting;
@@ -12,6 +13,7 @@ internal sealed class ChannelsHostedService : IHostedService
     private readonly IHostApplicationLifetime appLifetime;
     private readonly int listenPort;
     private readonly int so_backlog;
+    private readonly ChannelTransportMode transportMode;
 
     private readonly ManualResetEvent allDone = new ManualResetEvent( false );
 
@@ -31,6 +33,12 @@ internal sealed class ChannelsHostedService : IHostedService
 
         listenPort = options.Port;
         so_backlog = options.Backlog;
+        transportMode = options.TransportMode;
+
+        if ( transportMode != ChannelTransportMode.Tcp && transportMode != ChannelTransportMode.Udp )
+        {
+            throw new NotSupportedException( "Only TCP and UDP transport modes are supported." );
+        }
     }
 
     public Task StartAsync( CancellationToken cancellationToken )
@@ -63,10 +71,24 @@ internal sealed class ChannelsHostedService : IHostedService
 
             logger.LogDebug( "Attempting to listen on port {Port}...", listenPort );
 
-            // create a TCP streaming socket
-            listener = new Socket( ipAddress.AddressFamily
-                , SocketType.Stream
-                , ProtocolType.Tcp );
+            if ( transportMode == ChannelTransportMode.Udp )
+            {
+                // create a UDP datagram socket
+                listener = new Socket( ipAddress.AddressFamily
+                    , SocketType.Dgram
+                    , ProtocolType.Udp );
+            }
+            else if ( transportMode == ChannelTransportMode.Tcp )
+            {
+                // create a TCP streaming socket
+                listener = new Socket( ipAddress.AddressFamily
+                    , SocketType.Stream
+                    , ProtocolType.Tcp );
+            }
+            else
+            {
+                throw new NotSupportedException( $"{transportMode} transport mode not supported." );
+            }
 
             listener.Bind( localEndPoint );
             listener.Listen( so_backlog );

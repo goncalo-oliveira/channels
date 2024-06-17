@@ -7,7 +7,7 @@ public static class BufferLengthAdapterChannelBuilderExtensions
     /// <summary>
     /// Adds a buffer length adapter to the input pipeline
     /// </summary>
-    public static IChannelBuilder AddBufferLengthInputAdapter( this IChannelBuilder builder, Action<BufferLengthAdapterOptions>? configure = null )
+    public static IChannelBuilder AddBufferLengthInputAdapter<TChannelBuilder>( this IChannelBuilder<TChannelBuilder> builder, Action<BufferLengthAdapterOptions>? configure = null ) where TChannelBuilder : IChannelBuilder<TChannelBuilder>
     {
         builder.AddInputAdapter<BufferLengthAdapter>();
 

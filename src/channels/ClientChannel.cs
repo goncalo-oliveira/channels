@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
-internal class ClientChannel : Channel
+internal class ClientChannel : TcpChannel
 {
     public ClientChannel( IServiceScope serviceScope
         , Socket socket

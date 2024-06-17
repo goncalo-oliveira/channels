@@ -14,4 +14,9 @@ public class ServiceChannelOptions : ChannelOptions
     /// Gets or sets the maximum length of the pending connections queue. Default is 100.
     /// </summary>
     public int Backlog { get; set; } = 100;
+
+    /// <summary>
+    /// Gets or sets the transport mode. Default is TCP.
+    /// </summary>
+    public ChannelTransportMode TransportMode { get; set; } = ChannelTransportMode.Tcp;
 }

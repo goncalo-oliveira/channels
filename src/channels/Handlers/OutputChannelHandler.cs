@@ -6,12 +6,13 @@ internal sealed class OutputChannelHandler( ILoggerFactory loggerFactory ) : Cha
 {
     private readonly ILogger logger = loggerFactory.CreateLogger<OutputChannelHandler>();
 
-    public override Task ExecuteAsync( IChannelContext context, byte[] data )
+    public override async Task ExecuteAsync( IChannelContext context, byte[] data )
     {
-        ( (Sockets.ConnectedSocket)context.Channel ).Send( data );
+        if ( context.Channel is Channel channel )
+        {
+            await channel.WriteRawBytesAsync( data );
 
-        logger.LogDebug( "Written {length} bytes to the channel.", data.Length );
-
-        return Task.CompletedTask;
+            logger.LogDebug( "Written {length} bytes to the channel.", data.Length );
+        }
     }
 }

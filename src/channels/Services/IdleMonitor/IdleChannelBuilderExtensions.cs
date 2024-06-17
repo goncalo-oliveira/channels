@@ -7,7 +7,7 @@ public static class IdleChannelServiceChannelBuilderExtensions
     /// <summary>
     /// Adds idle channel service
     /// </summary>
-    public static IChannelBuilder AddIdleChannelService( this IChannelBuilder channel, Action<IdleChannelServiceOptions>? configure = null )
+    public static IChannelBuilder AddIdleChannelService<TChannelBuilder>( this IChannelBuilder<TChannelBuilder> channel, Action<IdleChannelServiceOptions>? configure = null ) where TChannelBuilder : IChannelBuilder<TChannelBuilder>
     {
         channel.AddChannelService<IdleChannelService>();
 

@@ -70,8 +70,8 @@ public class ScopedServiceTests
         var channel1 = await channelFactory.CreateChannelAsync( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
         var channel2 = await channelFactory.CreateChannelAsync( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
 
-        var adapter1 = (MyAdapter)((Channel)channel1).ServiceProvider.GetServices<IInputChannelAdapter>().Single();
-        var adapter2 = (MyAdapter)((Channel)channel1).ServiceProvider.GetServices<IInputChannelAdapter>().Single();
+        var adapter1 = (MyAdapter)((TcpChannel)channel1).ServiceProvider.GetServices<IInputChannelAdapter>().Single();
+        var adapter2 = (MyAdapter)((TcpChannel)channel1).ServiceProvider.GetServices<IInputChannelAdapter>().Single();
 
         var id1 = adapter1.Id;
         var id2 = adapter2.Id;
@@ -79,8 +79,8 @@ public class ScopedServiceTests
         // both ids have to match, since MyService is scoped
         Assert.Equal( id1, id2 );
 
-        adapter1 = (MyAdapter)((Channel)channel2).ServiceProvider.GetServices<IInputChannelAdapter>().Single();
-        adapter2 = (MyAdapter)((Channel)channel2).ServiceProvider.GetServices<IInputChannelAdapter>().Single();
+        adapter1 = (MyAdapter)((TcpChannel)channel2).ServiceProvider.GetServices<IInputChannelAdapter>().Single();
+        adapter2 = (MyAdapter)((TcpChannel)channel2).ServiceProvider.GetServices<IInputChannelAdapter>().Single();
 
         var id3 = adapter1.Id;
         var id4 = adapter2.Id;

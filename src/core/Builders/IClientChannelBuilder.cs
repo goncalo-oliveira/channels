@@ -3,7 +3,7 @@ namespace Faactory.Channels;
 /// <summary>
 /// An interface for configuring a client channel
 /// </summary>
-public interface IClientChannelBuilder : IChannelBuilder
+public interface IClientChannelBuilder : IChannelBuilder<IClientChannelBuilder>
 {
     /// <summary>
     /// Configure the builder with the client options

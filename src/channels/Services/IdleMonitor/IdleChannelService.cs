@@ -72,13 +72,22 @@ internal sealed class IdleChannelService : ChannelService
 
     private bool IsChannelSocketConnected()
     {
-        if ( Channel is Sockets.ConnectedSocket socket)
+        if ( Channel is TcpChannel tcpChannel)
         {
-            return socket.IsConnected();
+            return tcpChannel.IsConnected();
         }
 
+        /*
+        TODO: the above only works for TcpChannel.
+        We should probably declare a method in the Channel class
+        and have the TcpChannel implement it to check if the socket
+        is connected. This way, we can have a different implementation
+        for the WebSocketChannel or any other channel that doesn't
+        use a socket as the underlying transport.
+        */
+
         // since we can't ask the socket, we assume it is
-        return ( true );
+        return true;
     }
 
     private async Task CheckIdleStateAsync()

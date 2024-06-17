@@ -399,3 +399,71 @@ channel.AddIdleChannelService( options =>
 ```
 
 The recommended detection mode depends on the nature of the communication and the specific requirements of the application. For most cases, the `IdleDetectionMode.Auto` is a good choice. If the quality of the connection is known to be poor (particularly mobile networks), applying a hard timeout on received and/or sent data might be more reliable.
+
+## WebSockets
+
+It is possible to use the Channels middleware with WebSockets, however, there are a few things that need to be taken into consideration. Setting up the container is similar, it just uses a different extension method and build.
+
+```csharp
+IServiceCollection services = ...;
+
+services.AddWebSocketChannels( channel =>
+{
+    // configure options
+    channel.Configure( options =>
+    {
+        options.BufferEndianness = Buffers.Endianness.BigEndian;
+    } );
+
+    /*
+    set up input pipeline. remember that the first adapter should
+    read a WebSocketMessage instance and not an IByteBuffer as with TCP channels.
+    */
+    channel.AddInputAdapter<ExampleDecoderChannelAdapter>()
+        .AddInputHandler<MyChannelHandler>();
+
+    /*
+    set up output pipeline.
+    if you send a byte[] or IByteBuffer instance, the library will
+    send it as a (complete) binary message to the WebSocket.
+    the same if you send a string, which will be sent as a (complete) text message.
+    you can also send a WebSocketMessage instance, which allows you to send
+    fragmented messages and/or control the message type.
+    */
+    channel.AddOutputAdapter<ExampleEncoderAdapter>();
+} );
+```
+
+The main thing that needs to be taken into account is that WebSocket Channels do not have a built-in server. Because WebSockets rely on the HTTP protocol instead of the TCP protocol, a WebSocket Channel requires an existing WebSocket connection; since the library has no intention of implementing a Web Server, creating a WebSocket Channel is done on-demand, after a WebSocket connection is established.
+
+Let's see an example with ASP.NET Core. The following code is a minimal API endpoint that accepts a WebSocket connection and creates a WebSocket channel using the injected factory.
+
+```csharp
+public static async Task ConnectAsync( HttpContext httpContext, IWebSocketChannelFactory channelFactory )
+{
+    // make sure this is a WebSocket request
+    if ( !httpContext.WebSockets.IsWebSocketRequest )
+    {
+        httpContext.Response.StatusCode = 400;
+
+        return;
+    }
+
+    // accept the WebSocket connection
+    using var ws = await httpContext.WebSockets.AcceptWebSocketAsync();
+
+    // create a WebSocket channel using the factory
+    var channel = await channelFactory.CreateChannelAsync( ws );
+
+    // wait until the channel is closed
+    await channel.WaitAsync( httpContext.RequestAborted );
+
+    // close the channel and release resources; this will also close the underlying WebSocket
+    await channel.CloseAsync();
+}
+```
+
+Another thing to take into account is that the data delivered to the input pipeline, unlike TCP channels, is not an `IByteBuffer` but a `WebSocketMessage` instance, containing the message type and the data. If a fragmented message is received, it is first reassembled before being delivered to the input pipeline, so you'll never receive a fragmented message in the input pipeline.
+
+When writing data to the output pipeline, you can directly send a `string` or a `byte[]` or `IByteBuffer` instance, which will be sent as a complete text or binary message. If you need to send a fragmented message, you can send a `WebSocketMessage` instance, which allows you to control the message type and fragmentation.
+

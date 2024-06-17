@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
-internal sealed class ServiceChannel : Channel
+internal sealed class ServiceChannel : TcpChannel
 {
     public ServiceChannel( IServiceScope serviceScope
         , Socket socket
