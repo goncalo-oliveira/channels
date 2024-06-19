@@ -28,6 +28,7 @@ internal class ClientChannelFactory( IServiceProvider serviceProvider, IOptionsM
               serviceScope
             , client
             , options.BufferEndianness
+            , serviceProvider.GetServices<IChannelService>()
         );
 
         await channel.InitializeAsync();

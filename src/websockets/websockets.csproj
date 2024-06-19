@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <RootNamespace>Faactory.Channels.WebSockets</RootNamespace>
+    <AssemblyName>faactory.channels.websockets</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
+    <PackageId>Faactory.Channels.WebSockets</PackageId>
+    <Version>0.10.0</Version>
+    <Authors>Goncalo Oliveira</Authors>
+    <Description>Channels</Description>
+    <RepositoryUrl>https://github.com/goncalo-oliveira/channels</RepositoryUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>faactory.png</PackageIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\channels\channels.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../faactory.png" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+</Project>

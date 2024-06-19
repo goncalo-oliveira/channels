@@ -16,7 +16,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
     private readonly Task receiveTask;
     private readonly CancellationTokenSource cts = new();
 
-    internal WebSocketChannel( IServiceScope serviceScope, WebSocket socket, Endianness bufferEndianness )
+    internal WebSocketChannel( IServiceScope serviceScope, WebSocket socket, Endianness bufferEndianness, IChannelPipeline inputPipeline, IChannelPipeline outputPipeline, IEnumerable<IChannelService>? channelServices = null )
         : base( serviceScope )
     {
         logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
@@ -31,22 +31,13 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
         monitorTask = MonitorAsync( cts.Token );
         receiveTask = ReceiveAsync( cts.Token );
 
-        var pipelineFactory = new ChannelPipelineFactory( ServiceProvider );
+        Input = inputPipeline;
+        Output = outputPipeline;
 
-        Input = pipelineFactory.CreateInputPipeline();
-
-        var loggerFactory = ServiceProvider.GetRequiredService<ILoggerFactory>();
-        var outputAdapters = pipelineFactory.GetOutputAdapters()
-            .Prepend( new WebSocketTextMessageAdapter( loggerFactory ) )
-            .ToArray();
-        
-        var outputHandlers = new Handlers.IChannelHandler[]
+        if ( channelServices != null )
         {
-            new Handlers.WebSockets.WebSocketChannelHandler( loggerFactory ), // handle WebSocket-specific messages
-            new Handlers.OutputChannelHandler( loggerFactory ),               // handle byte[] content (sent as binary data)
-        };
-
-        Output = new ChannelPipeline( loggerFactory, outputAdapters, outputHandlers );
+            Services = channelServices;
+        }
     }
 
     private IByteBuffer TextBuffer { get; set; } = new WritableByteBuffer();

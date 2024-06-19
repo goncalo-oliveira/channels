@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\channels\channels.csproj" />
+    <ProjectReference Include="..\..\src\websockets\websockets.csproj" />
   </ItemGroup>
 
 </Project>

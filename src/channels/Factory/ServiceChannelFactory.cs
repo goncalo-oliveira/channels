@@ -15,7 +15,9 @@ internal class ServiceChannelFactory( IServiceProvider serviceProvider, IOptions
         var channel = new ServiceChannel(
               serviceScope
             , socket
-            , options.BufferEndianness );
+            , options.BufferEndianness
+            , serviceProvider.GetServices<IChannelService>()
+        );
 
         await channel.InitializeAsync();
 

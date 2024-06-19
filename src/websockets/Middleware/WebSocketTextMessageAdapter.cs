@@ -9,7 +9,7 @@ namespace Faactory.Channels.WebSockets.Adapters;
 /// <summary>
 /// This output adapter forwards strings to the channel's output pipeline as a text WebSocket message.
 /// </summary>
-internal sealed class WebSocketTextMessageAdapter( ILoggerFactory loggerFactory ) : ChannelAdapter<string>
+internal sealed class WebSocketTextMessageAdapter( ILoggerFactory loggerFactory ) : ChannelAdapter<string>, IOutputChannelAdapter
 {
     private readonly ILogger logger = loggerFactory.CreateLogger<WebSocketTextMessageAdapter>();
 

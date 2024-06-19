@@ -8,7 +8,8 @@ internal sealed class ServiceChannel : TcpChannel
 {
     public ServiceChannel( IServiceScope serviceScope
         , Socket socket
-        , Endianness bufferEndianness )
+        , Endianness bufferEndianness
+        , IEnumerable<IChannelService>? channelServices = null )
         : base( 
               serviceScope
             , socket
@@ -18,6 +19,11 @@ internal sealed class ServiceChannel : TcpChannel
 
         Input = pipelineFactory.CreateInputPipeline();
         Output = pipelineFactory.CreateOutputPipeline();
+
+        if ( channelServices is not null )
+        {
+            Services = channelServices;
+        }
     }
 
     public override Task CloseAsync()

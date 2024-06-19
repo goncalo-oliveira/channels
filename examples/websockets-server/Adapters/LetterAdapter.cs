@@ -7,23 +7,17 @@ using Faactory.Channels.WebSockets;
 namespace Faactory.Channels.Examples;
 
 /*
-This adapters reads from a web socket message and counts the number of words.
-It then forwards a structure with that information for the handler to deal with.
+This adapters reads from a web socket message.
 
-Notice we are using `WebSocketMessage` as the adapter type. On web socket channels,
-this is the type of message that is sent to the pipeline.
-
-The adapter also checks that the message type is text before processing it. Binary messages
-are not supported by this adapter.
-
-The word matching algorithm uses a regular expression.
+After reading the message, it extracts all the letters of the alphabet from the message.
+It then forwards the letters to the next middleware in the pipeline.
 
 Take note that this adapter is an `IInputChannelAdapter`.
 */
 
-public partial class WordAdapter( ILoggerFactory loggerFactory ) : ChannelAdapter<WebSocketMessage>, IInputChannelAdapter
+public partial class LetterAdapter( ILoggerFactory loggerFactory ) : ChannelAdapter<WebSocketMessage>, IInputChannelAdapter
 {
-    private readonly ILogger logger = loggerFactory.CreateLogger<WordAdapter>();
+    private readonly ILogger logger = loggerFactory.CreateLogger<LetterAdapter>();
 
     public override Task ExecuteAsync( IAdapterContext context, WebSocketMessage data )
     {
@@ -43,16 +37,23 @@ public partial class WordAdapter( ILoggerFactory loggerFactory ) : ChannelAdapte
         /*
         Text messages are (usually) UTF-8 encoded.
         */
-        var phrase = Encoding.UTF8.GetString( data.Data.ToArray() );
+        var text = Encoding.UTF8.GetString( data.Data.ToArray() )
+            .ToUpperInvariant();
 
-        var matches = MyRegex().Matches( phrase );
+        /*
+        We use a regular expression to extract all the letters of the alphabet from the message.
+        */
+        var letters = MyRegex().Matches( text )
+            .Select( m => m.Value.First() )
+            .Distinct()
+            .OrderBy( c => c )
+            .ToArray();
 
-        // we forward the matches found
-        context.Forward( matches );
+        context.Forward( letters );
 
         return Task.CompletedTask;
     }
 
-    [GeneratedRegex("[\\S]+")]
+    [GeneratedRegex("[A-Z]")]
     private static partial Regex MyRegex();
 }

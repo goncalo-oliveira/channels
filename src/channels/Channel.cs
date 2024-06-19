@@ -42,7 +42,7 @@ internal abstract class Channel : IChannel
 
     public DateTimeOffset? LastSent { get; protected set; }
 
-    public IEnumerable<IChannelService> Services => ServiceProvider.GetServices<IChannelService>();
+    public IEnumerable<IChannelService> Services { get; init; } = [];
 
     public abstract Task CloseAsync();
 
