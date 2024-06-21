@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Hosting;
@@ -13,9 +12,9 @@ internal sealed class ChannelsHostedService : IHostedService
     private readonly IHostApplicationLifetime appLifetime;
     private readonly int listenPort;
     private readonly int so_backlog;
-    private readonly ChannelTransportMode transportMode;
+    // private readonly ChannelTransportMode transportMode;
 
-    private readonly ManualResetEvent allDone = new ManualResetEvent( false );
+    private readonly ManualResetEvent allDone = new( false );
 
     private readonly IServiceChannelFactory channelFactory;
     private Socket? listener;
@@ -33,12 +32,12 @@ internal sealed class ChannelsHostedService : IHostedService
 
         listenPort = options.Port;
         so_backlog = options.Backlog;
-        transportMode = options.TransportMode;
+        // transportMode = options.TransportMode;
 
-        if ( transportMode != ChannelTransportMode.Tcp && transportMode != ChannelTransportMode.Udp )
-        {
-            throw new NotSupportedException( "Only TCP and UDP transport modes are supported." );
-        }
+        // if ( transportMode != ChannelTransportMode.Tcp && transportMode != ChannelTransportMode.Udp )
+        // {
+        //     throw new NotSupportedException( "Only TCP and UDP transport modes are supported." );
+        // }
     }
 
     public Task StartAsync( CancellationToken cancellationToken )
@@ -71,24 +70,29 @@ internal sealed class ChannelsHostedService : IHostedService
 
             logger.LogDebug( "Attempting to listen on port {Port}...", listenPort );
 
-            if ( transportMode == ChannelTransportMode.Udp )
-            {
-                // create a UDP datagram socket
-                listener = new Socket( ipAddress.AddressFamily
-                    , SocketType.Dgram
-                    , ProtocolType.Udp );
-            }
-            else if ( transportMode == ChannelTransportMode.Tcp )
-            {
-                // create a TCP streaming socket
-                listener = new Socket( ipAddress.AddressFamily
-                    , SocketType.Stream
-                    , ProtocolType.Tcp );
-            }
-            else
-            {
-                throw new NotSupportedException( $"{transportMode} transport mode not supported." );
-            }
+            // if ( transportMode == ChannelTransportMode.Udp )
+            // {
+            //     // create a UDP datagram socket
+            //     listener = new Socket( ipAddress.AddressFamily
+            //         , SocketType.Dgram
+            //         , ProtocolType.Udp );
+            // }
+            // else if ( transportMode == ChannelTransportMode.Tcp )
+            // {
+            //     // create a TCP streaming socket
+            //     listener = new Socket( ipAddress.AddressFamily
+            //         , SocketType.Stream
+            //         , ProtocolType.Tcp );
+            // }
+            // else
+            // {
+            //     throw new NotSupportedException( $"{transportMode} transport mode not supported." );
+            // }
+
+            // create a TCP streaming socket
+            listener = new Socket( ipAddress.AddressFamily
+                , SocketType.Stream
+                , ProtocolType.Tcp );
 
             listener.Bind( localEndPoint );
             listener.Listen( so_backlog );
@@ -136,7 +140,7 @@ internal sealed class ChannelsHostedService : IHostedService
         logger.LogInformation( "Service stopped." );
     }
 
-    private async void AcceptCallback( IAsyncResult ar )
+    private void AcceptCallback( IAsyncResult ar )
     {
         logger.LogDebug( "Accepting incoming connection..." );
 
@@ -168,7 +172,6 @@ internal sealed class ChannelsHostedService : IHostedService
             return;
         }
 
-        _ = await channelFactory.CreateChannelAsync( handler )
-            .ConfigureAwait( false );
+        _ = channelFactory.CreateChannel( handler );
     }
 }

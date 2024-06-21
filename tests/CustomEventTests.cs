@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using Faactory.Channels.Adapters;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
 namespace Faactory.Channels.Tests;
@@ -54,15 +55,16 @@ public class CustomEventTests
 
         var provider = services.BuildServiceProvider();
 
-        var pipeline = new ChannelPipelineFactory( provider )
-            .CreatePipeline(
+        var channel = new ServiceChannelFactory( provider )
+            .CreateChannel( new Socket( SocketType.Stream, ProtocolType.Tcp ), "__test" );
+
+        var pipeline = new ChannelPipeline(
+            NullLoggerFactory.Instance,
             [
                 new MyAdapter()
-            ] );
-
-        var options = new Microsoft.Extensions.Options.OptionsWrapper<ServiceChannelOptions>( new ServiceChannelOptions() );
-        var channel = await new ServiceChannelFactory( provider, options )
-            .CreateChannelAsync( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
+            ],
+            []
+        );
 
         var data = Guid.NewGuid().ToString( "N" );
         await pipeline.ExecuteAsync( channel, data );

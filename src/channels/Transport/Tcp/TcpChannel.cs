@@ -61,6 +61,13 @@ internal abstract class TcpChannel : Channel, IChannel
         base.Dispose();
     }
 
+    protected override async Task InitializeAsync(CancellationToken cancellationToken = default)
+    {
+        await base.InitializeAsync( cancellationToken );
+
+        BeginReceive();
+    }
+
     #region Socket
 
     internal bool IsConnected()
@@ -83,7 +90,7 @@ internal abstract class TcpChannel : Channel, IChannel
         }
     }
 
-    internal void BeginReceive()
+    private void BeginReceive()
     {
         try
         {

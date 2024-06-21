@@ -400,186 +400,61 @@ channel.AddIdleChannelService( options =>
 
 The recommended detection mode depends on the nature of the communication and the specific requirements of the application. For most cases, the `IdleDetectionMode.Auto` is a good choice. If the quality of the connection is known to be poor (particularly mobile networks), applying a hard timeout on received and/or sent data might be more reliable.
 
-## WebSockets
+## Named Channels
 
-It is possible to use the Channels middleware with WebSockets, however, there are a few things that need to be taken into consideration, since the library does not implement a Web Server. Setting up the container is similar, it just uses a different extension method and build.
+On some occasions, you might need different channels with a different pipeline configuration, whether because you need client and server channels in the same application or just different configurations for client or server channels. This is possible by using named channels.
+
+In reality, when you configure channels with a default pipeline, you are already using a named channel, however, the name is set internally by the library. To create an explicit named channel, you need to use the named channel builder that is returned by the `AddChannels` method.
 
 ```csharp
 IServiceCollection services = ...;
 
-services.AddWebSocketChannels( channel =>
-{
-    /*
-    configure options is minimal, since there's no server configuration
-    */
-    channel.Configure( options =>
+services.AddChannels()
+    .AddChanel( "myChannel", channel =>
     {
-        options.BufferEndianness = Buffers.Endianness.BigEndian;
+        // configure options
+        channel.Configure( options =>
+        {
+            options.Port = 8080;
+            options.Backlog = 30;
+        } );
+
+        // set up input pipeline
+        channel.AddInputAdapter<ExampleDecoderChannelAdapter>()
+            .AddInputHandler<MyChannelHandler>();
+
+        // set up output pipeline
+        channel.AddOutputAdapter<ExampleEncoderAdapter>();
     } );
-
-    /*
-    set up input pipeline. remember that the first adapter should
-    read a WebSocketMessage instance and not a IByteBuffer as with TCP channels.
-    */
-    channel.AddInputAdapter<ExampleDecoderChannelAdapter>()
-        .AddInputHandler<MyChannelHandler>();
-
-    /*
-    set up optional output pipeline. by default, the following types are already built-in:
-
-    - byte[] which is sent as a (complete) binary message
-    - IByteBuffer which is sent as a (complete) binary message
-    - string which is sent as a (complete) text message
-    - WebSocketMessage which allows you to send fragmented messages and/or control the message type
-    */
-    channel.AddOutputAdapter<ExampleEncoderAdapter>();
-} );
 ```
 
-The main thing that needs to be taken into account is that WebSocket Channels do not have a built-in server. Because WebSockets rely on the HTTP protocol instead of the TCP protocol, a WebSocket Channel requires an existing WebSocket connection. If using ASP.NET Core, this can be simplified by using extension methods to map the WebSocket endpoints to channel binding middleware.
-
-```csharp
-WebApplication app = ...;
-
-// required to use WebSockets  0.032 + iva
-// 
-app.UseWebSockets();
-
-app.MapWebSocketChannel( "/ws" );
-```
-
-Another thing to take into account is that the data delivered to the input pipeline, unlike TCP channels, is not an `IByteBuffer` but a `WebSocketMessage` instance, containing the message type and the data. If a fragmented message is received, it is first reassembled before being delivered to the input pipeline, so you'll never receive a fragmented message in the input pipeline.
-
-When writing data to the output pipeline, you can directly send a `string` or a `byte[]` or `IByteBuffer` instance, which will be sent as a complete text or binary message. If you need to send a fragmented message, you can send a `WebSocketMessage` instance, which allows you to control the message type and fragmentation.
-
-### Multiple Endpoints
-
-It is possible to have multiple WebSocket endpoints with a different pipeline configuration, however, this requires a bit of attention. The first thing to keep in mind is that when the mapping configuration occurs, the service provider is already built, so all channel middleware or services needs to be registered when registering the web socket channels.
+The above example creates a named channel called `myChannel`. This automatically launches a listener service when the application starts. This feature allows us to have multiple channels with different configurations.
 
 ```csharp
 IServiceCollection services = ...;
 
-services.AddWebSocketChannels( channel =>
-{
-    /*
-    register middleware for the first endpoint
-    */
-    channel.AddInputAdapter<ExampleAdapter1>()
-        .AddInputHandler<ExampleHandler1>();
+services.AddChannels()
+    .AddChanel( "channel1", channel =>
+    {
+        // configure options
+        channel.Configure( options =>
+        {
+            options.Port = 5001;
+        } );
 
-    /*
-    register middleware for the second endpoint
-    */
-    channel.AddInputAdapter<ExampleAdapter2>()
-        .AddInputHandler<ExampleHandler2>();
-} );
+        // ... set up pipelines
+    } )
+    .AddChanel( "channel2", channel =>
+    {
+        // configure options
+        channel.Configure( options =>
+        {
+            options.Port = 5002;
+        } );
+
+        // ... set up pipelines
+    } );
 ```
 
-The second thing to keep in mind is that if we have different middleware registered for different endpoints, we need to ensure that we customize the pipeline for each endpoint, since the default behaviour is to configure the pipeline with all registered middleware.
-
-```csharp
-var app = builder.Build();
-
-// set up the WebSocket middleware
-app.UseWebSockets();
-
-// map first WebSocket endpoint
-app.MapWebSocketChannel( "/ws1/connect", channel =>
-{
-    /*
-    customizing the pipeline creates a clean slate for the middleware
-    so we can add only the middleware we want from the ones registered before
-    */
-    channel.AddInputAdapter<ExampleAdapter1>()
-        .AddInputHandler<ExampleHandler1>();
-
-    /*
-    although the above method is the recommended way, it is also possible to
-    add middleware instances directly
-
-    channel.AddInputAdapter( new AnotherExampleAdapter() );
-
-    or from a factory method
-
-    channel.AddInputAdapter( sp => sp.GetRequiredService<AnotherExampleAdapter>() );
-    */
-} );
-
-// map second WebSocket endpoint
-app.MapWebSocketChannel( "/ws2/connect", channel =>
-{
-    /*
-    customizing the pipeline creates a clean slate for the middleware
-    so we can add only the middleware we want from the ones registered before
-    */
-    channel.AddInputAdapter<ExampleAdapter2>()
-        .AddInputHandler<ExampleHandler2>();
-} );
-```
-
-When customizing the pipeline, it's always possible to register all adapters, handlers or services directly. For instance, let's say we have multiple endpoints that share the same adapters (or initial adapters) but have different handlers. We'll also consider that the channel services are also shared.
-
-```csharp
-IServiceCollection services = ...;
-
-services.AddWebSocketChannels( channel =>
-{
-    /*
-    register input adapters; we know these will be shared across all endpoints
-    */
-    channel.AddInputAdapter<ExampleAdapter1>();
-
-    /*
-    register handler for the first endpoint
-    */
-    channel.AddInputHandler<ExampleHandler1>();
-
-    /*
-    register handler for the second endpoint
-    */
-    channel.AddInputHandler<ExampleHandler2>();
-
-    /*
-    register channel services; we know these will be shared across all endpoints
-    */
-    channel.AddIdleChannelService();
-} );
-
-// ...
-
-var app = builder.Build();
-
-app.UseWebSockets();
-
-// map first WebSocket endpoint
-app.MapWebSocketChannel( "/ws1/connect", channel =>
-{
-    /*
-    we want to use all registered adapters since we know they are shared
-    we also want to use all registered channel services
-    */
-    chanel.AddRegisteredInputAdapters();
-    chanel.AddRegisteredChannelServices();
-
-    /*
-    but we want to use only a specific handler here
-    */
-    channel.AddInputHandler<ExampleHandler1>();
-} );
-
-// map second WebSocket endpoint
-app.MapWebSocketChannel( "/ws2/connect", channel =>
-{
-    /*
-    again, we want to use all registered adapters
-    and all registered channel services
-    */
-    chanel.AddRegisteredInputAdapters();
-    chanel.AddRegisteredChannelServices();
-
-    /*
-    and a different handler
-    */
-    channel.AddInputHandler<ExampleHandler2>();
-} );
-```
+> [!TIP]
+> Earlier versions of the library didn't allow using a client channel and a server channel in the same application because they shared the same pipeline configuration. This is now possible by using named channels.

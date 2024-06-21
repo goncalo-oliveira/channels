@@ -6,28 +6,39 @@ namespace Faactory.Channels;
 
 internal sealed class ServiceChannel : TcpChannel
 {
+    private readonly Task initializeTask;
+    private readonly CancellationTokenSource cts = new();
+
     public ServiceChannel( IServiceScope serviceScope
         , Socket socket
         , Endianness bufferEndianness
+        , IChannelPipeline inputPipeline
+        , IChannelPipeline outputPipeline
         , IEnumerable<IChannelService>? channelServices = null )
         : base( 
               serviceScope
             , socket
             , bufferEndianness )
     {
-        var pipelineFactory = new ChannelPipelineFactory( serviceScope.ServiceProvider );
+        Input = inputPipeline;
+        Output = outputPipeline;
 
-        Input = pipelineFactory.CreateInputPipeline();
-        Output = pipelineFactory.CreateOutputPipeline();
-
-        if ( channelServices is not null )
+        if ( channelServices != null )
         {
             Services = channelServices;
         }
+
+        initializeTask = InitializeAsync( cts.Token );
     }
 
     public override Task CloseAsync()
     {
+        try
+        {
+            cts.Cancel();
+        }
+        catch { }
+
         try
         {
             Shutdown();
@@ -47,5 +58,12 @@ internal sealed class ServiceChannel : TcpChannel
         {}
 
         return Task.CompletedTask;
+    }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+
+        initializeTask.Dispose();
     }
 }

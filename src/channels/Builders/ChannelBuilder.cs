@@ -4,67 +4,75 @@ using Faactory.Channels.Handlers;
 
 namespace Faactory.Channels;
 
-internal abstract class ChannelBuilder<TChannelBuilder> : IChannelBuilder<TChannelBuilder> where TChannelBuilder : IChannelBuilder<TChannelBuilder>
+internal abstract class ChannelBuilder<TChannelBuilder>( IServiceCollection services, string channelName ) : IChannelBuilder<TChannelBuilder> where TChannelBuilder : IChannelBuilder<TChannelBuilder>
 {
-    protected ChannelBuilder( IServiceCollection services )
-    {
-        Services = services;
-    }
-
-    public IServiceCollection Services { get; }
+    public string Name { get; } = channelName;
+    public IServiceCollection Services { get; } = services;
 
     public TChannelBuilder AddInputAdapter<TAdapter>() where TAdapter : class, IChannelAdapter, IInputChannelAdapter
     {
-        Services.AddTransient<IInputChannelAdapter, TAdapter>();
+        Services.AddKeyedTransient<IInputChannelAdapter, TAdapter>( Name );
 
         return Self();
     }
 
     public TChannelBuilder AddInputAdapter( Func<IServiceProvider, IInputChannelAdapter> implementationFactory )
     {
-        Services.AddTransient( implementationFactory );
+        Services.AddKeyedTransient( Name, ( sp, _ ) =>
+        {
+            return implementationFactory( sp );
+        } );
 
         return Self();
     }
 
     public TChannelBuilder AddOutputAdapter<TAdapter>() where TAdapter : class, IChannelAdapter, IOutputChannelAdapter
     {
-        Services.AddTransient<IOutputChannelAdapter, TAdapter>();
+        Services.AddKeyedTransient<IOutputChannelAdapter, TAdapter>( Name );
 
         return Self();
     }
 
     public TChannelBuilder AddOutputAdapter( Func<IServiceProvider, IOutputChannelAdapter> implementationFactory )
     {
-        Services.AddTransient( implementationFactory );
+        Services.AddKeyedTransient( Name, ( sp, _ ) =>
+        {
+            return implementationFactory( sp );
+        } );
 
         return Self();
     }
 
     public TChannelBuilder AddInputHandler<THandler>() where THandler : class, IChannelHandler
     {
-        Services.AddTransient<IChannelHandler, THandler>();
+        Services.AddKeyedTransient<IChannelHandler, THandler>( Name );
 
         return Self();
     }
 
     public TChannelBuilder AddInputHandler( Func<IServiceProvider, IChannelHandler> implementationFactory )
     {
-        Services.AddTransient( implementationFactory );
+        Services.AddKeyedTransient( Name, ( sp, _ ) =>
+        {
+            return implementationFactory( sp );
+        } );
 
         return Self();
     }
 
     public TChannelBuilder AddChannelService<TService>() where TService : class, IChannelService
     {
-        Services.AddScoped<IChannelService, TService>();
+        Services.AddKeyedScoped<IChannelService, TService>( Name );
 
         return Self();
     }
 
     public TChannelBuilder AddChannelService( Func<IServiceProvider, IChannelService> implementationFactory )
     {
-        Services.AddScoped( implementationFactory );
+        Services.AddKeyedScoped( Name, ( sp, _ ) =>
+        {
+            return implementationFactory( sp );
+        } );
 
         return Self();
     }

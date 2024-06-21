@@ -8,5 +8,5 @@ internal interface IServiceChannelFactory
     /// <summary>
     /// Creates a new service channel instance
     /// </summary>
-    Task<IChannel> CreateChannelAsync( System.Net.Sockets.Socket socket );
+    IChannel CreateChannel( System.Net.Sockets.Socket socket, string? name = null );
 }

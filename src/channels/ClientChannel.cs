@@ -3,30 +3,41 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
-internal class ClientChannel : TcpChannel
+internal sealed class ClientChannel : TcpChannel
 {
+    private readonly Task initializeTask;
+    private readonly CancellationTokenSource cts = new();
+
     public ClientChannel( IServiceScope serviceScope
         , Socket socket
         , Buffers.Endianness bufferEndianness
+        , IChannelPipeline inputPipeline
+        , IChannelPipeline outputPipeline
         , IEnumerable<IChannelService>? channelServices = null )
         : base( 
               serviceScope
             , socket
             , bufferEndianness )
     {
-        var pipelineFactory = new ChannelPipelineFactory( serviceScope.ServiceProvider );
+        Input = inputPipeline;
+        Output = outputPipeline;
 
-        Input = pipelineFactory.CreateInputPipeline();
-        Output = pipelineFactory.CreateOutputPipeline();
-
-        if ( channelServices is not null )
+        if ( channelServices != null )
         {
             Services = channelServices;
         }
+
+        initializeTask = InitializeAsync( cts.Token );
     }
 
     public override async Task CloseAsync()
     {
+        try
+        {
+            cts.Cancel();
+        }
+        catch { }
+
         Shutdown();
 
         try
@@ -45,5 +56,12 @@ internal class ClientChannel : TcpChannel
         }
         catch ( Exception )
         {}
+    }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+
+        initializeTask.Dispose();
     }
 }

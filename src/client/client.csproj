@@ -2,12 +2,12 @@
 
   <PropertyGroup>
     <TargetFrameworks>net8.0</TargetFrameworks>
-    <RootNamespace>Faactory.Channels.WebSockets</RootNamespace>
-    <AssemblyName>faactory.channels.websockets</AssemblyName>
+    <RootNamespace>Faactory.Channels.Client</RootNamespace>
+    <AssemblyName>faactory.channels.client</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>preview</LangVersion>
-    <PackageId>Faactory.Channels.WebSockets</PackageId>
+    <PackageId>Faactory.Channels.Client</PackageId>
     <Version>1.0.0-preview-1</Version>
     <Authors>Goncalo Oliveira</Authors>
     <Description>Channels</Description>
@@ -16,10 +16,6 @@
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>faactory.png</PackageIcon>
   </PropertyGroup>
-
-  <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\channels\channels.csproj" />

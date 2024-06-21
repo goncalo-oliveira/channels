@@ -52,6 +52,8 @@ internal abstract class Channel : IChannel
         Output.Dispose();
 
         ChannelScope.Dispose();
+
+        GC.SuppressFinalize( this );
     }
 
     public virtual async Task WriteAsync( object data )
@@ -71,7 +73,10 @@ internal abstract class Channel : IChannel
 
     public abstract Task WriteRawBytesAsync( byte[] data );
 
-    internal virtual async Task InitializeAsync()
+    /// <summary>
+    /// Initializes the channel. This method is called when the channel is created.
+    /// </summary>
+    protected virtual async Task InitializeAsync( CancellationToken cancellationToken = default )
     {
         logger.LogInformation( "Created" );
 
@@ -79,16 +84,16 @@ internal abstract class Channel : IChannel
         this.NotifyChannelCreated();
 
         // start long-running services
-        await StartServicesAsync();
+        await StartServicesAsync( cancellationToken );
     }
 
-    private Task StartServicesAsync()
+    private Task StartServicesAsync( CancellationToken cancellationToken = default )
     {
         var tasks = Services.Select( async service =>
         {
             try
             {
-                await service.StartAsync( this );
+                await service.StartAsync( this, cancellationToken );
             }
             catch ( Exception ex )
             {

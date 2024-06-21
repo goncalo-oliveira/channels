@@ -1,7 +1,7 @@
+#pragma warning disable CA1859 // Use concrete types when possible for improved performance
+
 using System.Net.WebSockets;
-using Faactory.Channels.Adapters;
 using Faactory.Channels.Buffers;
-using Faactory.Channels.WebSockets.Adapters;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -26,11 +26,6 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
 
         Buffer = new WritableByteBuffer( bufferEndianness );
         WebSocket = socket;
-
-        initializeTask = base.InitializeAsync();
-        monitorTask = MonitorAsync( cts.Token );
-        receiveTask = ReceiveAsync( cts.Token );
-
         Input = inputPipeline;
         Output = outputPipeline;
 
@@ -38,6 +33,10 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
         {
             Services = channelServices;
         }
+
+        initializeTask = base.InitializeAsync( cts.Token );
+        monitorTask = MonitorAsync( cts.Token );
+        receiveTask = ReceiveAsync( cts.Token );
     }
 
     private IByteBuffer TextBuffer { get; set; } = new WritableByteBuffer();
@@ -125,7 +124,15 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
 
     public override void Dispose()
     {
-        cts.Cancel();
+        try
+        {
+            cts.Cancel();
+        }
+        catch { }
+
+        initializeTask.Dispose();
+        monitorTask.Dispose();
+        receiveTask.Dispose();
 
         WebSocket.Dispose();
 
@@ -136,7 +143,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
         base.Dispose(); // can't forget to dispose the base class
     }
 
-    internal override Task InitializeAsync() => initializeTask;
+    protected override Task InitializeAsync( CancellationToken cancellationToken ) => initializeTask;
 
     internal async Task WriteMessageAsync( WebSocketMessage message )
     {
@@ -338,3 +345,5 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
         logger.LogDebug( "Monitor task canceled." );
     }
 }
+
+#pragma warning restore CA1859 // Use concrete types when possible for improved performance

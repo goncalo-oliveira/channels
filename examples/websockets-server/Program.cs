@@ -22,6 +22,15 @@ builder.Services.AddWebSocketChannels( channel =>
     // set up input pipeline
     channel.AddInputAdapter<LetterAdapter>()
         .AddInputHandler<LetterHandler>();
+} )
+.AddChannel( "lowercase", channel =>
+{
+    channel.AddIdleChannelService();
+
+    // set up input pipeline
+    channel.AddInputAdapter<LetterAdapter>()
+        .AddInputAdapter<LowercaseAdapter>()
+        .AddInputHandler<LetterHandler>();
 } );
 
 /*
@@ -38,6 +47,7 @@ var app = builder.Build();
 app.UseWebSockets();
 
 // map WebSocket endpoint to Channels middleware
-app.MapWebSocketChannel( "/ws/connect" );
+app.MapWebSocketChannel( "/ws/connect" ); // this one uses the default channel pipeline
+app.MapWebSocketChannel( "/ws/lowercase/connect", "lowercase" );
 
 app.Run();

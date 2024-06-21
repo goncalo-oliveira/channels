@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -7,7 +6,10 @@ namespace Faactory.Channels.WebSockets;
 
 internal static class WebSocketChannelMiddleware
 {
-    public static async Task InvokeAsync( HttpContext httpContext, IWebSocketChannelFactory channelFactory, [FromServices] IChannelPipelineBuilder? pipelineBuilder = null )
+    public static Task InvokeAsync( HttpContext httpContext, IWebSocketChannelFactory channelFactory )
+        => InvokeNamedAsync( httpContext, channelFactory, WebSocketChannelFactory.DefaultChannelName );
+
+    public static async Task InvokeNamedAsync( HttpContext httpContext, IWebSocketChannelFactory channelFactory, string channelName )
     {
             // make sure this is a WebSocket request
             if ( !httpContext.WebSockets.IsWebSocketRequest )
@@ -21,7 +23,7 @@ internal static class WebSocketChannelMiddleware
             using var ws = await httpContext.WebSockets.AcceptWebSocketAsync();
 
             // create a WebSocket channel using the factory
-            var channel = await channelFactory.CreateChannelAsync( ws, pipelineBuilder );
+            var channel = channelFactory.CreateChannel( ws, channelName );
 
             /*
             this creates a linked token source that will cancel when either of the following happens:

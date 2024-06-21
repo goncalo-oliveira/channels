@@ -1,4 +1,8 @@
 using System.Net.WebSockets;
+using Faactory.Channels.Adapters;
+using Faactory.Channels.Handlers;
+using Faactory.Channels.Handlers.WebSockets;
+using Faactory.Channels.WebSockets.Adapters;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -9,20 +13,20 @@ internal sealed class WebSocketChannelFactory( IServiceProvider serviceProvider 
 {
     private readonly IServiceProvider provider = serviceProvider;
 
-    public async Task<IWebSocketChannel> CreateChannelAsync( WebSocket webSocket, IChannelPipelineBuilder? pipelineBuilder )
+    internal const string DefaultChannelName = "__ws-default";
+
+    public IWebSocketChannel CreateChannel( WebSocket webSocket, string? name )
     {
+        name ??= DefaultChannelName;
+
         var scope = provider.CreateScope();
 
-        var options = scope.ServiceProvider.GetRequiredService<IOptions<ChannelOptions>>();
+        var options = scope.ServiceProvider.GetRequiredService<IOptionsSnapshot<ChannelOptions>>()
+            .Get( name );
 
-        /*
-        Create the pipelines. If no pipeline builder is provided, use the default one.
-        */
-
-        pipelineBuilder ??= CreateDefaultPipeline( provider );
-
-        var inputPipeline = pipelineBuilder.BuildInputPipeline();
-        var outputPipeline = pipelineBuilder.BuildOutputPipeline();
+        var inputPipeline = CreateInputPipeline( scope.ServiceProvider, name );        
+        var outputPipeline = CreateOutputPipeline( scope.ServiceProvider, name );
+        var channelServices = scope.ServiceProvider.GetKeyedServices<IChannelService>( name );
 
         /*
         Create the channel instance
@@ -30,40 +34,45 @@ internal sealed class WebSocketChannelFactory( IServiceProvider serviceProvider 
         var channel = new WebSocketChannel(
             scope,
             webSocket,
-            options.Value.BufferEndianness,
+            options.BufferEndianness,
             inputPipeline,
             outputPipeline,
-            pipelineBuilder.ChannelServices
+            channelServices
         );
-
-        /*
-        initialize the channel
-        */
-        await channel.InitializeAsync();
 
         return channel;
     }
 
-    private static ChannelPipelineBuilder CreateDefaultPipeline( IServiceProvider provider )
+    private static IChannelPipeline CreateInputPipeline( IServiceProvider provider, string name )
+    {
+        var adapters = provider.GetAdapters<IInputChannelAdapter>( name );
+        var handlers = provider.GetHandlers( name );
+
+        IChannelPipeline pipeline = new ChannelPipeline(
+            provider.GetRequiredService<ILoggerFactory>(),
+            adapters,
+            handlers
+        );
+
+        return pipeline;
+    }
+
+    private static IChannelPipeline CreateOutputPipeline( IServiceProvider provider, string name )
     {
         var loggerFactory = provider.GetRequiredService<ILoggerFactory>();
-        var pipelineBuilder = new ChannelPipelineBuilder( provider );
 
-        // add the WebSocket-specific middleware (output adapters and handlers)
-        pipelineBuilder.AddWebSocketsMiddleware();
+        var adapters = provider.GetAdapters<IOutputChannelAdapter>( name )
+            .Prepend( new WebSocketTextMessageAdapter( loggerFactory ) );
 
-        // add all registered input adapters
-        pipelineBuilder.AddRegisteredInputAdapters();
+        IChannelPipeline pipeline = new ChannelPipeline(
+            provider.GetRequiredService<ILoggerFactory>(),
+            adapters,
+            [
+                new WebSocketChannelHandler( loggerFactory ),
+                new OutputChannelHandler( loggerFactory )
+            ]
+        );
 
-        // add all registered input handlers
-        pipelineBuilder.AddRegisteredInputHandlers();
-
-        // add all registered output adapters
-        pipelineBuilder.AddRegisteredOutputAdapters();
-
-        // use all registered channel services
-        pipelineBuilder.AddRegisteredChannelServices();
-
-        return pipelineBuilder;
+        return pipeline;
     }
 }
