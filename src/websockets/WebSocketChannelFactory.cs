@@ -13,18 +13,16 @@ internal sealed class WebSocketChannelFactory( IServiceProvider serviceProvider 
 {
     private readonly IServiceProvider provider = serviceProvider;
 
-    internal const string DefaultChannelName = "__ws-default";
-
-    public IWebSocketChannel CreateChannel( WebSocket webSocket, string? name )
+    public IWebSocketChannel CreateChannel( WebSocket webSocket, string name )
     {
-        name ??= DefaultChannelName;
+        ArgumentException.ThrowIfNullOrEmpty( name, nameof( name ) );
 
         var scope = provider.CreateScope();
 
         var options = scope.ServiceProvider.GetRequiredService<IOptionsSnapshot<ChannelOptions>>()
             .Get( name );
 
-        var inputPipeline = CreateInputPipeline( scope.ServiceProvider, name );        
+        var inputPipeline = ChannelPipeline.CreateInput( scope.ServiceProvider, name );
         var outputPipeline = CreateOutputPipeline( scope.ServiceProvider, name );
         var channelServices = scope.ServiceProvider.GetKeyedServices<IChannelService>( name );
 
@@ -41,20 +39,6 @@ internal sealed class WebSocketChannelFactory( IServiceProvider serviceProvider 
         );
 
         return channel;
-    }
-
-    private static IChannelPipeline CreateInputPipeline( IServiceProvider provider, string name )
-    {
-        var adapters = provider.GetAdapters<IInputChannelAdapter>( name );
-        var handlers = provider.GetHandlers( name );
-
-        IChannelPipeline pipeline = new ChannelPipeline(
-            provider.GetRequiredService<ILoggerFactory>(),
-            adapters,
-            handlers
-        );
-
-        return pipeline;
     }
 
     private static IChannelPipeline CreateOutputPipeline( IServiceProvider provider, string name )

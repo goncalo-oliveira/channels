@@ -178,7 +178,7 @@ Install the package from NuGet
 dotnet add package Faactory.Channels
 ```
 
-To quickly bootstrap a server, we need to inject a *hosted service*. Then we need to configure the listening options and set up the input and output pipelines. Here's an example
+The first step is to add the library to the DI container and configure the channel pipelines. These configurations are always *named*, which means that we can have multiple channel configurations for different purposes. Nonetheless, if we only need one channel pipeline, we can do it all at once by configuring a *default` configuration.
 
 ```csharp
 IServiceCollection services = ...;
@@ -186,57 +186,54 @@ IServiceCollection services = ...;
 // add our hosted service
 services.AddChannels( channel =>
 {
-    // configure options
-    channel.Configure( options =>
-    {
-        options.Port = 8080;
-        options.Backlog = 30;
-    } );
-
     // set up input pipeline
-    channel.AddInputAdapter<ExampleDecoderChannelAdapter>()
-        .AddInputHandler<MyChannelHandler>();
+    channel.AddInputAdapter<ExampleAdapter>()
+        .AddInputHandler<ExampleHandler>();
 
     // set up output pipeline
-    channel.AddOutputAdapter<ExampleEncoderAdapter>();
+    channel.AddOutputAdapter<ExampleAdapter>();
 } );
 ```
 
-To boostrap the client, we'll need to register the factory with a service provider. Then, similarly to the server, we need to configure the channel options and set up the input and output pipelines. Here's an example
+If we need to configure multiple channel pipelines, we use the parameterless method, which returns a builder that allows us to configure named channels.
 
 ```csharp
-IServiceCollection services = ...
+IServiceCollection services = ...;
 
-// add our client factory
-services.AddClientChannelFactory( channel =>
-{
-    // configure options
-    channel.Configure( options =>
+services.AddChannels()
+    .Add( "channel1", channel =>
     {
-        options.Host = "localhost";
-        options.Port = 8080;
-    } );
-    
-    // set up input pipeline
-    channel.AddInputAdapter<ExampleDecoderChannelAdapter>()
-        .AddInputHandler<MyChannelHandler>();
+        // set up input pipeline
+        channel.AddInputAdapter<ExampleAdapter>()
+            .AddInputHandler<ExampleHandler1>();
 
-    // set up output pipeline
-    channel.AddOutputAdapter<ExampleEncoderAdapter>();
-} );
+        // set up output pipeline
+        channel.AddOutputAdapter<ExampleAdapter>();
+    } )
+    .Add( "channel2", channel =>
+    {
+        // set up input pipeline
+        channel.AddInputAdapter<ExampleAdapter>()
+            .AddInputHandler<ExampleHandler2>();
+
+        // set up output pipeline
+        channel.AddOutputAdapter<ExampleAdapter>();
+    } );
 ```
 
-Then, where needed, we can create a client channel by using the factory
+## Listeners
+
+After the channels are configured, we need to add the listener services. The library provides listeners for TCP and UDP channels. When adding a listener, we can specify the channel name and the options, or we can use the default channel configuration.
 
 ```csharp
-IClientChannelFactory channelFactory = ...;
-var channel = await channelFactory.CreateAsync();
+IServiceCollection services = ...;
 
-await channel.WriteAsync( new MyData
-{
-    // ...
-} );
+services.AddTcpChannelListener( 8080 );                // TCP listener with default channel configuration
+// services.AddTcpChannelListener( "channel1", 8080 ); // TCP listener with named channel configuration
+// services.AddUdpChannelListener( 7701 );             // UDP listener with default channel configuration
 ```
+
+We can use multiple listeners in the same application, each with its own configuration.
 
 ## Adapters and Buffers
 
@@ -355,8 +352,7 @@ public class SampleIdentityHandler : ChannelHandler<IdentityInformation>
 
 ## Idle Channels
 
-> [!NOTE]
-> On previous releases, the idle detection mechanism was available and active by default. Since version 0.5 this is no longer true and the idle detection service needs to be added explicitly.
+//// TODO: Deprecate the idle channel service in favor of an internal mechanism; removes the need to have an additional service running.
 
 There's a ready-made service that monitors channel activity and detects if a channel has become idle or unresponsive. When that happens, the underlying socket is disconnected and the channel closed.
 
@@ -400,61 +396,60 @@ channel.AddIdleChannelService( options =>
 
 The recommended detection mode depends on the nature of the communication and the specific requirements of the application. For most cases, the `IdleDetectionMode.Auto` is a good choice. If the quality of the connection is known to be poor (particularly mobile networks), applying a hard timeout on received and/or sent data might be more reliable.
 
-## Named Channels
+## Client
 
-On some occasions, you might need different channels with a different pipeline configuration, whether because you need client and server channels in the same application or just different configurations for client or server channels. This is possible by using named channels.
+The library also provides a TCP/UDP client that can be used to connect to a server. This client automatically connects to the server and creates a channel instance when the connection is established. Connection drops are automatically handled and the client will attempt to reconnect.
 
-In reality, when you configure channels with a default pipeline, you are already using a named channel, however, the name is set internally by the library. To create an explicit named channel, you need to use the named channel builder that is returned by the `AddChannels` method.
-
-```csharp
-IServiceCollection services = ...;
-
-services.AddChannels()
-    .AddChanel( "myChannel", channel =>
-    {
-        // configure options
-        channel.Configure( options =>
-        {
-            options.Port = 8080;
-            options.Backlog = 30;
-        } );
-
-        // set up input pipeline
-        channel.AddInputAdapter<ExampleDecoderChannelAdapter>()
-            .AddInputHandler<MyChannelHandler>();
-
-        // set up output pipeline
-        channel.AddOutputAdapter<ExampleEncoderAdapter>();
-    } );
-```
-
-The above example creates a named channel called `myChannel`. This automatically launches a listener service when the application starts. This feature allows us to have multiple channels with different configurations.
+Clients use the same channel configuration as the listeners, so before we can create an instance of the client, we need to configure it first.
 
 ```csharp
 IServiceCollection services = ...;
 
-services.AddChannels()
-    .AddChanel( "channel1", channel =>
-    {
-        // configure options
-        channel.Configure( options =>
-        {
-            options.Port = 5001;
-        } );
+/*
+this registers a default client with the default channel configuration
+*/
+services.AddChannelsClient( "tcp://example.host:8080" );
 
-        // ... set up pipelines
-    } )
-    .AddChanel( "channel2", channel =>
-    {
-        // configure options
-        channel.Configure( options =>
-        {
-            options.Port = 5002;
-        } );
+/*
+we could also register the default client with a named channel configuration
+*/
+// services.AddChannelsClient( "channel1", "tcp://example.host:8080" );
 
-        // ... set up pipelines
-    } );
+/*
+when we need to create a client, we only need to inject the `IChannelsClientFactory` interface
+*/
+public class MyClient
+{
+    private readonly IChannelsClient client;
+
+    public MyClient( IChannelsClientFactory factory )
+    {
+        client = factory.CreateClient();
+    }
+
+    public Task ExecuteAsync()
+    {
+        // ...
+    }
+}
 ```
 
-> [!TIP]
-> Earlier versions of the library didn't allow using a client channel and a server channel in the same application because they shared the same pipeline configuration. This is now possible by using named channels.
+If we need to configure multiple clients with different channel configurations, we need to register them as named clients instead.
+
+```csharp
+IServiceCollection services = ...;
+
+/*
+this registers a named client (client1) with the default channel configuration
+*/
+services.AddChannelsNamedClient( "client1", "tcp://example.host:8080" );
+
+/*
+this registers a named client (client2) with a named channel configuration (channel1)
+*/
+services.AddChannelsNamedClient( "client2", "channel1", "tcp://example.host:8080" );
+```
+
+## Web Sockets
+
+Support for web sockets is available through the `Faactory.Channels.WebSockets` package. It provides ASP.NET Core routing and middleware for easy integration with this library.

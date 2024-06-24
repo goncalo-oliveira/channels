@@ -11,27 +11,33 @@ builder.Logging.ClearProviders()
     } );
 
 /*
-Set up Channels over WebSockets
+Set up Channels middleware;
+We used named channels here to demonstrate how to set up multiple channels
 */
-builder.Services.AddWebSocketChannels( channel =>
-{
-    // set up long-running services
-    // since v0.5 idle monitoring is a channel service
-    channel.AddIdleChannelService();
+builder.Services.AddChannels()
+    .Add( "uppercase", channel =>
+    {
+        // set up long-running services
+        channel.AddIdleChannelService();
 
-    // set up input pipeline
-    channel.AddInputAdapter<LetterAdapter>()
-        .AddInputHandler<LetterHandler>();
-} )
-.AddChannel( "lowercase", channel =>
-{
-    channel.AddIdleChannelService();
+        // set up input pipeline
+        channel.AddInputAdapter<LetterAdapter>()
+            .AddInputHandler<LetterHandler>();
+    } )
+    .Add( "lowercase", channel =>
+    {
+        channel.AddIdleChannelService();
 
-    // set up input pipeline
-    channel.AddInputAdapter<LetterAdapter>()
-        .AddInputAdapter<LowercaseAdapter>()
-        .AddInputHandler<LetterHandler>();
-} );
+        // set up input pipeline
+        channel.AddInputAdapter<LetterAdapter>()
+            .AddInputAdapter<LowercaseAdapter>()
+            .AddInputHandler<LetterHandler>();
+    } );
+
+/*
+Required for WebSocket channels
+*/
+builder.Services.AddWebSocketChannels();
 
 /*
 Configure Kestrel on port 8080
@@ -43,11 +49,11 @@ builder.Services.Configure<KestrelServerOptions>( options =>
 
 var app = builder.Build();
 
-// set up the WebSocket middleware
+// use ASP.NET WebSockets middleware
 app.UseWebSockets();
 
-// map WebSocket endpoint to Channels middleware
-app.MapWebSocketChannel( "/ws/connect" ); // this one uses the default channel pipeline
-app.MapWebSocketChannel( "/ws/lowercase/connect", "lowercase" );
+// map WebSockets endpoints to configured Channels middleware
+app.MapWebSocketChannel( "/ws/uppercase", "uppercase" );
+app.MapWebSocketChannel( "/ws/lowercase", "lowercase" );
 
 app.Run();

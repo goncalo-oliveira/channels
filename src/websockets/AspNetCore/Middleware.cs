@@ -7,7 +7,7 @@ namespace Faactory.Channels.WebSockets;
 internal static class WebSocketChannelMiddleware
 {
     public static Task InvokeAsync( HttpContext httpContext, IWebSocketChannelFactory channelFactory )
-        => InvokeNamedAsync( httpContext, channelFactory, WebSocketChannelFactory.DefaultChannelName );
+        => InvokeNamedAsync( httpContext, channelFactory, ChannelBuilder.DefaultChannelName );
 
     public static async Task InvokeNamedAsync( HttpContext httpContext, IWebSocketChannelFactory channelFactory, string channelName )
     {

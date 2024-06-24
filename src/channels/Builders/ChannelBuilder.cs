@@ -1,81 +1,91 @@
-using Microsoft.Extensions.DependencyInjection;
 using Faactory.Channels.Adapters;
 using Faactory.Channels.Handlers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
-internal abstract class ChannelBuilder<TChannelBuilder>( IServiceCollection services, string channelName ) : IChannelBuilder<TChannelBuilder> where TChannelBuilder : IChannelBuilder<TChannelBuilder>
+internal class ChannelBuilder( IServiceCollection services, string channelName ) : IChannelBuilder
 {
+    public const string DefaultChannelName = "__default";
+
+    /// <summary>
+    /// Gets the name of the channel
+    /// </summary>
     public string Name { get; } = channelName;
     public IServiceCollection Services { get; } = services;
 
-    public TChannelBuilder AddInputAdapter<TAdapter>() where TAdapter : class, IChannelAdapter, IInputChannelAdapter
+    public IChannelBuilder Configure( Action<ChannelOptions> configure )
+    {
+        Services.Configure( Name, configure );
+
+        return this;
+    }
+
+    public IChannelBuilder AddInputAdapter<TAdapter>() where TAdapter : class, IChannelAdapter, IInputChannelAdapter
     {
         Services.AddKeyedTransient<IInputChannelAdapter, TAdapter>( Name );
 
-        return Self();
+        return this;
     }
 
-    public TChannelBuilder AddInputAdapter( Func<IServiceProvider, IInputChannelAdapter> implementationFactory )
+    public IChannelBuilder AddInputAdapter( Func<IServiceProvider, IInputChannelAdapter> implementationFactory )
     {
         Services.AddKeyedTransient( Name, ( sp, _ ) =>
         {
             return implementationFactory( sp );
         } );
 
-        return Self();
+        return this;
     }
 
-    public TChannelBuilder AddOutputAdapter<TAdapter>() where TAdapter : class, IChannelAdapter, IOutputChannelAdapter
+    public IChannelBuilder AddOutputAdapter<TAdapter>() where TAdapter : class, IChannelAdapter, IOutputChannelAdapter
     {
         Services.AddKeyedTransient<IOutputChannelAdapter, TAdapter>( Name );
 
-        return Self();
+        return this;
     }
 
-    public TChannelBuilder AddOutputAdapter( Func<IServiceProvider, IOutputChannelAdapter> implementationFactory )
+    public IChannelBuilder AddOutputAdapter( Func<IServiceProvider, IOutputChannelAdapter> implementationFactory )
     {
         Services.AddKeyedTransient( Name, ( sp, _ ) =>
         {
             return implementationFactory( sp );
         } );
 
-        return Self();
+        return this;
     }
 
-    public TChannelBuilder AddInputHandler<THandler>() where THandler : class, IChannelHandler
+    public IChannelBuilder AddInputHandler<THandler>() where THandler : class, IChannelHandler
     {
         Services.AddKeyedTransient<IChannelHandler, THandler>( Name );
 
-        return Self();
+        return this;
     }
 
-    public TChannelBuilder AddInputHandler( Func<IServiceProvider, IChannelHandler> implementationFactory )
+    public IChannelBuilder AddInputHandler( Func<IServiceProvider, IChannelHandler> implementationFactory )
     {
         Services.AddKeyedTransient( Name, ( sp, _ ) =>
         {
             return implementationFactory( sp );
         } );
 
-        return Self();
+        return this;
     }
 
-    public TChannelBuilder AddChannelService<TService>() where TService : class, IChannelService
+    public IChannelBuilder AddChannelService<TService>() where TService : class, IChannelService
     {
         Services.AddKeyedScoped<IChannelService, TService>( Name );
 
-        return Self();
+        return this;
     }
 
-    public TChannelBuilder AddChannelService( Func<IServiceProvider, IChannelService> implementationFactory )
+    public IChannelBuilder AddChannelService( Func<IServiceProvider, IChannelService> implementationFactory )
     {
         Services.AddKeyedScoped( Name, ( sp, _ ) =>
         {
             return implementationFactory( sp );
         } );
 
-        return Self();
+        return this;
     }
-
-    protected abstract TChannelBuilder Self();
 }

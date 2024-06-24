@@ -60,16 +60,25 @@ public class ScopedServiceTests
         var channelName = "__tests";
         IServiceCollection services = new ServiceCollection()
             .AddLogging()
-            .AddTransient<IServiceChannelFactory, ServiceChannelFactory>()
             .AddKeyedTransient<IInputChannelAdapter, MyAdapter>( channelName )
             .AddScoped<MyService>();
 
         var provider = services.BuildServiceProvider();
 
-        var channelFactory = provider.GetRequiredService<IServiceChannelFactory>();
+        TcpChannel channelFactory()
+        {
+            return new TcpChannel(
+                provider.CreateScope(),
+                new Socket(SocketType.Stream, ProtocolType.Tcp),
+                Buffers.Endianness.BigEndian,
+                EmptyChannelPipeline.Instance,
+                EmptyChannelPipeline.Instance,
+                null
+            );
+        }
 
-        var channel1 = channelFactory.CreateChannel( new Socket( SocketType.Stream, ProtocolType.Tcp ), channelName );
-        var channel2 = channelFactory.CreateChannel( new Socket( SocketType.Stream, ProtocolType.Tcp ), channelName );
+        var channel1 = channelFactory();
+        var channel2 = channelFactory();
 
         var adapter1 = (MyAdapter)((TcpChannel)channel1).ServiceProvider.GetAdapters<IInputChannelAdapter>( channelName ).Single();
         var adapter2 = (MyAdapter)((TcpChannel)channel1).ServiceProvider.GetAdapters<IInputChannelAdapter>( channelName ).Single();
@@ -99,15 +108,24 @@ public class ScopedServiceTests
         var channelName = "__tests";
         IServiceCollection services = new ServiceCollection()
             .AddLogging()
-            .AddTransient<IServiceChannelFactory, ServiceChannelFactory>()
             .AddKeyedScoped<IChannelService, MyService>( channelName );
 
         var provider = services.BuildServiceProvider();
 
-        var channelFactory = provider.GetRequiredService<IServiceChannelFactory>();
+        TcpChannel channelFactory()
+        {
+            return new TcpChannel(
+                provider.CreateScope(),
+                new Socket(SocketType.Stream, ProtocolType.Tcp),
+                Buffers.Endianness.BigEndian,
+                EmptyChannelPipeline.Instance,
+                EmptyChannelPipeline.Instance,
+                null
+            );
+        }
 
-        var channel1 = channelFactory.CreateChannel( new Socket( SocketType.Stream, ProtocolType.Tcp ), channelName );
-        var channel2 = channelFactory.CreateChannel( new Socket( SocketType.Stream, ProtocolType.Tcp ), channelName );
+        var channel1 = channelFactory();
+        var channel2 = channelFactory();
 
         var svc1 = channel1.GetService<MyService>();
         var svc2 = channel2.GetService<MyService>();

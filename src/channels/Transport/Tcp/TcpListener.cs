@@ -1,35 +1,39 @@
-using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Faactory.Channels.Udp;
+namespace Faactory.Channels.Tcp;
 
-internal sealed class UdpListener : IHostedService, IDisposable
+internal sealed class TcpListener : IHostedService, IDisposable
 {
     private readonly ILogger logger;
-    private readonly ConcurrentDictionary<UdpRemote, UdpChannel> channels = new();
-
+    private readonly int so_backlog;
     private Task? receiveTask;
     private CancellationTokenSource? cancellationTokenSource;
 
-    public UdpListener( IServiceProvider serviceProvider, string channelName, UdpChannelListenerOptions options )
+    public TcpListener( IServiceProvider serviceProvider, string channelName, TcpChannelListenerOptions options )
     {
         logger = serviceProvider.GetRequiredService<ILoggerFactory>()
-            .CreateLogger<UdpListener>();
+            .CreateLogger<TcpListener>();
 
         Name = channelName;
         ServiceProvider = serviceProvider;
-        Socket = new UdpClient( options.Port );
+
+        so_backlog = options.Backlog;
+
+        var localEndPoint = new IPEndPoint( IPAddress.Any, options.Port );
+
+        Socket = new Socket( localEndPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp );
+
+        Socket.Bind( localEndPoint );
     }
-    
+
     private string Name { get; }
     private IServiceProvider ServiceProvider { get; }
-    private UdpClient Socket { get; }
+    private Socket Socket { get; }
 
     public void Dispose()
     {
@@ -63,11 +67,11 @@ internal sealed class UdpListener : IHostedService, IDisposable
             cancellationTokenSource?.Cancel();
 
             // close all channels
-            var closeTasks = channels.Values.Select( x => x.CloseAsync() )
-                .ToArray();
+            // var closeTasks = channels.Values.Select( x => x.CloseAsync() )
+            //     .ToArray();
 
-            await Task.WhenAll( closeTasks )
-                .ConfigureAwait( false );
+            // await Task.WhenAll( closeTasks )
+            //     .ConfigureAwait( false );
         }
         finally
         {
@@ -92,13 +96,20 @@ internal sealed class UdpListener : IHostedService, IDisposable
     {
         logger.LogInformation( "Started service.  [PID {Id}]", Environment.ProcessId );
 
+        Socket.Listen( so_backlog );
+
         while ( !cancellationToken.IsCancellationRequested )
         {
             try
             {
-                var receiveResult = await Socket.ReceiveAsync( cancellationToken );
+                var clientSocket = await Socket.AcceptAsync( cancellationToken );
 
-                HandleReceivedData( receiveResult.Buffer, receiveResult.RemoteEndPoint );
+                if ( Socket.SafeHandle.IsClosed )
+                {
+                    continue;
+                }
+
+                _ = CreateChannel( clientSocket );
             }
             catch ( OperationCanceledException )
             {
@@ -111,19 +122,7 @@ internal sealed class UdpListener : IHostedService, IDisposable
         }
     }
 
-    private void HandleReceivedData( byte[] data, IPEndPoint remoteEndPoint )
-    {
-        logger.LogDebug( "Received {N} bytes from {EndPoint}.", data.Length, remoteEndPoint );
-
-        var channel = channels.GetOrAdd(
-            new UdpRemote( Socket, remoteEndPoint ),
-            CreateChannel
-        );
-
-        channel.Receive( data );
-    }
-
-    private UdpChannel CreateChannel( UdpRemote remote )
+    private TcpChannel CreateChannel( Socket channelSocket )
     {
         var scope = ServiceProvider.CreateScope();
 
@@ -134,24 +133,15 @@ internal sealed class UdpListener : IHostedService, IDisposable
         var outputPipeline = ChannelPipeline.CreateOutput( scope.ServiceProvider, Name );
         var channelServices = scope.ServiceProvider.GetKeyedServices<IChannelService>( Name );
 
-        var channel = new UdpChannel(
+        var channel = new TcpChannel(
               scope
-            , remote
+            , channelSocket
             , options.BufferEndianness
             , inputPipeline
             , outputPipeline
             , channelServices
         );
 
-        channel.Closed += OnChannelClosed;
-
         return channel;
-    }
-
-    private void OnChannelClosed( UdpChannel channel )
-    {
-        channels.TryRemove( channel.Remote, out _ );
-
-        channel.Closed -= OnChannelClosed;
     }
 }

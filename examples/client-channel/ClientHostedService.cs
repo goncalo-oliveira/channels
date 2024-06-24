@@ -16,7 +16,7 @@ internal sealed class ClientHostedService( IChannelsClientFactory channelsClient
 
         await Task.Delay( 5000, stoppingToken ); // wait for the server to start
 
-        using var client = clientFactory.Create( "client" );
+        using var client = clientFactory.Create();
 
         // wait for the client to connect
         while ( client.Channel.IsClosed )

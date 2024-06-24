@@ -55,8 +55,14 @@ public class CustomEventTests
 
         var provider = services.BuildServiceProvider();
 
-        var channel = new ServiceChannelFactory( provider )
-            .CreateChannel( new Socket( SocketType.Stream, ProtocolType.Tcp ), "__test" );
+        var channel = new TcpChannel(
+            provider.CreateScope(),
+            new Socket( SocketType.Stream, ProtocolType.Tcp ),
+            Buffers.Endianness.BigEndian,
+            EmptyChannelPipeline.Instance,
+            EmptyChannelPipeline.Instance,
+            null
+        );
 
         var pipeline = new ChannelPipeline(
             NullLoggerFactory.Instance,

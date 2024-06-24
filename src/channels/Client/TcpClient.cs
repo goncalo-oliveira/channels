@@ -1,34 +1,32 @@
 using System.Net.Sockets;
-using Faactory.Channels.Adapters;
-using Faactory.Channels.Handlers;
+using Faactory.Channels.Client;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 
-namespace Faactory.Channels.Client;
+namespace Faactory.Channels.Tcp;
 
-internal sealed class ChannelsClient : IChannelsClient
+internal sealed class TcpClient : IChannelsClient, IDisposable
 {
     private readonly CancellationTokenSource cts = new();
+    private readonly string channelName;
     private readonly ChannelsClientOptions options;
 
     private Socket? socket = null;
     private Task connectTask = Task.CompletedTask;
 
-    public ChannelsClient( IServiceScope serviceScope, ChannelsClientOptions clientOptions, string channelName )
+    public TcpClient( IServiceScope serviceScope, ChannelsClientOptions clientOptions, string clientChannelName )
     {
         options = clientOptions;
 
-        Name = channelName;
+        channelName = clientChannelName;
         Scope = serviceScope;
 
         connectTask = ConnectAsync( cts.Token );
     }
 
+    public IChannel Channel { get; private set; } = NullChannel.Instance;
+
     private IServiceScope Scope { get; }
     private IServiceProvider ServiceProvider => Scope.ServiceProvider;
-
-    public IChannel Channel { get; private set; } = NullChannel.Instance;
-    public string Name { get; }
 
     public Task CloseAsync()
     {
@@ -61,6 +59,9 @@ internal sealed class ChannelsClient : IChannelsClient
         catch { }
     }
 
+    // public Task WriteAsync( object data )
+    //     => Channel.WriteAsync( data );
+
     private async Task ConnectAsync( CancellationToken cancellationToken )
     {
         if ( !Channel.IsClosed )
@@ -68,7 +69,7 @@ internal sealed class ChannelsClient : IChannelsClient
             return;
         }
 
-        socket = CreateSocket( options.ChannelOptions.TransportMode );
+        socket = new Socket( SocketType.Stream, ProtocolType.Tcp );
 
         var reconnectDelay = options.ReconnectDelay;
 
@@ -105,6 +106,22 @@ internal sealed class ChannelsClient : IChannelsClient
         }
     }
 
+    private TcpChannel CreateChannel( Socket socket )
+    {
+        var inputPipeline = ChannelPipeline.CreateInput( ServiceProvider, channelName );
+        var outputPipeline = ChannelPipeline.CreateOutput( ServiceProvider, channelName );
+        var channelServices = ServiceProvider.GetKeyedServices<IChannelService>( channelName );
+
+        return new TcpChannel(
+            Scope,
+            socket,
+            options.ChannelOptions.BufferEndianness,
+            inputPipeline,
+            outputPipeline,
+            channelServices
+        );
+    }
+
     private async Task MonitorAsync( CancellationToken cancellationToken )
     {
         while ( !Channel.IsClosed && !cancellationToken.IsCancellationRequested )
@@ -131,73 +148,5 @@ internal sealed class ChannelsClient : IChannelsClient
                 connectTask = ConnectAsync( cancellationToken );
             }
         }
-    }
-
-    private ClientChannel CreateChannel( Socket socket )
-    {
-        var inputPipeline = CreateInputPipeline();
-        var outputPipeline = CreateOutputPipeline();
-        var channelServices = ServiceProvider.GetKeyedServices<IChannelService>( Name );
-
-        return new ClientChannel(
-            Scope,
-            socket,
-            options.ChannelOptions.BufferEndianness,
-            inputPipeline,
-            outputPipeline,
-            channelServices
-        );
-    }
-
-    // TODO: this code is duplicated in ClientChannelFactory, ServiceChannelFactory.cs and WebSocketChannelFactory.cs
-    //       consider moving it to a common location
-    private IChannelPipeline CreateInputPipeline()
-    {
-        var adapters = ServiceProvider.GetAdapters<IInputChannelAdapter>( Name );
-        var handlers = ServiceProvider.GetHandlers( Name );
-
-        IChannelPipeline pipeline = new ChannelPipeline(
-            ServiceProvider.GetRequiredService<ILoggerFactory>(),
-            adapters,
-            handlers
-        );
-
-        return pipeline;
-    }
-
-    private IChannelPipeline CreateOutputPipeline()
-    {
-        var loggerFactory = ServiceProvider.GetRequiredService<ILoggerFactory>();
-
-        var adapters = ServiceProvider.GetAdapters<IOutputChannelAdapter>( Name );
-
-        IChannelPipeline pipeline = new ChannelPipeline(
-            ServiceProvider.GetRequiredService<ILoggerFactory>(),
-            adapters,
-            [
-                new OutputChannelHandler( loggerFactory )
-            ]
-        );
-
-        return pipeline;
-    }
-
-    private static Socket CreateSocket( ChannelTransportMode transportMode )
-    {
-        SocketType socketType = transportMode switch
-        {
-            ChannelTransportMode.Tcp => SocketType.Stream,
-            ChannelTransportMode.Udp => SocketType.Dgram,
-            _ => throw new NotSupportedException( "Only TCP and UDP transport modes are supported." )
-        };
-
-        ProtocolType protocolType = transportMode switch
-        {
-            ChannelTransportMode.Tcp => ProtocolType.Tcp,
-            ChannelTransportMode.Udp => ProtocolType.Udp,
-            _ => throw new NotSupportedException( "Only TCP and UDP transport modes are supported." )
-        };
-
-        return new Socket( socketType, protocolType );
     }
 }

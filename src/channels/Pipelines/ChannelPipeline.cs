@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Faactory.Channels.Adapters;
 using Faactory.Channels.Handlers;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
@@ -163,5 +164,36 @@ internal class ChannelPipeline : IChannelPipeline
         }
 
         return ( true );
+    }
+
+    internal static IChannelPipeline CreateInput( IServiceProvider provider, string name )
+    {
+        var adapters = provider.GetAdapters<IInputChannelAdapter>( name );
+        var handlers = provider.GetHandlers( name );
+
+        IChannelPipeline pipeline = new ChannelPipeline(
+            provider.GetRequiredService<ILoggerFactory>(),
+            adapters,
+            handlers
+        );
+
+        return pipeline;
+    }
+
+    internal static IChannelPipeline CreateOutput( IServiceProvider provider, string name )
+    {
+        var loggerFactory = provider.GetRequiredService<ILoggerFactory>();
+
+        var adapters = provider.GetAdapters<IOutputChannelAdapter>( name );
+
+        IChannelPipeline pipeline = new ChannelPipeline(
+            provider.GetRequiredService<ILoggerFactory>(),
+            adapters,
+            [
+                new OutputChannelHandler( loggerFactory )
+            ]
+        );
+
+        return pipeline;
     }
 }

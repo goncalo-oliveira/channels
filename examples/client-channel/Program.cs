@@ -1,64 +1,46 @@
-﻿using Faactory.Channels;
-using Faactory.Channels.Adapters;
-using Faactory.Channels.Examples;
-using Faactory.Channels.Handlers;
+﻿using Faactory.Channels.Examples;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 var builder = Host.CreateApplicationBuilder( args );
 
-builder.Services.AddUdpListener();
-builder.Services.AddKeyedTransient<IInputChannelAdapter, WordAdapter>( "__default" );
-builder.Services.AddKeyedTransient<IChannelHandler, WordHandler>( "__default" );
-builder.Services.AddKeyedTransient<IOutputChannelAdapter, UTFEncoderAdapter>( "__default" );
+builder.Logging.SetMinimumLevel( LogLevel.Debug );
 
-// builder.Services.Configure<ServiceChannelOptions>( options =>
-// {
-//     options.Port = 8080;
-//     options.Backlog = 10;
-//     options.TransportMode = ChannelTransportMode.Udp;    
-// } );
+/*
+configure two different channel pipelines, one for the server and one for the client
+*/
+builder.Services.AddChannels()
+    .Add( "server", channel =>
+    {
+        channel.AddInputAdapter<WordAdapter>()
+            .AddInputHandler<WordHandler>();
 
-// builder.Services.AddChannels( channel =>
-// {
-//     // configure options
-//     channel.Configure( options =>
-//     {
-//         options.Port = 8080;
-//         options.Backlog = 10;
-//     } );
+        channel.AddOutputAdapter<UTFEncoderAdapter>();
+    } )
+    .Add( "client", channel =>
+    {
+        channel.AddInputHandler<ClientHandler>();
 
-//     // set up long-running services
-//     // since v0.5 idle monitoring is a channel service
-//     channel.AddIdleChannelService();
+        channel.AddOutputAdapter<UTFEncoderAdapter>();
+    } )
+    ;
 
-//     // set up input pipeline
-//     channel.AddInputAdapter<WordAdapter>()
-//         .AddInputHandler<WordHandler>();
+/*
+Configure TCP server with the server channel pipeline
+*/
+builder.Services.AddTcpChannelListener( "server", 8080 );
 
-//     // set up output pipeline
-//     channel.AddOutputAdapter<UTFEncoderAdapter>();
-// } );
+/*
+Configure the client with the client channel pipeline
+*/
+builder.Services.AddChannelsClient( "client", "tcp://localhost:8080" );
 
-// builder.Services.AddChannelsClient()
-//     .AddChannel( "client", channel =>
-//     {
-//         // configure options
-//         channel.Configure( options =>
-//         {
-//             options.Host = "localhost";
-//             options.Port = 8080;
-//             options.ChannelOptions.TransportMode = ChannelTransportMode.Udp;
-//         } );
-
-//         // set up input pipeline
-//         channel.AddInputHandler<ClientHandler>();
-
-//         // set up output pipeline
-//         channel.AddOutputAdapter<UTFEncoderAdapter>();
-//     } );
-
-// builder.Services.AddHostedService<ClientHostedService>(); // our client test service
+/*
+this service will connect to the server, send a message
+and wait for the server to respond.
+*/
+builder.Services.AddHostedService<ClientHostedService>();
 
 var app = builder.Build();
 

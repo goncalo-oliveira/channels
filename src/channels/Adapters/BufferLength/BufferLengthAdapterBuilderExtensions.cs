@@ -1,4 +1,5 @@
 using Faactory.Channels.Adapters;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
@@ -7,13 +8,13 @@ public static class BufferLengthAdapterChannelBuilderExtensions
     /// <summary>
     /// Adds a buffer length adapter to the input pipeline
     /// </summary>
-    public static IChannelBuilder AddBufferLengthInputAdapter<TChannelBuilder>( this IChannelBuilder<TChannelBuilder> builder, Action<BufferLengthAdapterOptions>? configure = null ) where TChannelBuilder : IChannelBuilder<TChannelBuilder>
+    public static IChannelBuilder AddBufferLengthInputAdapter<TChannelBuilder>( this IChannelBuilder builder, Action<BufferLengthAdapterOptions>? configure = null )
     {
         builder.AddInputAdapter<BufferLengthAdapter>();
 
         if ( configure != null )
         {
-            builder.Configure( configure );
+            builder.Services.Configure( configure );
         }
 
         return builder;

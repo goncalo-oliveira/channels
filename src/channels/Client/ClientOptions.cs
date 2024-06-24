@@ -16,6 +16,11 @@ public class ChannelsClientOptions
     public int Port { get; set; } = 8080;
 
     /// <summary>
+    /// Gets or sets the transport mode. Default is TCP.
+    /// </summary>
+    public ChannelTransportMode TransportMode { get; set; } = ChannelTransportMode.Tcp;
+
+    /// <summary>
     /// Gets or sets the reconnect delay after a connection is lost. Default is 3 seconds.
     /// </summary>
     public TimeSpan ReconnectDelay { get; set; } = TimeSpan.FromSeconds( 3 );
@@ -28,5 +33,5 @@ public class ChannelsClientOptions
     /// <summary>
     /// Gets or sets the channel options
     /// </summary>
-    public ClientChannelOptions ChannelOptions { get; set; } = new();
+    public ChannelOptions ChannelOptions { get; set; } = new();
 }

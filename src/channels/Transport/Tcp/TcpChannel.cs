@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
-internal abstract class TcpChannel : Channel, IChannel
+internal sealed class TcpChannel : Channel, IChannel
 {
     private const int DefaultBufferLength = 13312;
 
@@ -14,10 +14,17 @@ internal abstract class TcpChannel : Channel, IChannel
 
     private readonly byte[] socketBuffer = new byte[DefaultBufferLength];
 
+    private readonly Task initializeTask;
+    private readonly CancellationTokenSource cts = new();
+
     internal TcpChannel( 
           IServiceScope serviceScope
         , Socket socket
-        , Endianness bufferEndianness )
+        , Endianness bufferEndianness
+        , IChannelPipeline inputPipeline
+        , IChannelPipeline outputPipeline
+        , IEnumerable<IChannelService>? channelServices = null
+        )
         : base( serviceScope )
     {
         logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
@@ -25,16 +32,52 @@ internal abstract class TcpChannel : Channel, IChannel
 
         loggerScope = logger.BeginScope( $"tcp-{Id[..7]}" );
 
-        Input = EmptyChannelPipeline.Instance;
-        Output = EmptyChannelPipeline.Instance;
         Buffer = new WritableByteBuffer( bufferEndianness );
 
         Socket = socket;
+        Input = inputPipeline;
+        Output = outputPipeline;
+
+        if ( channelServices != null )
+        {
+            Services = channelServices;
+        }
+
+        initializeTask = InitializeAsync( cts.Token );
     }
 
     public Socket Socket { get; init; }
 
     private bool IsShutdown { get; set; }
+
+    public override Task CloseAsync()
+    {
+        try
+        {
+            cts.Cancel();
+        }
+        catch { }
+
+        try
+        {
+            Shutdown();
+        }
+        catch ( Exception )
+        { }
+        finally
+        {
+            OnDisconnected();
+        }
+
+        try
+        {
+            Socket.Close();
+        }
+        catch ( Exception )
+        {}
+
+        return Task.CompletedTask;
+    }
 
     public override Task WriteAsync( object data )
     {
@@ -59,6 +102,8 @@ internal abstract class TcpChannel : Channel, IChannel
         loggerScope?.Dispose();
 
         base.Dispose();
+
+        initializeTask.Dispose();
     }
 
     protected override async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -131,7 +176,7 @@ internal abstract class TcpChannel : Channel, IChannel
         return Task.CompletedTask;
     }
 
-    protected void OnDataReceived( byte[] data )
+    private void OnDataReceived( byte[] data )
     {
         LastReceived = DateTimeOffset.UtcNow;
 
@@ -158,14 +203,14 @@ internal abstract class TcpChannel : Channel, IChannel
         }
     }
 
-    protected void OnDataSent( int bytesSent )
+    private void OnDataSent( int bytesSent )
     {
         LastSent = DateTimeOffset.UtcNow;
 
         this.NotifyDataSent( bytesSent );
     }
 
-    protected async void OnDisconnected()
+    private async void OnDisconnected()
     {
         if ( IsClosed )
         {
@@ -189,7 +234,7 @@ internal abstract class TcpChannel : Channel, IChannel
         Dispose();
     }
 
-    protected void Shutdown()
+    private void Shutdown()
     {
         try
         {

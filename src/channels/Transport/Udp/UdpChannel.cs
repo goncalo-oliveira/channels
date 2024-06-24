@@ -1,15 +1,13 @@
-using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using Faactory.Channels.Buffers;
 using Microsoft.Extensions.DependencyInjection;
-using System.Net;
-using Faactory.Channels.Udp;
 
-namespace Faactory.Channels;
+namespace Faactory.Channels.Udp;
 
 internal sealed class UdpChannel : Channel, IChannel
 {
     private readonly Task initializeTask;
+    private readonly Task monitorTask;
     private readonly CancellationTokenSource cts = new();
     private readonly ILogger logger;
     private readonly IDisposable? loggerScope;
@@ -39,9 +37,12 @@ internal sealed class UdpChannel : Channel, IChannel
         }
 
         initializeTask = InitializeAsync( cts.Token );
+        monitorTask = MonitorAsync( cts.Token );
     }
 
-    public UdpRemote Remote { get; init; }
+    internal UdpRemote Remote { get; init; }
+
+    internal event Action<UdpChannel>? Closed;
 
     public override Task CloseAsync()
     {
@@ -86,6 +87,13 @@ internal sealed class UdpChannel : Channel, IChannel
         {
             await Remote.SendAsync( data )
                 .ConfigureAwait( false );
+
+            // trigger data sent
+            logger.LogTrace( "sent {bytesSent} bytes", data.Length );
+
+            LastSent = DateTimeOffset.UtcNow;
+
+            this.NotifyDataSent( data.Length );
         }
         catch ( ObjectDisposedException )
         {
@@ -97,10 +105,6 @@ internal sealed class UdpChannel : Channel, IChannel
     }
 
     internal void Receive( byte[] data )
-    {
-    }
-
-    protected void OnDataReceived( byte[] data )
     {
         LastReceived = DateTimeOffset.UtcNow;
 
@@ -127,14 +131,7 @@ internal sealed class UdpChannel : Channel, IChannel
         }
     }
 
-    protected void OnDataSent( int bytesSent )
-    {
-        LastSent = DateTimeOffset.UtcNow;
-
-        this.NotifyDataSent( bytesSent );
-    }
-
-    protected async void OnDisconnected()
+    private async void OnDisconnected()
     {
         if ( IsClosed )
         {
@@ -155,6 +152,35 @@ internal sealed class UdpChannel : Channel, IChannel
         await StopServicesAsync()
             .ConfigureAwait( false );
 
+        Closed?.Invoke( this );
+
         Dispose();
+    }
+
+    private async Task MonitorAsync( CancellationToken cancellationToken )
+    {
+        LastReceived = DateTimeOffset.UtcNow;
+        LastSent = DateTimeOffset.UtcNow;
+
+        while ( !cancellationToken.IsCancellationRequested )
+        {
+            try
+            {
+                await Task.Delay( 1000, cancellationToken );
+
+                var ts = LastReceived > LastSent ? LastReceived : LastSent;
+
+                if ( ts?.AddSeconds( 30 ) < DateTimeOffset.UtcNow ) // TODO: should come from options
+                {
+                    await CloseAsync();
+
+                    break;
+                }
+            }
+            catch ( OperationCanceledException )
+            {
+                break;
+            }
+        }
     }
 }
