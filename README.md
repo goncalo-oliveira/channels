@@ -452,4 +452,4 @@ services.AddChannelsNamedClient( "client2", "channel1", "tcp://example.host:8080
 
 ## Web Sockets
 
-Support for web sockets is available through the `Faactory.Channels.WebSockets` package. It provides ASP.NET Core routing and middleware for easy integration with this library.
+Support for web sockets is available through the `Faactory.Channels.WebSockets` package. It provides ASP.NET Core routing and middleware for easy integration with this library. Read more about it [here](README.websockets.md).
