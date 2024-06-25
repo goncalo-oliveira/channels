@@ -400,7 +400,7 @@ The recommended detection mode depends on the nature of the communication and th
 
 The library also provides a TCP/UDP client that can be used to connect to a server. This client automatically connects to the server and creates a channel instance when the connection is established. Connection drops are automatically handled and the client will attempt to reconnect.
 
-Clients use the same channel configuration as the listeners, so before we can create an instance of the client, we need to configure it first.
+Clients use the same channel configuration as the listeners, but they require additional configuration.
 
 ```csharp
 IServiceCollection services = ...;

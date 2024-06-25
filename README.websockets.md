@@ -4,18 +4,18 @@ An extension library to use the Channels middleware with WebSockets.
 
 ## Design
 
-Unlike TCP or UDP Channels, the library does not provide a low-level server to handle WebSocket connections. Instead, it provides a pipeline builder to create a Channel and its associated middleware over an existing WebSocket connection. While this could allow the library to be used with any HTTP server that can produce a WebSocket connection, it does provide extension methods that make it super easy to use with the ASP.NET Core middleware.
+Unlike TCP or UDP Channels, the library does not provide a low-level server to handle WebSocket connections. Instead, it provides a factory to create a Channel on top of an existing WebSocket connection. It also provides extension methods to make it super easy to integrate with the ASP.NET Core middleware.
 
 Unlike the TCP and UDP Channels, the WebSockets middleware does not deliver raw byte buffers to the input pipeline. Instead, it delivers a `WebSocketMessage` instance, which contains the message type and payload, since web sockets support both binary and text messages.
 
 > [!TIP]
-> Messages delivered to the input pipeline are always complete messages (`WebSocketMessage.EndOfMessage: true`). If a fragmented message is received, the channel will buffer the fragments until the message is complete and only then deliver it to the input pipeline.
+> Messages delivered to the input pipeline are always complete messages (`WebSocketMessage.EndOfMessage: true`). If a fragmented message is received, the channel will buffer the fragments until it is complete and only then deliver it to the input pipeline.
 
 When writing to the output pipeline, the library provides built-in middleware for sending binary, text or fragmented messages, so either of the following types can be directly written to the output pipeline:
 
 - `byte[]` which is sent as a (complete) binary message
 - `IByteBuffer` also sent as a (complete) binary message
-- `string` which is sent as a (complete) text message
+- `string` which is sent as a (complete) text message (utf-8 encoded)
 - `WebSocketMessage` which gives you full control over the message type and content
 
 ## Usage
@@ -26,36 +26,23 @@ To make use of the library, you first need to add the NuGet package to your proj
 dotnet add package Faactory.Channels.WebSockets
 ```
 
-If you are using a single web sockets endpoint, you can configure the Channels middleware mostly the same way you would with regular Channels, you just use a different extension method:
+The channel pipeline configuration is done in the same way as with the TCP and UDP channels; WebSocket channels will use this same configuration. Nonetheless, additional services are required to set up the web sockets middleware.
 
 ```csharp
 IServiceCollection services = ...;
 
-services.AddWebSocketChannels( channel =>
-{
-    /*
-    configure options is minimal, since there's no server configuration
-    */
-    channel.Configure( options =>
-    {
-        options.BufferEndianness = Buffers.Endianness.BigEndian;
-    } );
+/*
+Configure the channel or channels as usual
+*/
+services.AddChannels( ... );
 
-    /*
-    set up input pipeline. remember that the first adapter should
-    read a WebSocketMessage instance and not a IByteBuffer as with TCP channels
-    */
-    channel.AddInputAdapter<ExampleDecoderChannelAdapter>()
-        .AddInputHandler<MyChannelHandler>();
-
-    /*
-    set up optional output pipeline
-    */
-    channel.AddOutputAdapter<ExampleEncoderAdapter>();
-} );
+/*
+register web sockets middleware services
+*/
+services.AddWebSocketChannels();
 ```
 
-With the middleware in place, you now need to bind the web sockets endpoint to the middleware, which is done through route mapping:
+With the middleware in place, we now need to bind the web sockets endpoint to the middleware, which is done through route mapping:
 
 ```csharp
 WebApplication app = ...;
@@ -63,27 +50,35 @@ WebApplication app = ...;
 // required WebSockets middleware
 app.UseWebSockets();
 
-// map the web socket endpoint to the Channels middleware
+// map the web socket endpoint to the Channels default pipeline
 app.MapWebSocketChannel( "/ws" );
 ```
 
 ## Multiple Endpoints
 
-It is possible to have multiple web sockets endpoints with different Channels pipelines. This can be achieved by using named pipelines:
+It is possible to have multiple web sockets endpoints with different Channels pipeline configuration. This can be achieved by using named channels:
 
 ```csharp
 IServiceCollection services = ...;
 
-services.AddWebSocketChannels()
-    .AddChannel( "foo", channel =>
+services.AddChannels()
+    .Add( "channel1", channel =>
     {
-        channel.AddInputAdapter<ExampleAdapter1>()
+        // set up input pipeline
+        channel.AddInputAdapter<ExampleAdapter>()
             .AddInputHandler<ExampleHandler1>();
+
+        // set up output pipeline
+        channel.AddOutputAdapter<ExampleAdapter>();
     } )
-    .AddChannel( "bar", channel =>
+    .Add( "channel2", channel =>
     {
-        channel.AddInputAdapter<ExampleAdapter2>()
+        // set up input pipeline
+        channel.AddInputAdapter<ExampleAdapter>()
             .AddInputHandler<ExampleHandler2>();
+
+        // set up output pipeline
+        channel.AddOutputAdapter<ExampleAdapter>();
     } );
 ```
 
@@ -96,21 +91,21 @@ WebApplication app = ...;
 app.UseWebSockets();
 
 // map the web socket endpoints
-app.MapWebSocketChannel( "/ws/foo", "foo" );
-app.MapWebSocketChannel( "/ws/bar", "bar" );
+app.MapWebSocketChannel( "/ws/foo", "channel1" );
+app.MapWebSocketChannel( "/ws/bar", "channel2" );
 ```
 
 ## Usage without ASP.NET Core
 
-If you are not using ASP.NET Core, you can still use the library with any HTTP server that can produce a `System.Net.WebSockets.WebSocket` instance. In this case, you won't be using the `MapWebSocketChannel` extension method, but instead, you will need to create the channel manually by using the factory.
+If you are not using ASP.NET Core, you can still use the library with any HTTP server that can produce a `System.Net.WebSockets.WebSocket` instance. In this case, you won't be using the `MapWebSocketChannel` extension method, but instead, you will need to manually create the channel by using the factory.
 
 ```csharp
 WebSocket webSocket = ...;
 IWebSocketChannelFactory factory = ...; // get the factory from the DI container
-CancellationToken cancellationToken = ...; // graceful shutdown if using the WaitAsync method
+CancellationToken cancellationToken = ...; // optional: graceful shutdown if using the WaitAsync method
 
-// create named channel using the pre-configured "foo" pipeline
-var channel = factory.CreateChannel( webSocket, "foo" );
+// create named channel using the pre-configured "channel1" pipeline
+var channel = factory.CreateChannel( webSocket, "channel1" );
 
 // optional: wait until the channel is closed or cancellation token is triggered
 try
@@ -120,6 +115,6 @@ try
 catch ( OperationCanceledException )
 { }
 
-// close the channel and release resources
+// recommended: close the channel and release resources
 await channel.CloseAsync();
 ```

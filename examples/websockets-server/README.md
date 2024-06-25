@@ -1,22 +1,17 @@
-# Example: Simple Server
+# Example: Web Sockets Server
 
-This is a simple example. The server receives data, counts the number of words and responds to the client. Not exactly a real-life scenario but it demonstrates the usage of adapters/handlers.
+This is a simple example. The server receives data, counts the distinct letters and sends the result back.
 
-Data received goes through `WordAdapter` that translates a byte array into a string and forwards a collection of words.
+Two websocket endpoints are exposed:
+
+- `/ws/uppercase` receives a string and returns the count of distinct letters in uppercase
+- `/ws/lowercase` receives a string and returns the count of distinct letters in lowercase
 
 Here's the workflow
 
-- The `WordAdapter` receives a byte array and translates it into a string
-- The adapter counts the number of words and forwards a `MatchCollection` containing the words
-- The `WordHandler` receives a `MatchCollection` and computes an adequate response
-- The handler writes the response to the output pipeline as a string
-- The `UTFEncoderAdapter` receives the string and forwards it as an UTF8 byte array
-- The byte array is sent back to the channel
+- The `LetterAdapter` receives a websocket message, decodes its content into a string and forwards a char array
+- The `LowercaseAdapter` receives the char array and converts it to lowercase
+- The `LetterHandler` receives the char array and computes an adequate response as a string
+- Internal middleware transforms the string into a websocket message and sends it back to the client
 
-Telnet can be used to test the communication with the server.
-
-```bash
-$ telnet localhost 8080  
-The quick brown fox jumps over the lazy dog
-received 9 word(s).
-```
+Postman can be used to test the communication with the server.

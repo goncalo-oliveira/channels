@@ -3,13 +3,6 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 
 var builder = WebApplication.CreateBuilder( args );
 
-builder.Logging.ClearProviders()
-    .AddSimpleConsole( options =>
-    {
-        options.IncludeScopes = false;
-        options.SingleLine = true;
-    } );
-
 /*
 Set up Channels middleware;
 We used named channels here to demonstrate how to set up multiple channels
