@@ -22,6 +22,13 @@ internal class ChannelBuilder( IServiceCollection services, string channelName )
         return this;
     }
 
+    public IChannelBuilder Configure<TOptions>( Action<TOptions> configure ) where TOptions : class
+    {
+        Services.Configure( Name, configure );
+
+        return this;
+    }
+
     public IChannelBuilder AddInputAdapter<TAdapter>() where TAdapter : class, IChannelAdapter, IInputChannelAdapter
     {
         Services.AddKeyedTransient<IInputChannelAdapter, TAdapter>( Name );

@@ -20,10 +20,17 @@ public interface IChannelBuilder
     IServiceCollection Services { get; }
 
     /// <summary>
-    /// Allows configuring the channel options
+    /// Registers an action used to configure the channel options.
     /// </summary>
     /// <param name="configure">The delegate used to configure the channel options</param>
     IChannelBuilder Configure( Action<ChannelOptions> configure );
+
+    /// <summary>
+    /// Registers an action used to configure a particular type of options.
+    /// </summary>
+    /// <typeparam name="TOptions">The options type to be configured</typeparam>
+    /// <param name="configure">The delegate used to configure the options</param>
+    IChannelBuilder Configure<TOptions>( Action<TOptions> configure ) where TOptions : class;
 
     /// <summary>
     /// Adds a transient service for the channel adapter to the input pipeline
