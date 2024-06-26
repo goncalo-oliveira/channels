@@ -12,7 +12,7 @@ public static class AnonymousHandlerChannelBuilderExtensions
     /// <typeparam name="TData">The data type expected by the handler</typeparam>
     public static IChannelBuilder AddInputHandler<TData>( this IChannelBuilder builder, Action<IChannelContext, TData> action )
     {
-        builder.Services.AddKeyedTransient<IChannelHandler, AnonymousChannelHandler<TData>>( builder.Name, ( provider, _ ) =>
+        builder.AddInputHandler( provider =>
         {
             return new AnonymousChannelHandler<TData>( async ( context, data ) =>
             {
@@ -31,14 +31,14 @@ public static class AnonymousHandlerChannelBuilderExtensions
     /// <typeparam name="TData">The data type expected by the handler</typeparam>
     public static IChannelBuilder AddInputHandler<TData>( this IChannelBuilder builder, Action<IServiceProvider, IChannelContext, TData> action )
     {
-        builder.Services.AddKeyedTransient<IChannelHandler, AnonymousChannelHandler<TData>>( builder.Name, ( provider, _ ) =>
+        builder.AddInputHandler( provider =>
         {
             return new AnonymousChannelHandler<TData>( async ( context, data ) =>
             {
                 await Task.Run( () => action.Invoke( provider, context, data ) )
                     .ConfigureAwait( false );
             } );
-        });
+        } );
 
         return builder;
     }
