@@ -98,6 +98,8 @@ internal sealed class TcpListener : IHostedService, IDisposable
 
         Socket.Listen( so_backlog );
 
+        logger.LogInformation( "Listening at {EndPoint}", Socket.LocalEndPoint );
+
         while ( !cancellationToken.IsCancellationRequested )
         {
             try

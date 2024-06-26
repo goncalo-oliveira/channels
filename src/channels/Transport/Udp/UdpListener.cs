@@ -91,6 +91,7 @@ internal sealed class UdpListener : IHostedService, IDisposable
     private async Task ExecuteAsync( CancellationToken cancellationToken )
     {
         logger.LogInformation( "Started service.  [PID {Id}]", Environment.ProcessId );
+        logger.LogInformation( "Listening at {EndPoint}", Socket.Client.LocalEndPoint );
 
         while ( !cancellationToken.IsCancellationRequested )
         {

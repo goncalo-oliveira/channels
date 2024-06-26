@@ -10,6 +10,11 @@ namespace Faactory.Channels;
 public interface IChannelBuilder
 {
     /// <summary>
+    /// Gets the name of the channel being configured
+    /// </summary>
+    string Name { get; }
+
+    /// <summary>
     /// Gets the Microsoft.Extensions.DependencyInjection.IServiceCollection where channel services are configured
     /// </summary>
     IServiceCollection Services { get; }

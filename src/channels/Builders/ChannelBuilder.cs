@@ -12,6 +12,7 @@ internal class ChannelBuilder( IServiceCollection services, string channelName )
     /// Gets the name of the channel
     /// </summary>
     public string Name { get; } = channelName;
+
     public IServiceCollection Services { get; } = services;
 
     public IChannelBuilder Configure( Action<ChannelOptions> configure )
