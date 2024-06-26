@@ -9,13 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- <PackageReference Include="Faactory.Channels" Version="0.10.0" /> -->
+    <PackageReference Include="Faactory.Channels.WebSockets" Version="1.0.0-preview-1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\websockets\websockets.csproj" />
   </ItemGroup>
 
 </Project>

@@ -108,7 +108,4 @@ internal sealed class ChannelsUdpClient : IChannelsClient, IDisposable
             }
         }
     }
-
-    // public Task WriteAsync( object data )
-    //     => Channel.WriteAsync( data );
 }

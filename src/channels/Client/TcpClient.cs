@@ -59,9 +59,6 @@ internal sealed class TcpClient : IChannelsClient, IDisposable
         catch { }
     }
 
-    // public Task WriteAsync( object data )
-    //     => Channel.WriteAsync( data );
-
     private async Task ConnectAsync( CancellationToken cancellationToken )
     {
         if ( !Channel.IsClosed )
