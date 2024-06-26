@@ -1,14 +1,12 @@
 ﻿using Faactory.Channels.Examples;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 var builder = Host.CreateApplicationBuilder( args );
 
 builder.Services.AddChannels( channel =>
 {
-    // set up long-running services
-    channel.AddIdleChannelService();
-
     // set up input pipeline
     /*
     We are replying the received data as it is, therefore we don't need adapters

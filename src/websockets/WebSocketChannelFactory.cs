@@ -32,7 +32,7 @@ internal sealed class WebSocketChannelFactory( IServiceProvider serviceProvider 
         var channel = new WebSocketChannel(
             scope,
             webSocket,
-            options.BufferEndianness,
+            options,
             inputPipeline,
             outputPipeline,
             channelServices

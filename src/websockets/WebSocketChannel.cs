@@ -16,7 +16,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
     private readonly Task receiveTask;
     private readonly CancellationTokenSource cts = new();
 
-    internal WebSocketChannel( IServiceScope serviceScope, WebSocket socket, Endianness bufferEndianness, IChannelPipeline inputPipeline, IChannelPipeline outputPipeline, IEnumerable<IChannelService>? channelServices = null )
+    internal WebSocketChannel( IServiceScope serviceScope, WebSocket socket, ChannelOptions options, IChannelPipeline inputPipeline, IChannelPipeline outputPipeline, IEnumerable<IChannelService>? channelServices = null )
         : base( serviceScope )
     {
         logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
@@ -24,7 +24,8 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
 
         loggerScope = logger.BeginScope( $"ws-{Id[..7]}" );
 
-        Buffer = new WritableByteBuffer( bufferEndianness );
+        Buffer = new WritableByteBuffer( options.BufferEndianness );
+        Timeout = options.IdleTimeout;
         WebSocket = socket;
         Input = inputPipeline;
         Output = outputPipeline;

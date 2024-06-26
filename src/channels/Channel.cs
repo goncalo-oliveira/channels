@@ -44,6 +44,8 @@ internal abstract class Channel : IChannel
 
     public IEnumerable<IChannelService> Services { get; init; } = [];
 
+    public TimeSpan Timeout { get; protected set; } = TimeSpan.FromSeconds( 60 );
+
     public abstract Task CloseAsync();
 
     public virtual void Dispose()
@@ -82,6 +84,14 @@ internal abstract class Channel : IChannel
 
         // notify channel created
         this.NotifyChannelCreated();
+
+        /*
+        Start monitoring the channel if a timeout is set.
+        */
+        if ( Timeout > TimeSpan.Zero )
+        {
+            _ = MonitorAsync( cancellationToken );
+        }
 
         // start long-running services
         await StartServicesAsync( cancellationToken );
@@ -129,5 +139,42 @@ internal abstract class Channel : IChannel
         } );
 
         return Task.WhenAll( tasks );
+    }
+
+    private async Task MonitorAsync( CancellationToken cancellationToken )
+    {
+        LastReceived = DateTimeOffset.UtcNow;
+        LastSent = DateTimeOffset.UtcNow;
+
+        logger.LogDebug( "Monitoring started." );
+
+        while ( !cancellationToken.IsCancellationRequested )
+        {
+            try
+            {
+                await Task.Delay( 1000, cancellationToken );
+
+                var ts = LastReceived > LastSent ? LastReceived : LastSent;
+
+                if ( ts?.Add( Timeout ) < DateTimeOffset.UtcNow )
+                {
+                    logger.LogWarning(
+                        "Channel has been idle for more than {seconds} seconds.",
+                        (int)Timeout.TotalSeconds
+                    );
+
+                    await CloseAsync()
+                        .ConfigureAwait( false );
+
+                    break;
+                }
+            }
+            catch ( OperationCanceledException )
+            {
+                break;
+            }
+        }
+
+        logger.LogDebug( "Monitoring stopped." );
     }
 }

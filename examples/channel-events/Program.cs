@@ -7,9 +7,6 @@ var builder = Host.CreateApplicationBuilder( args );
 
 builder.Services.AddChannels( channel =>
 {
-    // set up long-running services
-    channel.AddIdleChannelService();
-
     // set up input pipeline
     /*
     We need at least one middleware component to "consume" the data

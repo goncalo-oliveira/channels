@@ -70,7 +70,7 @@ public class ScopedServiceTests
             return new TcpChannel(
                 provider.CreateScope(),
                 new Socket(SocketType.Stream, ProtocolType.Tcp),
-                Buffers.Endianness.BigEndian,
+                new ChannelOptions(),
                 EmptyChannelPipeline.Instance,
                 EmptyChannelPipeline.Instance,
                 null
@@ -114,13 +114,15 @@ public class ScopedServiceTests
 
         TcpChannel channelFactory()
         {
+            var scope = provider.CreateScope();
+
             return new TcpChannel(
-                provider.CreateScope(),
-                new Socket(SocketType.Stream, ProtocolType.Tcp),
-                Buffers.Endianness.BigEndian,
+                scope,
+                new Socket( SocketType.Stream, ProtocolType.Tcp ),
+                new ChannelOptions(),
                 EmptyChannelPipeline.Instance,
                 EmptyChannelPipeline.Instance,
-                null
+                scope.ServiceProvider.GetKeyedServices<IChannelService>( channelName )
             );
         }
 

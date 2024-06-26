@@ -20,7 +20,7 @@ internal sealed class TcpChannel : Channel, IChannel
     internal TcpChannel( 
           IServiceScope serviceScope
         , Socket socket
-        , Endianness bufferEndianness
+        , ChannelOptions options
         , IChannelPipeline inputPipeline
         , IChannelPipeline outputPipeline
         , IEnumerable<IChannelService>? channelServices = null
@@ -32,8 +32,8 @@ internal sealed class TcpChannel : Channel, IChannel
 
         loggerScope = logger.BeginScope( $"tcp-{Id[..7]}" );
 
-        Buffer = new WritableByteBuffer( bufferEndianness );
-
+        Buffer = new WritableByteBuffer( options.BufferEndianness );
+        Timeout = options.IdleTimeout;
         Socket = socket;
         Input = inputPipeline;
         Output = outputPipeline;

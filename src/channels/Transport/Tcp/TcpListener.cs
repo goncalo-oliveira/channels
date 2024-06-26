@@ -136,7 +136,7 @@ internal sealed class TcpListener : IHostedService, IDisposable
         var channel = new TcpChannel(
               scope
             , channelSocket
-            , options.BufferEndianness
+            , options
             , inputPipeline
             , outputPipeline
             , channelServices

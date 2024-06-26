@@ -58,7 +58,7 @@ public class CustomEventTests
         var channel = new TcpChannel(
             provider.CreateScope(),
             new Socket( SocketType.Stream, ProtocolType.Tcp ),
-            Buffers.Endianness.BigEndian,
+            new ChannelOptions(),
             EmptyChannelPipeline.Instance,
             EmptyChannelPipeline.Instance,
             null

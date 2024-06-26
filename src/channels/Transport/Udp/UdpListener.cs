@@ -137,7 +137,7 @@ internal sealed class UdpListener : IHostedService, IDisposable
         var channel = new UdpChannel(
               scope
             , remote
-            , options.BufferEndianness
+            , options
             , inputPipeline
             , outputPipeline
             , channelServices

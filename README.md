@@ -352,49 +352,27 @@ public class SampleIdentityHandler : ChannelHandler<IdentityInformation>
 
 ## Idle Channels
 
-//// TODO: Deprecate the idle channel service in favor of an internal mechanism; removes the need to have an additional service running.
-
-There's a ready-made service that monitors channel activity and detects if a channel has become idle or unresponsive. When that happens, the underlying socket is disconnected and the channel closed.
-
-To enable this service, just add it as a channel service using the builder extensions
+By default, channels are initialized with an idle detection mechanism that closes the channel if no data is received or sent after a certain amount of time, which defaults to 60 seconds. This mechanism can be disabled or customized through the channel options.
 
 ```csharp
-IChannelBuilder channel = ...;
+IServiceCollection services = ...;
 
-channel.AddIdleChannelService();
-```
-
-The default detection mode is `IdleDetectionMode.Auto`, which attempts to actively verify if the underlying socket is still connected and if not, closes the channel.
-
-There's also a hard timeout of 60 seconds by default; if no data is received or sent through the underlying socket before the timeout, the channel is closed. This timeout can be disabled when using the `IdleDetectionMode.Auto` method by setting its value to `TimeSpan.Zero`.
-
-```csharp
-IChannelBuilder channel = ...;
-
-channel.AddIdleChannelService( options =>
+services.AddChannels( channel =>
 {
-    // these are the default settings; added here just for clarity
-    options.DetectionMode = IdleDetectionMode.Auto;
-    options.Timeout = TimeSpan.FromSeconds( 60 );
-    // to use Auto method without the hard timeout
-    //options.Timeout = TimeSpan.Zero;
+    channel.Configure( options =>
+    {
+        // this is the default setting; added here just for clarity
+        options.IdleTimeout = TimeSpan.FromSeconds( 60 );
+    } );
+
+    // ...
 } );
 ```
 
-Other detection modes only use the hard timeout on received and.or sent data.
+To disable the idle detection mechanism, set the `IdleTimeout` property to `TimeSpan.Zero`.
 
-```csharp
-IChannelBuilder channel = ...;
-
-channel.AddIdleChannelService( options =>
-{
-    // timeout (30s) to both received and sent data
-    options.DetectionMode = IdleDetectionMode.Both;
-    options.Timeout = TimeSpan.FromSeconds( 30 );
-} );
-```
-
-The recommended detection mode depends on the nature of the communication and the specific requirements of the application. For most cases, the `IdleDetectionMode.Auto` is a good choice. If the quality of the connection is known to be poor (particularly mobile networks), applying a hard timeout on received and/or sent data might be more reliable.
+> [!TIP]
+> The idle detection mechanism is available for all channel types: TCP, UDP and WebSockets.
 
 ## Client
 

@@ -45,4 +45,12 @@ if [ $# -eq 2 ]
     package=`ls -Art src/channels/bin/release/*.nupkg | tail -n 1`
 
     dotnet nuget push -s nuget.org -k $1 $package
+
+    # pack websockets
+    dotnet pack -c release src/websockets
+
+    # retrieve latest websockets package
+    package=`ls -Art src/websockets/bin/release/*.nupkg | tail -n 1`
+
+    dotnet nuget push -s nuget.org -k $1 $package
 fi

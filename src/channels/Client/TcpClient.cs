@@ -115,7 +115,7 @@ internal sealed class TcpClient : IChannelsClient, IDisposable
         return new TcpChannel(
             Scope,
             socket,
-            options.ChannelOptions.BufferEndianness,
+            options.ChannelOptions,
             inputPipeline,
             outputPipeline,
             channelServices

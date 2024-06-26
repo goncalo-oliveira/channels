@@ -10,16 +10,13 @@ We used named channels here to demonstrate how to set up multiple channels
 builder.Services.AddChannels()
     .Add( "uppercase", channel =>
     {
-        // set up long-running services
-        channel.AddIdleChannelService();
-
         // set up input pipeline
         channel.AddInputAdapter<LetterAdapter>()
             .AddInputHandler<LetterHandler>();
     } )
     .Add( "lowercase", channel =>
     {
-        channel.AddIdleChannelService();
+        //channel.AddIdleChannelService();
 
         // set up input pipeline
         channel.AddInputAdapter<LetterAdapter>()

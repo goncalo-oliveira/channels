@@ -6,9 +6,6 @@ var builder = Host.CreateApplicationBuilder( args );
 
 builder.Services.AddChannels( channel =>
 {
-    // set up long-running services
-    channel.AddIdleChannelService();
-
     // set up input pipeline
     channel.AddInputAdapter<WordAdapter>()
         .AddInputHandler<WordHandler>();

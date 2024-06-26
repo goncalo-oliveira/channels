@@ -77,7 +77,7 @@ internal sealed class ChannelsUdpClient : IChannelsClient, IDisposable
         var channel = new UdpChannel(
               scope
             , remote
-            , options.ChannelOptions.BufferEndianness
+            , options.ChannelOptions
             , inputPipeline
             , outputPipeline
             , channelServices

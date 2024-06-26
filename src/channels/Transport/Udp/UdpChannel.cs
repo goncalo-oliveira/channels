@@ -7,7 +7,6 @@ namespace Faactory.Channels.Udp;
 internal sealed class UdpChannel : Channel, IChannel
 {
     private readonly Task initializeTask;
-    private readonly Task monitorTask;
     private readonly CancellationTokenSource cts = new();
     private readonly ILogger logger;
     private readonly IDisposable? loggerScope;
@@ -15,7 +14,7 @@ internal sealed class UdpChannel : Channel, IChannel
     internal UdpChannel( 
           IServiceScope serviceScope
         , UdpRemote udpRemote
-        , Endianness bufferEndianness
+        , ChannelOptions options
         , IChannelPipeline inputPipeline
         , IChannelPipeline outputPipeline
         , IEnumerable<IChannelService> channelServices )
@@ -27,7 +26,8 @@ internal sealed class UdpChannel : Channel, IChannel
         loggerScope = logger.BeginScope( $"udp-{Id[..7]}" );
 
         Remote = udpRemote;
-        Buffer = new WritableByteBuffer( bufferEndianness );
+        Buffer = new WritableByteBuffer( options.BufferEndianness );
+        Timeout = options.IdleTimeout;
         Input = inputPipeline;
         Output = outputPipeline;
 
@@ -37,7 +37,6 @@ internal sealed class UdpChannel : Channel, IChannel
         }
 
         initializeTask = InitializeAsync( cts.Token );
-        monitorTask = MonitorAsync( cts.Token );
     }
 
     internal UdpRemote Remote { get; init; }
@@ -155,32 +154,5 @@ internal sealed class UdpChannel : Channel, IChannel
         Closed?.Invoke( this );
 
         Dispose();
-    }
-
-    private async Task MonitorAsync( CancellationToken cancellationToken )
-    {
-        LastReceived = DateTimeOffset.UtcNow;
-        LastSent = DateTimeOffset.UtcNow;
-
-        while ( !cancellationToken.IsCancellationRequested )
-        {
-            try
-            {
-                await Task.Delay( 1000, cancellationToken );
-
-                var ts = LastReceived > LastSent ? LastReceived : LastSent;
-
-                if ( ts?.AddSeconds( 30 ) < DateTimeOffset.UtcNow ) // TODO: should come from options
-                {
-                    await CloseAsync();
-
-                    break;
-                }
-            }
-            catch ( OperationCanceledException )
-            {
-                break;
-            }
-        }
     }
 }
