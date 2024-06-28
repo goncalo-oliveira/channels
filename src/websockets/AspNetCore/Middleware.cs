@@ -23,7 +23,7 @@ internal static class WebSocketChannelMiddleware
             using var ws = await httpContext.WebSockets.AcceptWebSocketAsync();
 
             // create a WebSocket channel using the factory
-            var channel = channelFactory.CreateChannel( ws, channelName );
+            using var channel = channelFactory.CreateChannel( ws, channelName );
 
             /*
             this creates a linked token source that will cancel when either of the following happens:

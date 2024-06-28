@@ -16,8 +16,6 @@ builder.Services.AddChannels()
     } )
     .Add( "lowercase", channel =>
     {
-        //channel.AddIdleChannelService();
-
         // set up input pipeline
         channel.AddInputAdapter<LetterAdapter>()
             .AddInputAdapter<LowercaseAdapter>()

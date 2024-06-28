@@ -3,7 +3,7 @@ namespace Faactory.Channels.WebSockets;
 /// <summary>
 /// A WebSocket channel
 /// </summary>
-public interface IWebSocketChannel
+public interface IWebSocketChannel : IDisposable
 {
     /// <summary>
     /// Gets the identifier of the channel

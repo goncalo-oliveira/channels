@@ -111,7 +111,14 @@ internal sealed class TcpListener : IHostedService, IDisposable
                     continue;
                 }
 
-                _ = CreateChannel( clientSocket );
+                /*
+                this gets executed in a separate thread to avoid thread issues with
+                the channel's scope, since the channel has asynchronous operations
+                */
+                await Task.Run(
+                    () => _ = CreateChannel( clientSocket ),
+                    cancellationToken
+                );
             }
             catch ( OperationCanceledException )
             {

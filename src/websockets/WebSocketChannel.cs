@@ -2,6 +2,7 @@
 
 using System.Net.WebSockets;
 using Faactory.Channels.Buffers;
+using Faactory.Channels.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -20,7 +21,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
         : base( serviceScope )
     {
         logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
-            .CreateLogger<IChannel>();
+            .CreateLogger<WebSocketChannel>();
 
         loggerScope = logger.BeginScope( $"ws-{Id[..7]}" );
 
@@ -35,7 +36,11 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
             Services = channelServices;
         }
 
-        initializeTask = base.InitializeAsync( cts.Token );
+        initializeTask = base.InitializeAsync( cts.Token ).ContinueWith( _ =>
+        {
+            logger.LogInformation( "Ready." );
+        });
+
         monitorTask = MonitorAsync( cts.Token );
         receiveTask = ReceiveAsync( cts.Token );
     }
@@ -74,7 +79,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
         // flag the channel as closed
         IsClosed = true;
 
-        logger.LogInformation( "Channel closed." );
+        logger.LogInformation( "Closed." );
 
         // notify the channel is closed
         try
@@ -131,17 +136,23 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
         }
         catch { }
 
-        initializeTask.Dispose();
-        monitorTask.Dispose();
-        receiveTask.Dispose();
+        initializeTask.WaitForCompletion();
+        monitorTask.WaitForCompletion();
+        receiveTask.WaitForCompletion();
+
+        initializeTask.TryDispose();
+        monitorTask.TryDispose();
+        receiveTask.TryDispose();
 
         WebSocket.Dispose();
+
+        base.Dispose(); // can't forget to dispose the base class
 
         logger.LogDebug( "Disposed." );
 
         loggerScope?.Dispose();
 
-        base.Dispose(); // can't forget to dispose the base class
+        GC.SuppressFinalize( this );
     }
 
     protected override Task InitializeAsync( CancellationToken cancellationToken ) => initializeTask;

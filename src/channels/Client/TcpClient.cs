@@ -1,5 +1,6 @@
 using System.Net.Sockets;
 using Faactory.Channels.Client;
+using Faactory.Channels.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels.Tcp;
@@ -43,14 +44,7 @@ internal sealed class TcpClient : IChannelsClient, IDisposable
         }
         catch { }
 
-        try
-        {
-            if ( !connectTask.IsCompleted && !connectTask.IsCanceled && !connectTask.IsFaulted )
-            {
-                connectTask.Wait();
-            }
-        }
-        catch { }
+        connectTask.WaitForCompletion();
 
         try
         {

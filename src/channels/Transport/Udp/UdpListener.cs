@@ -99,7 +99,14 @@ internal sealed class UdpListener : IHostedService, IDisposable
             {
                 var receiveResult = await Socket.ReceiveAsync( cancellationToken );
 
-                HandleReceivedData( receiveResult.Buffer, receiveResult.RemoteEndPoint );
+                /*
+                this gets executed in a separate thread to avoid thread issues with
+                the channel's scope, since the channel has asynchronous operations
+                */
+                await Task.Run(
+                    () => HandleReceivedData( receiveResult.Buffer, receiveResult.RemoteEndPoint ),
+                    cancellationToken
+                );
             }
             catch ( OperationCanceledException )
             {

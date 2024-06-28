@@ -1,4 +1,5 @@
 using Faactory.Channels.Buffers;
+using Faactory.Channels.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -10,6 +11,7 @@ namespace Faactory.Channels;
 internal abstract class Channel : IChannel
 {
     private readonly ILogger logger;
+    private Task? monitorTask;
 
     public Channel( IServiceScope serviceScope )
     {
@@ -18,6 +20,8 @@ internal abstract class Channel : IChannel
 
         logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger<Channel>();
+
+        logger.LogTrace( "Created" );
     }
 
     internal IChannelInfo Info { get; }
@@ -50,8 +54,14 @@ internal abstract class Channel : IChannel
 
     public virtual void Dispose()
     {
+        // if monitor task is running, wait for it to complete
+        monitorTask?.WaitForCompletion();
+        monitorTask?.TryDispose();
+
         Input.Dispose();
         Output.Dispose();
+
+        logger.LogDebug( "Disposed" );
 
         ChannelScope.Dispose();
 
@@ -80,8 +90,6 @@ internal abstract class Channel : IChannel
     /// </summary>
     protected virtual async Task InitializeAsync( CancellationToken cancellationToken = default )
     {
-        logger.LogInformation( "Created" );
-
         // notify channel created
         this.NotifyChannelCreated();
 
@@ -90,11 +98,13 @@ internal abstract class Channel : IChannel
         */
         if ( Timeout > TimeSpan.Zero )
         {
-            _ = MonitorAsync( cancellationToken );
+            monitorTask = MonitorAsync( cancellationToken );
         }
 
         // start long-running services
         await StartServicesAsync( cancellationToken );
+
+        logger.LogDebug( "Initialized" );
     }
 
     private Task StartServicesAsync( CancellationToken cancellationToken = default )

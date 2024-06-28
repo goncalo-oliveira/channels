@@ -1,6 +1,7 @@
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using Faactory.Channels.Buffers;
+using Faactory.Channels.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
@@ -28,7 +29,7 @@ internal sealed class TcpChannel : Channel, IChannel
         : base( serviceScope )
     {
         logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
-            .CreateLogger<IChannel>();
+            .CreateLogger<TcpChannel>();
 
         loggerScope = logger.BeginScope( $"tcp-{Id[..7]}" );
 
@@ -44,6 +45,8 @@ internal sealed class TcpChannel : Channel, IChannel
         }
 
         initializeTask = InitializeAsync( cts.Token );
+
+        logger.LogDebug( "Created" );
     }
 
     public Socket Socket { get; init; }
@@ -93,17 +96,25 @@ internal sealed class TcpChannel : Channel, IChannel
 
     public override void Dispose()
     {
-        Input.Dispose();
-        Output.Dispose();
-        Socket.Dispose();
-
-        logger.LogDebug( "Disposed." );
-
-        loggerScope?.Dispose();
+        try
+        {
+            cts.Cancel();
+        }
+        catch { }
 
         base.Dispose();
 
-        initializeTask.Dispose();
+        try
+        {
+            Socket.Dispose();
+        }
+        catch { }
+
+        initializeTask.TryDispose();
+
+        logger.LogDebug( "Disposed." );
+
+        GC.SuppressFinalize( this );
     }
 
     protected override async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -111,6 +122,8 @@ internal sealed class TcpChannel : Channel, IChannel
         await base.InitializeAsync( cancellationToken );
 
         BeginReceive();
+
+        logger.LogInformation( "Ready." );
     }
 
     #region Socket
@@ -228,8 +241,12 @@ internal sealed class TcpChannel : Channel, IChannel
         catch ( Exception )
         { }
 
+        logger.LogDebug( "Stopping services." );
+
         await StopServicesAsync()
             .ConfigureAwait( false );
+
+        logger.LogDebug( "Stopped services." );
 
         Dispose();
     }

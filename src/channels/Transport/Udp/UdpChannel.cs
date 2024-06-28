@@ -21,7 +21,7 @@ internal sealed class UdpChannel : Channel, IChannel
         : base( serviceScope )
     {
         logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
-            .CreateLogger<IChannel>();
+            .CreateLogger<UdpChannel>();
 
         loggerScope = logger.BeginScope( $"udp-{Id[..7]}" );
 
@@ -36,7 +36,10 @@ internal sealed class UdpChannel : Channel, IChannel
             Services = channelServices;
         }
 
-        initializeTask = InitializeAsync( cts.Token );
+        initializeTask = InitializeAsync( cts.Token ).ContinueWith( _ =>
+        {
+            logger.LogInformation( "Ready." );
+        } );
     }
 
     internal UdpRemote Remote { get; init; }
@@ -70,14 +73,13 @@ internal sealed class UdpChannel : Channel, IChannel
 
     public override void Dispose()
     {
-        Input.Dispose();
-        Output.Dispose();
-
-        logger.LogDebug( "Disposed." );
+        base.Dispose();
 
         loggerScope?.Dispose();
 
-        base.Dispose();
+        logger.LogDebug( "Disposed." );
+
+        GC.SuppressFinalize( this );
     }
 
     public override async Task WriteRawBytesAsync( byte[] data )
