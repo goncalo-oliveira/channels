@@ -1,6 +1,4 @@
 using Faactory.Channels.Adapters;
-using Faactory.Channels.Handlers;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
@@ -13,7 +11,7 @@ public static class AnonymousAdapterChannelBuilderExtensions
     /// <typeparam name="TData">The data type expected by the adapter</typeparam>
     public static IChannelBuilder AddInputAdapter<TData>( this IChannelBuilder builder, Action<IAdapterContext, TData> action )
     {
-        builder.Services.AddTransient<IInputChannelAdapter, AnonymousChannelAdapter<TData>>( provider =>
+        builder.AddInputAdapter( ( provider ) =>
         {
             return new AnonymousChannelAdapter<TData>( async ( context, data ) =>
             {
@@ -32,7 +30,7 @@ public static class AnonymousAdapterChannelBuilderExtensions
     /// <typeparam name="TData">The data type expected by the adapter</typeparam>
     public static IChannelBuilder AddInputAdapter<TData>( this IChannelBuilder builder, Action<IServiceProvider, IAdapterContext, TData> action )
     {
-        builder.Services.AddTransient<IInputChannelAdapter, AnonymousChannelAdapter<TData>>( provider =>
+        builder.AddInputAdapter( ( provider ) =>
         {
             return new AnonymousChannelAdapter<TData>( async ( context, data ) =>
             {
@@ -51,7 +49,7 @@ public static class AnonymousAdapterChannelBuilderExtensions
     /// <typeparam name="TData">The data type expected by the adapter</typeparam>
     public static IChannelBuilder AddOutputAdapter<TData>( this IChannelBuilder builder, Action<IAdapterContext, TData> action )
     {
-        builder.Services.AddTransient<IOutputChannelAdapter, AnonymousChannelAdapter<TData>>( provider =>
+        builder.AddOutputAdapter( ( provider ) =>
         {
             return new AnonymousChannelAdapter<TData>( async ( context, data ) =>
             {
@@ -60,7 +58,7 @@ public static class AnonymousAdapterChannelBuilderExtensions
             } );
         });
 
-        return ( builder );
+        return builder;
     }
 
     /// <summary>
@@ -70,15 +68,15 @@ public static class AnonymousAdapterChannelBuilderExtensions
     /// <typeparam name="TData">The data type expected by the adapter</typeparam>
     public static IChannelBuilder AddOutputAdapter<TData>( this IChannelBuilder builder, Action<IServiceProvider, IAdapterContext, TData> action )
     {
-        builder.Services.AddTransient<IOutputChannelAdapter, AnonymousChannelAdapter<TData>>( provider =>
+        builder.AddOutputAdapter( ( provider ) =>
         {
             return new AnonymousChannelAdapter<TData>( async ( context, data ) =>
             {
                 await Task.Run( () => action.Invoke( provider, context, data ) )
                     .ConfigureAwait( false );
             } );
-        });
+        } );
 
-        return ( builder );
+        return builder;
     }
 }

@@ -55,23 +55,33 @@ public class ScopedServiceTests
     }
 
     [Fact]
-    public async Task TestScopedService()
+    public void TestScopedService()
     {
+        var channelName = "__tests";
         IServiceCollection services = new ServiceCollection()
             .AddLogging()
-            .AddTransient<IServiceChannelFactory, ServiceChannelFactory>()
-            .AddTransient<IInputChannelAdapter, MyAdapter>()
+            .AddKeyedTransient<IInputChannelAdapter, MyAdapter>( channelName )
             .AddScoped<MyService>();
 
         var provider = services.BuildServiceProvider();
 
-        var channelFactory = provider.GetRequiredService<IServiceChannelFactory>();
+        TcpChannel channelFactory()
+        {
+            return new TcpChannel(
+                provider.CreateScope(),
+                new Socket(SocketType.Stream, ProtocolType.Tcp),
+                new ChannelOptions(),
+                EmptyChannelPipeline.Instance,
+                EmptyChannelPipeline.Instance,
+                null
+            );
+        }
 
-        var channel1 = await channelFactory.CreateChannelAsync( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
-        var channel2 = await channelFactory.CreateChannelAsync( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
+        var channel1 = channelFactory();
+        var channel2 = channelFactory();
 
-        var adapter1 = (MyAdapter)((Channel)channel1).ServiceProvider.GetServices<IInputChannelAdapter>().Single();
-        var adapter2 = (MyAdapter)((Channel)channel1).ServiceProvider.GetServices<IInputChannelAdapter>().Single();
+        var adapter1 = (MyAdapter)((TcpChannel)channel1).ServiceProvider.GetAdapters<IInputChannelAdapter>( channelName ).Single();
+        var adapter2 = (MyAdapter)((TcpChannel)channel1).ServiceProvider.GetAdapters<IInputChannelAdapter>( channelName ).Single();
 
         var id1 = adapter1.Id;
         var id2 = adapter2.Id;
@@ -79,8 +89,8 @@ public class ScopedServiceTests
         // both ids have to match, since MyService is scoped
         Assert.Equal( id1, id2 );
 
-        adapter1 = (MyAdapter)((Channel)channel2).ServiceProvider.GetServices<IInputChannelAdapter>().Single();
-        adapter2 = (MyAdapter)((Channel)channel2).ServiceProvider.GetServices<IInputChannelAdapter>().Single();
+        adapter1 = (MyAdapter)((TcpChannel)channel2).ServiceProvider.GetAdapters<IInputChannelAdapter>( channelName ).Single();
+        adapter2 = (MyAdapter)((TcpChannel)channel2).ServiceProvider.GetAdapters<IInputChannelAdapter>( channelName ).Single();
 
         var id3 = adapter1.Id;
         var id4 = adapter2.Id;
@@ -95,17 +105,29 @@ public class ScopedServiceTests
     [Fact]
     public async Task TestChannelServices()
     {
+        var channelName = "__tests";
         IServiceCollection services = new ServiceCollection()
             .AddLogging()
-            .AddTransient<IServiceChannelFactory, ServiceChannelFactory>()
-            .AddScoped<IChannelService, MyService>();
+            .AddKeyedScoped<IChannelService, MyService>( channelName );
 
         var provider = services.BuildServiceProvider();
 
-        var channelFactory = provider.GetRequiredService<IServiceChannelFactory>();
+        TcpChannel channelFactory()
+        {
+            var scope = provider.CreateScope();
 
-        var channel1 = await channelFactory.CreateChannelAsync( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
-        var channel2 = await channelFactory.CreateChannelAsync( new Socket( SocketType.Stream, ProtocolType.Tcp ) );
+            return new TcpChannel(
+                scope,
+                new Socket( SocketType.Stream, ProtocolType.Tcp ),
+                new ChannelOptions(),
+                EmptyChannelPipeline.Instance,
+                EmptyChannelPipeline.Instance,
+                scope.ServiceProvider.GetKeyedServices<IChannelService>( channelName )
+            );
+        }
+
+        var channel1 = channelFactory();
+        var channel2 = channelFactory();
 
         var svc1 = channel1.GetService<MyService>();
         var svc2 = channel2.GetService<MyService>();

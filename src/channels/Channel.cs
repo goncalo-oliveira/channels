@@ -1,71 +1,79 @@
-using System.Net.Sockets;
-using Microsoft.Extensions.Logging;
 using Faactory.Channels.Buffers;
-using Faactory.Channels.Sockets;
+using Faactory.Channels.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Faactory.Channels;
 
-internal abstract class Channel : ConnectedSocket, IChannel
+/// <summary>
+/// An abstract class that represents a communication channel.
+/// </summary>
+internal abstract class Channel : IChannel
 {
-    protected readonly ILogger logger;
-    private readonly IDisposable? loggerScope;
-    private readonly IServiceScope channelScope;
+    private readonly ILogger logger;
+    private Task? monitorTask;
 
-    internal Channel( 
-          IServiceScope serviceScope
-        , Socket socket
-        , Endianness bufferEndianness )
-        : base( serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>(), socket )
+    public Channel( IServiceScope serviceScope )
     {
-        logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
-            .CreateLogger<IChannel>();
-
-        loggerScope = logger.BeginScope( $"Channel_{Id[..7]}" );
-
+        ChannelScope = serviceScope;
         Info = new ChannelInfo( this );
-        Input = EmptyChannelPipeline.Instance;
-        Output = EmptyChannelPipeline.Instance;
-        Buffer = new WritableByteBuffer( bufferEndianness );
 
-        channelScope = serviceScope;
+        logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
+            .CreateLogger<Channel>();
+
+        logger.LogTrace( "Created" );
     }
 
-    public IEnumerable<IChannelService> Services => channelScope.ServiceProvider.GetServices<IChannelService>();
-
-    internal IServiceProvider ServiceProvider => channelScope.ServiceProvider;
     internal IChannelInfo Info { get; }
+    internal IServiceProvider ServiceProvider => ChannelScope.ServiceProvider;
 
-    public bool IsClosed { get; private set; }
-    public IByteBuffer Buffer { get; private set; }
+    protected IServiceScope ChannelScope { get; }
+
+    public IChannelPipeline Input { get; protected set; } = EmptyChannelPipeline.Instance;
+    public IChannelPipeline Output { get; protected set; } = EmptyChannelPipeline.Instance;
+
+    public string Id { get; } = Guid.NewGuid().ToString( "N" );
+
+    public bool IsClosed { get; protected set; }
+
+    public IByteBuffer Buffer { get; protected set; } = new WritableByteBuffer();
+
+    public ChannelData Data { get; protected set; } = [];
 
     public DateTimeOffset Created { get; } = DateTimeOffset.UtcNow;
-    public DateTimeOffset? LastReceived { get; private set; }
-    public DateTimeOffset? LastSent { get; private set; }
 
-    public ChannelData Data { get; } = [];
+    public DateTimeOffset? LastReceived { get; protected set; }
 
-    public IChannelPipeline Input { get; protected set; }
-    public IChannelPipeline Output { get; protected set; }
+    public DateTimeOffset? LastSent { get; protected set; }
+
+    public IEnumerable<IChannelService> Services { get; init; } = [];
+
+    public TimeSpan Timeout { get; protected set; } = TimeSpan.FromSeconds( 60 );
 
     public abstract Task CloseAsync();
 
-    public virtual async Task InitializeAsync()
+    public virtual void Dispose()
     {
-        logger.LogInformation( "Created" );
+        // if monitor task is running, wait for it to complete
+        monitorTask?.WaitForCompletion();
+        monitorTask?.TryDispose();
 
-        // notify channel created
-        this.NotifyChannelCreated();
+        Input.Dispose();
+        Output.Dispose();
 
-        // start long-running services
-        await StartServicesAsync();
+        logger.LogDebug( "Disposed" );
+
+        ChannelScope.Dispose();
+
+        GC.SuppressFinalize( this );
     }
 
     public virtual async Task WriteAsync( object data )
     {
-        if ( IsShutdown )
+        if ( IsClosed )
         {
             logger.LogWarning( "Can't write to a closed channel." );
+
             return;
         }
 
@@ -75,83 +83,37 @@ internal abstract class Channel : ConnectedSocket, IChannel
             .ConfigureAwait( false );
     }
 
-    public virtual void Dispose()
+    public abstract Task WriteRawBytesAsync( byte[] data );
+
+    /// <summary>
+    /// Initializes the channel. This method is called when the channel is created.
+    /// </summary>
+    protected virtual async Task InitializeAsync( CancellationToken cancellationToken = default )
     {
-        Input.Dispose();
-        Output.Dispose();
-        Socket.Dispose();
+        // notify channel created
+        this.NotifyChannelCreated();
 
-        logger.LogDebug( "Disposed." );
-
-        loggerScope?.Dispose();
-        channelScope.Dispose();
-    }
-
-    protected override void OnDataReceived( byte[] data )
-    {
-        LastReceived = DateTimeOffset.UtcNow;
-
-        this.NotifyDataReceived( data );
-
-        Buffer.WriteBytes( data, 0, data.Length );
-
-        var pipelineBuffer = Buffer.MakeReadOnly();
-
-        logger.LogDebug( "Executing input pipeline..." );
-
-        Task.Run( () => Input.ExecuteAsync( this, pipelineBuffer ) )
-            .ConfigureAwait( false )
-            .GetAwaiter()
-            .GetResult();
-
-        pipelineBuffer.DiscardReadBytes();
-
-        Buffer = pipelineBuffer.MakeWritable();
-
-        if ( Buffer.Length > 0 )
+        /*
+        Start monitoring the channel if a timeout is set.
+        */
+        if ( Timeout > TimeSpan.Zero )
         {
-            logger.LogDebug( "Remaining buffer length: {Length} byte(s).", Buffer.Length );
-        }
-    }
-
-    protected override void OnDataSent( int bytesSent )
-    {
-        LastSent = DateTimeOffset.UtcNow;
-
-        this.NotifyDataSent( bytesSent );
-    }
-
-    protected override async void OnDisconnected()
-    {
-        if ( IsClosed )
-        {
-            return;
+            monitorTask = MonitorAsync( cancellationToken );
         }
 
-        IsClosed = true;
+        // start long-running services
+        await StartServicesAsync( cancellationToken );
 
-        logger.LogInformation( "Closed." );
-        
-        try
-        {
-            this.NotifyChannelClosed();
-        }
-        catch ( Exception )
-        { }
-
-        await StopServicesAsync()
-            .ConfigureAwait( false );
-
-        Dispose();
+        logger.LogDebug( "Initialized" );
     }
 
-    internal Task StartServicesAsync()
+    private Task StartServicesAsync( CancellationToken cancellationToken = default )
     {
         var tasks = Services.Select( async service =>
         {
             try
             {
-                await service.StartAsync( this );
+                await service.StartAsync( this, cancellationToken );
             }
             catch ( Exception ex )
             {
@@ -167,7 +129,7 @@ internal abstract class Channel : ConnectedSocket, IChannel
         return Task.WhenAll( tasks );
     }
 
-    private Task StopServicesAsync()
+    protected Task StopServicesAsync()
     {
         var tasks = Services.Select( async service =>
         {
@@ -187,5 +149,42 @@ internal abstract class Channel : ConnectedSocket, IChannel
         } );
 
         return Task.WhenAll( tasks );
+    }
+
+    private async Task MonitorAsync( CancellationToken cancellationToken )
+    {
+        LastReceived = DateTimeOffset.UtcNow;
+        LastSent = DateTimeOffset.UtcNow;
+
+        logger.LogDebug( "Monitoring started." );
+
+        while ( !cancellationToken.IsCancellationRequested )
+        {
+            try
+            {
+                await Task.Delay( 1000, cancellationToken );
+
+                var ts = LastReceived > LastSent ? LastReceived : LastSent;
+
+                if ( ts?.Add( Timeout ) < DateTimeOffset.UtcNow )
+                {
+                    logger.LogWarning(
+                        "Channel has been idle for more than {seconds} seconds.",
+                        (int)Timeout.TotalSeconds
+                    );
+
+                    await CloseAsync()
+                        .ConfigureAwait( false );
+
+                    break;
+                }
+            }
+            catch ( OperationCanceledException )
+            {
+                break;
+            }
+        }
+
+        logger.LogDebug( "Monitoring stopped." );
     }
 }

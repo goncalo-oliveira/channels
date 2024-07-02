@@ -1,4 +1,5 @@
 using Faactory.Channels.Adapters;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
