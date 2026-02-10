@@ -8,7 +8,7 @@
     <Nullable>enable</Nullable>
     <LangVersion>preview</LangVersion>
     <PackageId>Faactory.Channels.Core</PackageId>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
     <Authors>Goncalo Oliveira</Authors>
     <Description>Channels</Description>
     <RepositoryUrl>https://github.com/goncalo-oliveira/channels</RepositoryUrl>
