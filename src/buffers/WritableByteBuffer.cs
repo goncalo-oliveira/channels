@@ -127,6 +127,9 @@ public sealed class WritableByteBuffer : IByteBuffer
 
     public byte[] ToArray() => buffer.ToArray();
 
+    public IByteBuffer UndoRead( int length )
+        => throw new NonReadableBufferException();
+
     public IByteBuffer WriteBoolean( bool value )
     {
         var bytes = BitConverter.GetBytes( value );

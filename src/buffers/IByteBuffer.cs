@@ -230,6 +230,13 @@ public interface IByteBuffer
     byte[] ToArray();
 
     /// <summary>
+    /// Moves the reading offset back by the given length
+    /// </summary>
+    /// <param name="length">The number of bytes to move back the reading offset</param>
+    /// <returns>The same IByteBuffer instance to allow fluent syntax</returns>
+    IByteBuffer UndoRead( int length );
+
+    /// <summary>
     /// Writes a boolean value
     /// </summary>
     /// <param name="value">The value to write</param>

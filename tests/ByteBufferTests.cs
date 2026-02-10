@@ -188,4 +188,28 @@ public class ByteBufferTests
         Assert.True( buffer.Any( b => b > 0x00 ) );
         Assert.False( buffer.Any( b => b == 0xff ) );
     }
+
+    [Fact]
+    public void TestUndoRead()
+    {
+        var buffer = new WrappedByteBuffer( [0x00, 0x01, 0x02, 0x03] );
+
+        Assert.Equal( 0x00, buffer.ReadByte() );
+        Assert.Equal( 0x01, buffer.ReadByte() );
+
+        buffer.UndoRead( 1 );
+
+        Assert.Equal( 0x01, buffer.ReadByte() );
+
+        buffer.UndoRead( 2 );
+
+        Assert.Equal( 0x00, buffer.ReadByte() );
+        Assert.Equal( 0x01, buffer.ReadByte() );
+        Assert.Equal( 0x02, buffer.ReadByte() );
+        Assert.Equal( 0x03, buffer.ReadByte() );
+
+        buffer.ResetOffset();
+
+        Assert.Throws<ArgumentOutOfRangeException>( () => buffer.UndoRead( 1 ) );
+    }
 }
