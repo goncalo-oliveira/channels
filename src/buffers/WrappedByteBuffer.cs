@@ -273,6 +273,18 @@ public sealed class WrappedByteBuffer( byte[] source, Endianness endianness = En
 
     public byte[] ToArray() => buffer;
 
+    public IByteBuffer UndoRead( int length )
+    {
+        if ( ( Offset - length ) < 0 )
+        {
+            throw new ArgumentOutOfRangeException( nameof( length ) );
+        }
+
+        Offset -= length;
+
+        return this;
+    }
+
     public IByteBuffer WriteBoolean( bool value )
         => throw new NonWritableBufferException();
 
