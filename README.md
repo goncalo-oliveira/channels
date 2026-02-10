@@ -394,15 +394,15 @@ we could also register the default client with a named channel configuration
 // services.AddChannelsClient( "channel1", "tcp://example.host:8080" );
 
 /*
-when we need to create a client, we only need to inject the `IChannelsClientFactory` interface
+when we need to create a client, we only need to inject the `IChannelFactory` interface
 */
 public class MyClient
 {
     private readonly IChannelsClient client;
 
-    public MyClient( IChannelsClientFactory factory )
+    public MyClient( IChannelFactory factory )
     {
-        client = factory.CreateClient();
+        client = factory.CreateClientChannel();
     }
 
     public Task ExecuteAsync()

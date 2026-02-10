@@ -18,6 +18,14 @@ public static class ChannelsBuilderServiceExtensions
     /// <returns></returns>
     public static IServiceCollection AddChannels( this IServiceCollection services, Action<IChannelBuilder> configure )
     {
+        /*
+        Channel factory is just a placeholder for the channel services provider,
+        which is used to create channel instances and resolve channel adapters.
+
+        It also serves as an anchor for extending the factory with different channel types (e.g. Clients, WebSockets, etc.).
+        */
+        services.AddTransient<IChannelFactory, ChannelFactory>();
+
         var builder = new NamedChannelBuilder( services );
 
         builder.Add( ChannelBuilder.DefaultChannelName, configure );

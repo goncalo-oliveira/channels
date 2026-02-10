@@ -25,8 +25,9 @@ public static class EndpointRouteBuilderWebSocketChannelExtensions
     [RequiresDynamicCode("This API may perform reflection on the supplied delegate and its parameters. These types may require generated code and aren't compatible with native AOT applications.")]
     [RequiresUnreferencedCode("This API may perform reflection on the supplied delegate and its parameters. These types may be trimmed if not directly referenced.")]
     public static RouteHandlerBuilder MapWebSocketChannel( this IEndpointRouteBuilder endpoints, [StringSyntax("Route")] string pattern, string channelName )
-        => endpoints.MapGet( pattern, ( HttpContext httpContext, IWebSocketChannelFactory channelFactory ) =>
-        {
-            return WebSocketChannelMiddleware.InvokeNamedAsync( httpContext, channelFactory, channelName );
-        } );
+        => endpoints.MapGet(
+            pattern,
+            ( HttpContext httpContext, IChannelFactory channelFactory ) =>
+                WebSocketChannelMiddleware.InvokeNamedAsync( httpContext, channelFactory, channelName )
+        );
 }

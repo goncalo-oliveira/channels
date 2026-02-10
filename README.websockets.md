@@ -35,11 +35,6 @@ IServiceCollection services = ...;
 Configure the channel or channels as usual
 */
 services.AddChannels( ... );
-
-/*
-register web sockets middleware services
-*/
-services.AddWebSocketChannels();
 ```
 
 With the middleware in place, we now need to bind the web sockets endpoint to the middleware, which is done through route mapping:
@@ -101,16 +96,16 @@ If you are not using ASP.NET Core, you can still use the library with any HTTP s
 
 ```csharp
 WebSocket webSocket = ...;
-IWebSocketChannelFactory factory = ...; // get the factory from the DI container
+IChannelFactory factory = ...; // get the factory from the DI container
 CancellationToken cancellationToken = ...; // optional: graceful shutdown if using the WaitAsync method
 
 // create named channel using the pre-configured "channel1" pipeline
-var channel = factory.CreateChannel( webSocket, "channel1" );
+var channel = factory.CreateWebSocketChannel( webSocket, "channel1" );
 
 // optional: wait until the channel is closed or cancellation token is triggered
 try
 {
-    await channel.WaitAsync( cts.Token );
+    await channel.WaitAsync( cancellationToken );
 }
 catch ( OperationCanceledException )
 { }

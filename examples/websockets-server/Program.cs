@@ -23,11 +23,6 @@ builder.Services.AddChannels()
     } );
 
 /*
-Required for WebSocket channels
-*/
-builder.Services.AddWebSocketChannels();
-
-/*
 Configure Kestrel on port 8080
 */
 builder.Services.Configure<KestrelServerOptions>( options =>
