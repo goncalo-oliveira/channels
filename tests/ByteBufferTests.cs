@@ -212,4 +212,19 @@ public class ByteBufferTests
 
         Assert.Throws<ArgumentOutOfRangeException>( () => buffer.UndoRead( 1 ) );
     }
+
+    [Fact]
+    public void TestMatchBytes()
+    {
+        var buffer = new WrappedByteBuffer( [0x00, 0x01, 0x02, 0x03] );
+
+        Assert.True( buffer.MatchBytes( [0x00, 0x01] ) );
+        Assert.False( buffer.MatchBytes( [0x02, 0x03] ) );
+
+        Assert.Equal( 0x00, buffer.ReadByte() );
+        Assert.Equal( 0x01, buffer.ReadByte() );
+
+        Assert.True( buffer.MatchBytes( [0x02, 0x03] ) );
+        Assert.False( buffer.MatchBytes( [0x00, 0x01] ) );
+    }
 }
