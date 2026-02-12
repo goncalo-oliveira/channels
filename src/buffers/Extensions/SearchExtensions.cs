@@ -118,14 +118,22 @@ public static class ByteBufferSearchExtensions
             offset = source.Offset;
         }
 
-        if ( ( offset + sequence.Length - 1 ) > source.ReadableBytes )
+        // validate the offset and sequence length
+        if ( offset < 0 || sequence.Length == 0 )
+        {
+            return false;
+        }
+
+        // validate that the sequence fits in the buffer at the given offset
+        if ( offset + sequence.Length > source.Length )
         {
             return false ;
         }
 
-        for ( int idx = offset; idx < ( offset + sequence.Length ); idx++ )
+        // compare the bytes
+        for ( int idx = 0; idx < sequence.Length; idx++ )
         {
-            if ( source.GetByte( idx ) != sequence[idx - offset] )
+            if ( source.GetByte( offset + idx ) != sequence[idx] )
             {
                 return false ;
             }
