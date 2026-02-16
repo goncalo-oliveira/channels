@@ -156,9 +156,9 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
     {
         await base.InitializeAsync( cancellationToken );
 
-        BeginReceive();
-
         logger.LogInformation( "Ready." );
+
+        BeginReceive();
     }
 
     #region Socket

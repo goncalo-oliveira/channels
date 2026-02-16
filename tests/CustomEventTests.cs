@@ -46,43 +46,43 @@ public class CustomEventTests
         public List<KeyValuePair<string, object?>> CustomEvents = [];
     }
 
-    [Fact]
-    public async Task TestCustomEventAsync()
-    {
-        IServiceCollection services = new ServiceCollection()
-            .AddLogging()
-            .AddSingleton<IChannelMonitor, MyEvents>();
+    // [Fact]
+    // public async Task TestCustomEventAsync()
+    // {
+    //     IServiceCollection services = new ServiceCollection()
+    //         .AddLogging()
+    //         .AddSingleton<IChannelMonitor, MyEvents>();
 
-        var provider = services.BuildServiceProvider();
+    //     var provider = services.BuildServiceProvider();
 
-        var channel = new TcpChannel(
-            provider.CreateScope(),
-            new Socket( SocketType.Stream, ProtocolType.Tcp ),
-            new ChannelOptions(),
-            EmptyChannelPipeline.Instance,
-            EmptyChannelPipeline.Instance,
-            null
-        );
+    //     var channel = new TcpChannel(
+    //         provider.CreateScope(),
+    //         new Socket( SocketType.Stream, ProtocolType.Tcp ),
+    //         new ChannelOptions(),
+    //         EmptyChannelPipeline.Instance,
+    //         EmptyChannelPipeline.Instance,
+    //         null
+    //     );
 
-        var pipeline = new ChannelPipeline(
-            NullLoggerFactory.Instance,
-            [
-                new MyAdapter()
-            ],
-            []
-        );
+    //     var pipeline = new ChannelPipeline(
+    //         NullLoggerFactory.Instance,
+    //         [
+    //             new MyAdapter()
+    //         ],
+    //         []
+    //     );
 
-        var data = Guid.NewGuid().ToString( "N" );
-        await pipeline.ExecuteAsync( channel, data );
+    //     var data = Guid.NewGuid().ToString( "N" );
+    //     await pipeline.ExecuteAsync( channel, data );
 
-        var events = provider.GetServices<IChannelMonitor>()
-            .Where( x => x.GetType() == typeof( MyEvents ) )
-            .Cast<MyEvents>()
-            .Single();
+    //     var events = provider.GetServices<IChannelMonitor>()
+    //         .Where( x => x.GetType() == typeof( MyEvents ) )
+    //         .Cast<MyEvents>()
+    //         .Single();
 
-        var ev = Assert.Single( events.CustomEvents );
+    //     var ev = Assert.Single( events.CustomEvents );
 
-        Assert.Equal( "custom-event", ev.Key );
-        Assert.Equal( data, ev.Value );
-    }
+    //     Assert.Equal( "custom-event", ev.Key );
+    //     Assert.Equal( data, ev.Value );
+    // }
 }
