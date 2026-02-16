@@ -204,15 +204,15 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
         return Task.CompletedTask;
     }
 
-    private async Task ExecuteInputPipelineAsync( byte[] data, int length )
+    private async Task ExecuteInputPipelineAsync( byte[] data )
     {
         try
         {
             LastReceived = DateTimeOffset.UtcNow;
 
-            this.NotifyDataReceived( data, length );
+            this.NotifyDataReceived( data );
 
-            Buffer.WriteBytes( data, 0, length );
+            Buffer.WriteBytes( data, 0, data.Length );
 
             var pipelineBuffer = Buffer.MakeReadOnly();
 
@@ -310,7 +310,10 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
         // trigger data received
         logger.LogTrace( "received {bytesReceived} bytes", bytesReceived );
 
-        _ = channel.ExecuteInputPipelineAsync( channel.socketBuffer, bytesReceived );
+        var received = new byte[bytesReceived];
+        System.Buffer.BlockCopy( channel.socketBuffer, 0, received, 0, bytesReceived );
+
+        _ = channel.ExecuteInputPipelineAsync( received );
     }
 
     private void SendCallback( IAsyncResult ar )

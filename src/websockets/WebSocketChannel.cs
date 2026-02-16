@@ -234,7 +234,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                     break;
                 }
 
-                this.NotifyDataReceived( buffer[..result.Count], result.Count );
+                this.NotifyDataReceived( buffer[..result.Count] );
 
                 /*
                 Unlike TCP and UDP channels, data received from a WebSocket

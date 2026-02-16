@@ -12,9 +12,9 @@ internal static class ChannelMonitorExtensions
         => channel.GetMonitorServices()
             .InvokeAll( x => x.ChannelClosed( channel.Info ) );
 
-    public static void NotifyDataReceived( this Channel channel, byte[] data, int bytesReceived )
+    public static void NotifyDataReceived( this Channel channel, byte[] data )
         => channel.GetMonitorServices()
-            .InvokeAll( x => x.DataReceived( channel.Info, data, bytesReceived ) );
+            .InvokeAll( x => x.DataReceived( channel.Info, data ) );
 
     public static void NotifyDataSent( this Channel channel, int sent )
         => channel.GetMonitorServices()

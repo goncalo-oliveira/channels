@@ -32,7 +32,7 @@ public class CustomEventTests
         public void ChannelCreated(IChannelInfo channelInfo)
         { }
 
-        public void DataReceived(IChannelInfo channelInfo, byte[] data, int length)
+        public void DataReceived(IChannelInfo channelInfo, byte[] data)
         { }
 
         public void DataSent(IChannelInfo channelInfo, int sent)

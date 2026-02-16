@@ -181,7 +181,7 @@ internal sealed class UdpChannel : Channel, IChannel, IAsyncDisposable
         {
             LastReceived = DateTimeOffset.UtcNow;
 
-            this.NotifyDataReceived( data, data.Length );
+            this.NotifyDataReceived( data );
 
             Buffer.WriteBytes( data, 0, data.Length );
 

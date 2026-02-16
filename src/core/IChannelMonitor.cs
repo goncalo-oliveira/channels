@@ -18,7 +18,7 @@ public interface IChannelMonitor
     /// <summary>
     /// Triggered when data is received by the channel
     /// </summary>
-    void DataReceived( IChannelInfo channelInfo, byte[] data, int bytesReceived );
+    void DataReceived( IChannelInfo channelInfo, byte[] data );
 
     /// <summary>
     /// Triggered when data is sent by the channel
