@@ -44,7 +44,13 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
             Services = channelServices;
         }
 
-        initializeTask = InitializeAsync( cts.Token );
+        initializeTask = InitializeAsync( cts.Token )
+            .ContinueWith(
+                t => logger.LogError( t.Exception?.GetBaseException(), "Init failed" ),
+                CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+                TaskScheduler.Default
+            );
 
         logger.LogDebug( "Created" );
     }
@@ -52,6 +58,7 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
     public Socket Socket { get; init; }
 
     private int isClosing;
+    private bool IsClosing => Volatile.Read( ref isClosing ) == 1;
 
     public override async Task CloseAsync()
     {
@@ -120,7 +127,7 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
 
     public override Task WriteAsync( object data )
     {
-        if ( Volatile.Read( ref isClosing ) == 1 )
+        if ( IsClosing )
         {
             logger.LogWarning( "Can't write to a closed channel." );
 
@@ -156,26 +163,6 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
 
     #region Socket
 
-    internal bool IsConnected()
-    {
-        try
-        {
-            var readStatus = Socket.Poll( 1000, SelectMode.SelectRead );
-            var dataUnavailable = Socket.Available == 0;
-
-            if ( ( !Socket.Connected ) || ( readStatus && dataUnavailable ) )
-            {
-                return false;
-            }
-
-            return true;
-        }
-        catch ( Exception )
-        {
-            return false;
-        }
-    }
-
     private void BeginReceive()
     {
         try
@@ -186,7 +173,7 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
                 , 0
                 , new AsyncCallback( ReadCallback ), this );
         }
-        catch ( ObjectDisposedException )
+        catch ( Exception ex ) when ( ex is ObjectDisposedException || ex is SocketException )
         {
             // socket is closed
             logger.LogTrace( "Disconnected." );
@@ -206,7 +193,7 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
                 , new AsyncCallback( SendCallback )
                 , this );
         }
-        catch ( ObjectDisposedException )
+        catch ( Exception ex ) when ( ex is ObjectDisposedException || ex is SocketException )
         {
             // socket is closed
             logger.LogTrace( "Disconnected." );
@@ -217,30 +204,48 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
         return Task.CompletedTask;
     }
 
-    private void OnDataReceived( byte[] data )
+    private async Task ExecuteInputPipelineAsync( byte[] data, int length )
     {
-        LastReceived = DateTimeOffset.UtcNow;
-
-        this.NotifyDataReceived( data );
-
-        Buffer.WriteBytes( data, 0, data.Length );
-
-        var pipelineBuffer = Buffer.MakeReadOnly();
-
-        logger.LogDebug( "Executing input pipeline..." );
-
-        Task.Run( () => Input.ExecuteAsync( this, pipelineBuffer ) )
-            .ConfigureAwait( false )
-            .GetAwaiter()
-            .GetResult();
-
-        pipelineBuffer.DiscardReadBytes();
-
-        Buffer = pipelineBuffer.MakeWritable();
-
-        if ( Buffer.Length > 0 )
+        try
         {
-            logger.LogDebug( "Remaining buffer length: {Length} byte(s).", Buffer.Length );
+            LastReceived = DateTimeOffset.UtcNow;
+
+            this.NotifyDataReceived( data, length );
+
+            Buffer.WriteBytes( data, 0, length );
+
+            var pipelineBuffer = Buffer.MakeReadOnly();
+
+            logger.LogDebug( "Executing input pipeline..." );
+
+            await Input.ExecuteAsync( this, pipelineBuffer )
+                .ConfigureAwait( false );
+
+            pipelineBuffer.DiscardReadBytes();
+
+            Buffer = pipelineBuffer.MakeWritable();
+
+            if ( Buffer.Length > 0 )
+            {
+                logger.LogDebug( "Remaining buffer length: {Length} byte(s).", Buffer.Length );
+            }
+        }
+        catch ( Exception ex )
+        {
+            logger.LogError( ex, "Pipeline execution failed. {Message}", ex.Message );
+
+            if ( !IsClosing )
+            {
+                await CloseAsync().ConfigureAwait( false );
+            }
+        }
+        finally
+        {
+            // read more data
+            if ( !IsClosing )
+            {
+                BeginReceive();
+            }
         }
     }
 
@@ -285,6 +290,8 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
             handler.TryDisconnect();
             handler.TryClose();
 
+            _ = channel.CloseAsync();
+
             return;
         }
 
@@ -303,12 +310,7 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
         // trigger data received
         logger.LogTrace( "received {bytesReceived} bytes", bytesReceived );
 
-        channel.OnDataReceived( 
-            channel.socketBuffer.Take( bytesReceived )
-                .ToArray() );
-
-        // read more data
-        channel.BeginReceive();
+        _ = channel.ExecuteInputPipelineAsync( channel.socketBuffer, bytesReceived );
     }
 
     private void SendCallback( IAsyncResult ar )
