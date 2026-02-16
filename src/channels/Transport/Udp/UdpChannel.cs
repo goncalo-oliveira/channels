@@ -1,13 +1,16 @@
 using Microsoft.Extensions.Logging;
 using Faactory.Channels.Buffers;
+using Faactory.Channels.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net.Sockets;
 
 namespace Faactory.Channels.Udp;
 
-internal sealed class UdpChannel : Channel, IChannel
+internal sealed class UdpChannel : Channel, IChannel, IAsyncDisposable
 {
     private readonly Task initializeTask;
     private readonly CancellationTokenSource cts = new();
+    private readonly SemaphoreSlim pipelineLock = new( 1, 1 );
     private readonly ILogger logger;
     private readonly IDisposable? loggerScope;
 
@@ -36,27 +39,81 @@ internal sealed class UdpChannel : Channel, IChannel
             Services = channelServices;
         }
 
-        initializeTask = InitializeAsync( cts.Token ).ContinueWith( _ =>
-        {
-            logger.LogInformation( "Ready." );
-        } );
+        initializeTask = InitializeAsync( cts.Token );
+
+        _ = initializeTask.ContinueWith(
+            _ => logger.LogInformation( "Ready." ),
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnRanToCompletion | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default
+        );
+            
+        _ = initializeTask.ContinueWith(
+            t => logger.LogError( t.Exception?.GetBaseException(), "Init failed" ),
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default
+        );
     }
 
     internal UdpRemote Remote { get; init; }
 
     internal event Action<UdpChannel>? Closed;
 
-    public override Task CloseAsync()
+    private int isClosing;
+
+    public override async Task CloseAsync()
     {
+        if ( Interlocked.Exchange( ref isClosing, 1 ) == 1 )
+        {
+            return;
+        }
+
+        IsClosed = true;
+
         try
         {
             cts.Cancel();
         }
         catch { }
 
-        OnDisconnected();
+        logger.LogInformation( "Closed." );
 
-        return Task.CompletedTask;
+        try
+        {
+            this.NotifyChannelClosed();
+        }
+        catch ( Exception )
+        { }
+
+        logger.LogDebug( "Stopping services." );
+
+        try
+        {
+            await StopServicesAsync()
+                .ConfigureAwait( false );
+        }
+        catch ( Exception ex )
+        {
+            logger.LogError( ex, "Failed to stop services. {Message}", ex.Message );
+        }
+
+        logger.LogDebug( "Stopped services." );
+
+        try
+        {
+            Closed?.Invoke( this );
+        }
+        catch ( Exception ex )
+        {
+            logger.LogError( ex, "Closed handler failed. {Message}", ex.Message );
+        }
+
+        initializeTask.TryDispose();
+
+        loggerScope?.Dispose();
+
+        base.Dispose();
     }
 
     public override Task WriteAsync( object data )
@@ -73,11 +130,14 @@ internal sealed class UdpChannel : Channel, IChannel
 
     public override void Dispose()
     {
-        base.Dispose();
+        _ = CloseAsync();
 
-        loggerScope?.Dispose();
+        GC.SuppressFinalize( this );
+    }
 
-        logger.LogDebug( "Disposed." );
+    public async ValueTask DisposeAsync()
+    {
+        await CloseAsync().ConfigureAwait( false );
 
         GC.SuppressFinalize( this );
     }
@@ -96,65 +156,63 @@ internal sealed class UdpChannel : Channel, IChannel
 
             this.NotifyDataSent( data.Length );
         }
-        catch ( ObjectDisposedException )
+        catch ( Exception ex ) when ( ex is ObjectDisposedException || ex is SocketException )
         {
             // socket is closed
             logger.LogTrace( "Disconnected." );
 
-            OnDisconnected();
+            _ = CloseAsync();
         }
     }
 
-    internal void Receive( byte[] data )
+    internal async Task ExecuteInputPipelineAsync( byte[] data )
     {
-        LastReceived = DateTimeOffset.UtcNow;
-
-        this.NotifyDataReceived( data, data.Length );
-
-        Buffer.WriteBytes( data, 0, data.Length );
-
-        var pipelineBuffer = Buffer.MakeReadOnly();
-
-        logger.LogDebug( "Executing input pipeline..." );
-
-        Task.Run( () => Input.ExecuteAsync( this, pipelineBuffer ) )
-            .ConfigureAwait( false )
-            .GetAwaiter()
-            .GetResult();
-
-        pipelineBuffer.DiscardReadBytes();
-
-        Buffer = pipelineBuffer.MakeWritable();
-
-        if ( Buffer.Length > 0 )
+        try
         {
-            logger.LogDebug( "Remaining buffer length: {Length} byte(s).", Buffer.Length );
+            await pipelineLock.WaitAsync( cts.Token )
+                .ConfigureAwait( false );
         }
-    }
-
-    private async void OnDisconnected()
-    {
-        if ( IsClosed )
+        catch ( OperationCanceledException )
         {
             return;
         }
 
-        IsClosed = true;
-
-        logger.LogInformation( "Closed." );
-        
         try
         {
-            this.NotifyChannelClosed();
+            LastReceived = DateTimeOffset.UtcNow;
+
+            this.NotifyDataReceived( data, data.Length );
+
+            Buffer.WriteBytes( data, 0, data.Length );
+
+            var pipelineBuffer = Buffer.MakeReadOnly();
+
+            logger.LogDebug( "Executing input pipeline..." );
+
+            await Input.ExecuteAsync( this, pipelineBuffer )
+                .ConfigureAwait( false );
+
+            pipelineBuffer.DiscardReadBytes();
+
+            Buffer = pipelineBuffer.MakeWritable();
+
+            if ( Buffer.Length > 0 )
+            {
+                logger.LogDebug( "Remaining buffer length: {Length} byte(s).", Buffer.Length );
+            }
         }
-        catch ( Exception )
-        { }
+        catch ( Exception ex )
+        {
+            logger.LogError( ex, "Pipeline execution failed. {Message}", ex.Message );
 
-        await StopServicesAsync()
-            .ConfigureAwait( false );
-
-        Closed?.Invoke( this );
-
-        Dispose();
+            if ( !IsClosed )
+            {
+                await CloseAsync().ConfigureAwait( false );
+            }
+        }
+        finally
+        {
+            pipelineLock.Release();
+        }
     }
 }

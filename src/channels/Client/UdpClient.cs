@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Faactory.Channels.Udp;
 
-internal sealed class ChannelsUdpClient : IChannelsClient, IDisposable
+internal sealed class ChannelsUdpClient : IChannelsClient, IDisposable, IAsyncDisposable
 {
     private readonly ILogger logger;
     private readonly CancellationTokenSource cts = new();
@@ -13,9 +13,9 @@ internal sealed class ChannelsUdpClient : IChannelsClient, IDisposable
     private readonly ChannelsClientOptions options;
     private readonly Task receiveTask;
 
-    private IPEndPoint remoteEndPoint;
+    private readonly IPEndPoint remoteEndPoint;
     private System.Net.Sockets.UdpClient Socket { get; }
-    private UdpChannel? udpChannel = null;
+    private readonly UdpChannel udpChannel;
 
     public ChannelsUdpClient( IServiceScope serviceScope, ChannelsClientOptions clientOptions, string clientChannelName )
     {
@@ -36,37 +36,56 @@ internal sealed class ChannelsUdpClient : IChannelsClient, IDisposable
         Socket = new System.Net.Sockets.UdpClient();
         Socket.Connect( remoteEndPoint );
 
+        udpChannel = CreateUdpChannel();
+
         receiveTask = ReceiveAsync( cts.Token );
+
+        _ = receiveTask.ContinueWith(
+            t => logger.LogError( t.Exception?.GetBaseException(), "Receive loop failed" ),
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default
+        );
     }
 
-    public IChannel Channel
-    {
-        get
-        {
-            udpChannel ??= CreateChannel( new UdpRemote( Socket, null ) );
-
-            return udpChannel;
-        }
-    }
+    public IChannel Channel => udpChannel;
 
     private IServiceScope Scope { get; }
     private IServiceProvider ServiceProvider => Scope.ServiceProvider;
 
-    public Task CloseAsync()
+    public async Task CloseAsync()
     {
         cts.Cancel();
 
-        return Channel.CloseAsync();
+        try
+        {
+            await receiveTask.ConfigureAwait( false );
+        }
+        catch (OperationCanceledException)
+        { }
+
+        await Channel.CloseAsync()
+            .ConfigureAwait( false );
+
+        try
+        {
+            Socket.Dispose();
+        }
+        catch { }
     }
 
     public void Dispose()
     {
-        cts.Cancel();
-
-        Socket.Dispose();
+        DisposeAsync().AsTask().GetAwaiter().GetResult();
     }
 
-    private UdpChannel CreateChannel( UdpRemote remote )
+    public async ValueTask DisposeAsync()
+    {
+        await CloseAsync()
+            .ConfigureAwait( false );
+    }
+
+    private UdpChannel CreateUdpChannel()
     {
         var scope = ServiceProvider.CreateScope();
 
@@ -76,7 +95,7 @@ internal sealed class ChannelsUdpClient : IChannelsClient, IDisposable
 
         var channel = new UdpChannel(
               scope
-            , remote
+            , new UdpRemote( Socket, null )
             , options.ChannelOptions
             , inputPipeline
             , outputPipeline
@@ -96,15 +115,14 @@ internal sealed class ChannelsUdpClient : IChannelsClient, IDisposable
 
                 logger.LogDebug( "Received {N} bytes from {EndPoint}.", receiveResult.Buffer.Length, receiveResult.RemoteEndPoint );
 
-                udpChannel ??= CreateChannel( new UdpRemote( Socket, null ) );
-
-                udpChannel.Receive( receiveResult.Buffer );
+                await udpChannel.ExecuteInputPipelineAsync( receiveResult.Buffer );
             }
             catch ( OperationCanceledException )
             { }
             catch ( Exception ex )
             {
                 logger.LogError( "Failed to received data. {Error}.", ex.Message );
+                break;
             }
         }
     }

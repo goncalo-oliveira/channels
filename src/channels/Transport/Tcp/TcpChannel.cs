@@ -44,13 +44,14 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
             Services = channelServices;
         }
 
-        initializeTask = InitializeAsync( cts.Token )
-            .ContinueWith(
-                t => logger.LogError( t.Exception?.GetBaseException(), "Init failed" ),
-                CancellationToken.None,
-                TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
-                TaskScheduler.Default
-            );
+        initializeTask = InitializeAsync( cts.Token );
+            
+        _ = initializeTask.ContinueWith(
+            t => logger.LogError( t.Exception?.GetBaseException(), "Init failed" ),
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default
+        );
 
         logger.LogDebug( "Created" );
     }
@@ -58,7 +59,6 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
     public Socket Socket { get; init; }
 
     private int isClosing;
-    private bool IsClosing => Volatile.Read( ref isClosing ) == 1;
 
     public override async Task CloseAsync()
     {
@@ -127,7 +127,7 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
 
     public override Task WriteAsync( object data )
     {
-        if ( IsClosing )
+        if ( IsClosed )
         {
             logger.LogWarning( "Can't write to a closed channel." );
 
@@ -139,7 +139,7 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
 
     public override void Dispose()
     {
-        _ = CloseAsync();
+        DisposeAsync().AsTask().GetAwaiter().GetResult();
 
         GC.SuppressFinalize( this );
     }
@@ -234,7 +234,7 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
         {
             logger.LogError( ex, "Pipeline execution failed. {Message}", ex.Message );
 
-            if ( !IsClosing )
+            if ( !IsClosed )
             {
                 await CloseAsync().ConfigureAwait( false );
             }
@@ -242,7 +242,7 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
         finally
         {
             // read more data
-            if ( !IsClosing )
+            if ( !IsClosed )
             {
                 BeginReceive();
             }

@@ -34,7 +34,8 @@ internal abstract class Channel : IChannel
 
     public string Id { get; } = Guid.NewGuid().ToString( "N" );
 
-    public bool IsClosed { get; protected set; }
+    private volatile bool isClosed;
+    public bool IsClosed { get => isClosed; protected set => isClosed = value; }
 
     public IByteBuffer Buffer { get; protected set; } = new WritableByteBuffer();
 
@@ -55,7 +56,6 @@ internal abstract class Channel : IChannel
     public virtual void Dispose()
     {
         // if monitor task is running, wait for it to complete
-        monitorTask?.WaitForCompletion();
         monitorTask?.TryDispose();
 
         Input.Dispose();
@@ -93,6 +93,9 @@ internal abstract class Channel : IChannel
         // notify channel created
         this.NotifyChannelCreated();
 
+        // start long-running services
+        await StartServicesAsync( cancellationToken );
+
         /*
         Start monitoring the channel if a timeout is set.
         */
@@ -100,9 +103,6 @@ internal abstract class Channel : IChannel
         {
             monitorTask = MonitorAsync( cancellationToken );
         }
-
-        // start long-running services
-        await StartServicesAsync( cancellationToken );
 
         logger.LogDebug( "Initialized" );
     }
