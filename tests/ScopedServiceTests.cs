@@ -44,7 +44,7 @@ public class ScopedServiceTests
 
         public string Id => id;
 
-        public override Task ExecuteAsync( IAdapterContext context, string data )
+        public override Task ExecuteAsync( IAdapterContext context, string data, CancellationToken cancellationToken )
         {
             context.Forward( id );
 

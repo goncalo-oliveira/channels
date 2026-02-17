@@ -37,10 +37,10 @@ public sealed class ByteBufferJsonConverter( ByteBufferSerializerFormat format =
 
         if ( Format == ByteBufferSerializerFormat.HexString )
         {
-            return new WrappedByteBuffer( Convert.FromHexString( value ) );
+            return new ReadableByteBuffer( Convert.FromHexString( value ) );
         }
 
-        return new WrappedByteBuffer( Convert.FromBase64String( value ) );
+        return new ReadableByteBuffer( Convert.FromBase64String( value ) );
     }
 
     /// <summary>

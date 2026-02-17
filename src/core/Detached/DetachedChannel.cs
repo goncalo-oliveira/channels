@@ -19,7 +19,7 @@ public sealed class DetachedChannel : IChannel
 
     public DateTimeOffset? LastSent { get; }
 
-    public IByteBuffer Buffer { get; } = new WrappedByteBuffer( [] );
+    public Endianness BufferEndianness { get; init; } = Endianness.BigEndian;
 
     public bool IsClosed { get; private set; }
 

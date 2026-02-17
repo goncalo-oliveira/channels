@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 using Faactory.Channels.Adapters;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +15,7 @@ public class CustomEventTests
 {
     private class MyAdapter : ChannelAdapter<string>, IInputChannelAdapter
     {
-        public override Task ExecuteAsync( IAdapterContext context, string data )
+        public override Task ExecuteAsync( IAdapterContext context, string data, CancellationToken cancellationToken )
         {
             context.Forward( data );
 

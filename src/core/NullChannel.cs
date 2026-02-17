@@ -36,7 +36,7 @@ public sealed class NullChannel : IChannel, IAsyncDisposable
 
     public bool IsClosed => true;
 
-    public IByteBuffer Buffer => throw new NotSupportedException();
+    public Endianness BufferEndianness => Endianness.BigEndian;
 
     public ChannelData Data { get; } = [];
 

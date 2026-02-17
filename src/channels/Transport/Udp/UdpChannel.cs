@@ -97,7 +97,7 @@ internal sealed class UdpChannel : Channel
 
             Buffer.WriteBytes( data, 0, data.Length );
 
-            var pipelineBuffer = Buffer.MakeReadOnly();
+            var pipelineBuffer = Buffer.AsReadable();
 
             logger.LogDebug( "Executing input pipeline..." );
 
@@ -106,7 +106,7 @@ internal sealed class UdpChannel : Channel
 
             pipelineBuffer.DiscardReadBytes();
 
-            Buffer = pipelineBuffer.MakeWritable();
+            Buffer = pipelineBuffer.AsWritable();
 
             if ( Buffer.Length > 0 )
             {

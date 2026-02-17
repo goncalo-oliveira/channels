@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Faactory.Channels.Adapters;
 using Faactory.Channels.Buffers;
@@ -72,7 +73,7 @@ public class ChannelAdapterTests
 
         Assert.Single( context.Forwarded );
 
-        var contextData = Assert.IsType<WrappedByteBuffer>( context.Forwarded.Single() );
+        var contextData = Assert.IsType<IByteBuffer>( context.Forwarded.Single(), exactMatch: false );
 
         Assert.True( data.SequenceEqual( contextData.ToArray() ) );
     }
@@ -81,7 +82,7 @@ public class ChannelAdapterTests
     [Fact]
     public async Task TestByteArrayMutation()
     {
-        var data = new WrappedByteBuffer( Encoding.ASCII.GetBytes( Guid.NewGuid().ToString( "N" ) ) );
+        var data = new ReadableByteBuffer( Encoding.ASCII.GetBytes( Guid.NewGuid().ToString( "N" ) ) );
 
         var context = new DetachedContext();
         IChannelAdapter adapter = new ByteArrayAdapter();
@@ -97,7 +98,7 @@ public class ChannelAdapterTests
 
     private class ObjectAdapter : ChannelAdapter<string>
     {
-        public override Task ExecuteAsync( IAdapterContext context, string data )
+        public override Task ExecuteAsync( IAdapterContext context, string data, CancellationToken cancellationToken )
         {
             context.Forward( data );
 
@@ -107,7 +108,7 @@ public class ChannelAdapterTests
 
     private class ObjectArrayAdapter : ChannelAdapter<string[]>
     {
-        public override Task ExecuteAsync( IAdapterContext context, string[] data )
+        public override Task ExecuteAsync( IAdapterContext context, string[] data, CancellationToken cancellationToken )
         {
             context.Forward( data );
 
@@ -117,7 +118,7 @@ public class ChannelAdapterTests
 
     private class BufferAdapter : ChannelAdapter<IByteBuffer>
     {
-        public override Task ExecuteAsync( IAdapterContext context, IByteBuffer data )
+        public override Task ExecuteAsync( IAdapterContext context, IByteBuffer data, CancellationToken cancellationToken )
         {
             context.Forward( data );
 
@@ -127,7 +128,7 @@ public class ChannelAdapterTests
 
     private class ByteArrayAdapter : ChannelAdapter<byte[]>
     {
-        public override Task ExecuteAsync( IAdapterContext context, byte[] data )
+        public override Task ExecuteAsync( IAdapterContext context, byte[] data, CancellationToken cancellationToken )
         {
             context.Forward( data );
 

@@ -14,25 +14,25 @@ public class ByteBufferTests
         When the buffer is already read-only and the endianness doesn't change
         the instance returned should be the same as the original.
         */
-        IByteBuffer source = new WrappedByteBuffer( new byte[] { 0x00, 0x01 }, Endianness.BigEndian );
-        IByteBuffer readOnly = source.MakeReadOnly();
+        IByteBuffer source = new ReadableByteBuffer( [0x00, 0x01], Endianness.BigEndian );
+        IByteBuffer readOnly = source.EnsureReadable();
 
         Assert.Equal( source, readOnly );
-        Assert.True( readOnly.IsReadable );
-        Assert.False( readOnly.IsWritable );
-
+        Assert.IsType<IReadableByteBuffer>( readOnly, exactMatch: false );
+        Assert.IsNotType<IWritableByteBuffer>( readOnly, exactMatch: false );
+        
         /*
         However, if the endianness changes, the returned instance should be
         a new instance with the new endianness, even if the buffer is already
         read-only.
         */
 
-        source = new WrappedByteBuffer( new byte[] { 0x00, 0x01 }, Endianness.BigEndian );
-        readOnly = source.MakeReadOnly( Endianness.LittleEndian );
+        source = new ReadableByteBuffer( [0x00, 0x01], Endianness.BigEndian );
+        readOnly = source.EnsureReadable( Endianness.LittleEndian );
 
         Assert.NotEqual( source, readOnly );
-        Assert.True( readOnly.IsReadable );
-        Assert.False( readOnly.IsWritable );
+        Assert.IsType<IReadableByteBuffer>( readOnly, exactMatch: false );
+        Assert.IsNotType<IWritableByteBuffer>( readOnly, exactMatch: false );
 
         /*
         If the buffer is not read-only, the returned instance should be a new
@@ -40,13 +40,13 @@ public class ByteBufferTests
         */
 
         source = new WritableByteBuffer()
-            .WriteBytes( new byte[] { 0x00, 0x01 } );
+            .WriteBytes( [0x00, 0x01] );
         
-        readOnly = source.MakeReadOnly();
+        readOnly = source.EnsureReadable();
 
         Assert.NotEqual( source, readOnly );
-        Assert.True( readOnly.IsReadable );
-        Assert.False( readOnly.IsWritable );
+        Assert.IsType<IReadableByteBuffer>( readOnly, exactMatch: false );
+        Assert.IsNotType<IWritableByteBuffer>( readOnly, exactMatch: false );
     }
 
     [Fact]
@@ -57,13 +57,13 @@ public class ByteBufferTests
         the instance returned should be the same as the original.
         */
         IByteBuffer source = new WritableByteBuffer()
-            .WriteBytes( new byte[] { 0x00, 0x01 } );
+            .WriteBytes( [0x00, 0x01] );
 
-        IByteBuffer writable = source.MakeWritable();
+        IByteBuffer writable = source.EnsureWritable();
 
         Assert.Equal( source, writable );
-        Assert.True( writable.IsWritable );
-        Assert.False( writable.IsReadable );
+        Assert.IsType<IWritableByteBuffer>( writable, exactMatch: false );
+        Assert.IsNotType<IReadableByteBuffer>( writable, exactMatch: false );
 
         /*
         However, if the endianness changes, the returned instance should be
@@ -72,38 +72,38 @@ public class ByteBufferTests
         */
 
         source = new WritableByteBuffer()
-            .WriteBytes( new byte[] { 0x00, 0x01 } );
+            .WriteBytes( [0x00, 0x01] );
 
-        writable = source.MakeWritable( Endianness.LittleEndian );
+        writable = source.EnsureWritable( Endianness.LittleEndian );
 
         Assert.NotEqual( source, writable );
-        Assert.True( writable.IsWritable );
-        Assert.False( writable.IsReadable );
+        Assert.IsType<IWritableByteBuffer>( writable, exactMatch: false );
+        Assert.IsNotType<IReadableByteBuffer>( writable, exactMatch: false );
 
         /*
         If the buffer is not writable, the returned instance should be a new
         instance with the same endianness.
         */
 
-        source = new WrappedByteBuffer( new byte[] { 0x00, 0x01 }, Endianness.BigEndian );
-        writable = source.MakeWritable();
+        source = new ReadableByteBuffer( [0x00, 0x01], Endianness.BigEndian );
+        writable = source.EnsureWritable();
 
         Assert.NotEqual( source, writable );
-        Assert.True( writable.IsWritable );
-        Assert.False( writable.IsReadable );
+        Assert.IsType<IWritableByteBuffer>( writable, exactMatch: false );
+        Assert.IsNotType<IReadableByteBuffer>( writable, exactMatch: false );
     }
 
     [Fact]
     public void TestFindBytes()
     {
-        IByteBuffer source = new WrappedByteBuffer(
-            new byte[] { 0x00, 0x01, 0x02, 0x03 }
+        IReadableByteBuffer source = new ReadableByteBuffer(
+            [0x00, 0x01, 0x02, 0x03]
         );
 
-        Assert.Equal( 0, source.IndexOf( new byte[] { 0x00, 0x01 } ) );
-        Assert.Equal( 1, source.IndexOf( new byte[] { 0x01, 0x02 } ) );
-        Assert.Equal( 2, source.IndexOf( new byte[] { 0x02, 0x03 } ) );
-        Assert.Equal( 3, source.IndexOf( new byte[] { 0x03 } ) );
+        Assert.Equal( 0, source.IndexOf( [0x00, 0x01] ) );
+        Assert.Equal( 1, source.IndexOf( [0x01, 0x02] ) );
+        Assert.Equal( 2, source.IndexOf( [0x02, 0x03] ) );
+        Assert.Equal( 3, source.IndexOf( [0x03] ) );
 
         Assert.Equal( 0, source.IndexOf( 0x00 ) );
         Assert.Equal( 1, source.IndexOf( 0x01 ) );
@@ -112,10 +112,10 @@ public class ByteBufferTests
 
         source.SkipBytes( 1 );
 
-        Assert.Equal( 1, source.IndexOf( new byte[] { 0x01, 0x02 } ) );
-        Assert.Equal( 2, source.IndexOf( new byte[] { 0x02, 0x03 } ) );
-        Assert.Equal( 3, source.IndexOf( new byte[] { 0x03 } ) );
-        Assert.Equal( 3, source.IndexOf( new byte[] { 0x03 }, 3 ) );
+        Assert.Equal( 1, source.IndexOf( [0x01, 0x02] ) );
+        Assert.Equal( 2, source.IndexOf( [0x02, 0x03] ) );
+        Assert.Equal( 3, source.IndexOf( [0x03] ) );
+        Assert.Equal( 3, source.IndexOf( [0x03], 3 ) );
 
         Assert.Equal( -1, source.IndexOf( 0x00 ) );
         Assert.Equal( 1, source.IndexOf( 0x01 ) );
@@ -126,63 +126,63 @@ public class ByteBufferTests
     [Fact]
     public void TestIndexOf()
     {
-        var buffer = new WrappedByteBuffer( new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05 } );
+        var buffer = new ReadableByteBuffer( [0x00, 0x01, 0x02, 0x03, 0x04, 0x05] );
 
         Assert.Equal( -1, buffer.IndexOf( 0xff ) );
         Assert.Equal( -1, buffer.IndexOf( 0xff, 0 ) );
         Assert.Equal( -1, buffer.IndexOf( 0xff, 5 ) );
 
-        Assert.Equal( -1, buffer.IndexOf( new byte[] { 0xff } ) );
-        Assert.Equal( -1, buffer.IndexOf( new byte[] { 0xff }, 5 ) );
-        Assert.Equal( -1, buffer.IndexOf( new byte[] { 0xff }, 0 ) );
+        Assert.Equal( -1, buffer.IndexOf( [0xff] ) );
+        Assert.Equal( -1, buffer.IndexOf( [0xff], 5 ) );
+        Assert.Equal( -1, buffer.IndexOf( [0xff], 0 ) );
 
-        Assert.Equal( -1, buffer.IndexOf( new byte[] { 0xff, 0xff } ) );
-        Assert.Equal( -1, buffer.IndexOf( new byte[] { 0xff, 0xff }, 4 ) );
-        Assert.Equal( -1, buffer.IndexOf( new byte[] { 0xff, 0xff }, 5 ) );
-        Assert.Equal( -1, buffer.IndexOf( new byte[] { 0xff, 0xff }, 0 ) );
+        Assert.Equal( -1, buffer.IndexOf( [0xff, 0xff] ) );
+        Assert.Equal( -1, buffer.IndexOf( [0xff, 0xff], 4 ) );
+        Assert.Equal( -1, buffer.IndexOf( [0xff, 0xff], 5 ) );
+        Assert.Equal( -1, buffer.IndexOf( [0xff, 0xff], 0 ) );
 
-        Assert.Equal( 1, buffer.IndexOf( new byte[] { 0x01, 0x02 } ) );
-        Assert.Equal( 1, buffer.IndexOf( new byte[] { 0x01, 0x02 }, 0 ) );
-        Assert.Equal( 1, buffer.IndexOf( new byte[] { 0x01, 0x02 }, 1 ) );
+        Assert.Equal( 1, buffer.IndexOf( [0x01, 0x02] ) );
+        Assert.Equal( 1, buffer.IndexOf( [0x01, 0x02], 0 ) );
+        Assert.Equal( 1, buffer.IndexOf( [0x01, 0x02], 1 ) );
 
-        Assert.Equal( 0, buffer.IndexOf( new byte[] { 0x00 } ) );
-        Assert.Equal( 0, buffer.IndexOf( new byte[] { 0x00 }, 0 ) );
+        Assert.Equal( 0, buffer.IndexOf( [0x00] ) );
+        Assert.Equal( 0, buffer.IndexOf( [0x00], 0 ) );
         
-        Assert.Equal( 1, buffer.IndexOf( new byte[] { 0x01 } ) );
-        Assert.Equal( 1, buffer.IndexOf( new byte[] { 0x01 }, 0 ) );
-        Assert.Equal( 1, buffer.IndexOf( new byte[] { 0x01 }, 1 ) );
+        Assert.Equal( 1, buffer.IndexOf( [0x01] ) );
+        Assert.Equal( 1, buffer.IndexOf( [0x01], 0 ) );
+        Assert.Equal( 1, buffer.IndexOf( [0x01], 1 ) );
 
-        Assert.Equal( 2, buffer.IndexOf( new byte[] { 0x02 } ) );
-        Assert.Equal( 2, buffer.IndexOf( new byte[] { 0x02 }, 0 ) );
-        Assert.Equal( 2, buffer.IndexOf( new byte[] { 0x02 }, 1 ) );
-        Assert.Equal( 2, buffer.IndexOf( new byte[] { 0x02 }, 2 ) );
+        Assert.Equal( 2, buffer.IndexOf( [0x02] ) );
+        Assert.Equal( 2, buffer.IndexOf( [0x02], 0 ) );
+        Assert.Equal( 2, buffer.IndexOf( [0x02], 1 ) );
+        Assert.Equal( 2, buffer.IndexOf( [0x02], 2 ) );
 
-        Assert.Equal( 3, buffer.IndexOf( new byte[] { 0x03 } ) );
-        Assert.Equal( 3, buffer.IndexOf( new byte[] { 0x03 }, 0 ) );
-        Assert.Equal( 3, buffer.IndexOf( new byte[] { 0x03 }, 1 ) );
-        Assert.Equal( 3, buffer.IndexOf( new byte[] { 0x03 }, 2 ) );
-        Assert.Equal( 3, buffer.IndexOf( new byte[] { 0x03 }, 3 ) );
+        Assert.Equal( 3, buffer.IndexOf( [0x03] ) );
+        Assert.Equal( 3, buffer.IndexOf( [0x03], 0 ) );
+        Assert.Equal( 3, buffer.IndexOf( [0x03], 1 ) );
+        Assert.Equal( 3, buffer.IndexOf( [0x03], 2 ) );
+        Assert.Equal( 3, buffer.IndexOf( [0x03], 3 ) );
 
-        Assert.Equal( 4, buffer.IndexOf( new byte[] { 0x04 } ) );
-        Assert.Equal( 4, buffer.IndexOf( new byte[] { 0x04 }, 0 ) );
-        Assert.Equal( 4, buffer.IndexOf( new byte[] { 0x04 }, 1 ) );
-        Assert.Equal( 4, buffer.IndexOf( new byte[] { 0x04 }, 2 ) );
-        Assert.Equal( 4, buffer.IndexOf( new byte[] { 0x04 }, 3 ) );
-        Assert.Equal( 4, buffer.IndexOf( new byte[] { 0x04 }, 4 ) );
+        Assert.Equal( 4, buffer.IndexOf( [0x04] ) );
+        Assert.Equal( 4, buffer.IndexOf( [0x04], 0 ) );
+        Assert.Equal( 4, buffer.IndexOf( [0x04], 1 ) );
+        Assert.Equal( 4, buffer.IndexOf( [0x04], 2 ) );
+        Assert.Equal( 4, buffer.IndexOf( [0x04], 3 ) );
+        Assert.Equal( 4, buffer.IndexOf( [0x04], 4 ) );
 
-        Assert.Equal( 5, buffer.IndexOf( new byte[] { 0x05 } ) );
-        Assert.Equal( 5, buffer.IndexOf( new byte[] { 0x05 }, 0 ) );
-        Assert.Equal( 5, buffer.IndexOf( new byte[] { 0x05 }, 1 ) );
-        Assert.Equal( 5, buffer.IndexOf( new byte[] { 0x05 }, 2 ) );
-        Assert.Equal( 5, buffer.IndexOf( new byte[] { 0x05 }, 3 ) );
-        Assert.Equal( 5, buffer.IndexOf( new byte[] { 0x05 }, 4 ) );
-        Assert.Equal( 5, buffer.IndexOf( new byte[] { 0x05 }, 5 ) );
+        Assert.Equal( 5, buffer.IndexOf( [0x05] ) );
+        Assert.Equal( 5, buffer.IndexOf( [0x05], 0 ) );
+        Assert.Equal( 5, buffer.IndexOf( [0x05], 1 ) );
+        Assert.Equal( 5, buffer.IndexOf( [0x05], 2 ) );
+        Assert.Equal( 5, buffer.IndexOf( [0x05], 3 ) );
+        Assert.Equal( 5, buffer.IndexOf( [0x05], 4 ) );
+        Assert.Equal( 5, buffer.IndexOf( [0x05], 5 ) );
     }
 
     [Fact]
     public void TestAny()
     {
-        var buffer = new WrappedByteBuffer( new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05 } );
+        var buffer = new ReadableByteBuffer( [0x00, 0x01, 0x02, 0x03, 0x04, 0x05] );
 
         Assert.True( buffer.Any( b => b == 0x03 ) );
         Assert.True( buffer.Any( b => b > 0x00 ) );
@@ -192,7 +192,7 @@ public class ByteBufferTests
     [Fact]
     public void TestUndoRead()
     {
-        var buffer = new WrappedByteBuffer( [0x00, 0x01, 0x02, 0x03] );
+        var buffer = new ReadableByteBuffer( [0x00, 0x01, 0x02, 0x03] );
 
         Assert.Equal( 0x00, buffer.ReadByte() );
         Assert.Equal( 0x01, buffer.ReadByte() );

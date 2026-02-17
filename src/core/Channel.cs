@@ -54,6 +54,8 @@ public abstract class Channel : IChannel, IAsyncDisposable
     /// </remarks>
     protected CancellationToken LifetimeToken => cts.Token;
 
+    public Endianness BufferEndianness => Buffer.Endianness;
+
     public IChannelPipeline Input { get; protected set; } = EmptyChannelPipeline.Instance;
     public IChannelPipeline Output { get; protected set; } = EmptyChannelPipeline.Instance;
 
@@ -62,7 +64,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
     private volatile bool isClosed;
     public bool IsClosed { get => isClosed; private set => isClosed = value; }
 
-    public IByteBuffer Buffer { get; protected set; } = new WritableByteBuffer();
+    public IWritableByteBuffer Buffer { get; protected set; } = new WritableByteBuffer();
 
     public ChannelData Data { get; protected set; } = [];
 

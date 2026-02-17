@@ -22,7 +22,7 @@ public class DetachedChannelTests
 
     private class MyAdapter : IChannelAdapter, IInputChannelAdapter
     {
-        public Task ExecuteAsync( IAdapterContext context, object data )
+        public Task ExecuteAsync( IAdapterContext context, object data, CancellationToken cancellationToken )
         {
             var svc = context.Channel.GetRequiredChannelService<MyChannelService>();
 

@@ -1,7 +1,7 @@
 namespace Faactory.Channels.Buffers;
 
 /// <summary>
-/// Provides extension methods for replacing byte sequences in an <see cref="IByteBuffer"/>.
+/// Provides extension methods for replacing byte sequences in an <see cref="IWritableByteBuffer"/>.
 /// </summary>
 public static class ByteBufferReplaceExtensions
 {
@@ -12,30 +12,39 @@ public static class ByteBufferReplaceExtensions
     /// <param name="sequence">The sequence of bytes to replace</param>
     /// <param name="replacement">The sequence of bytes to replace with</param>
     /// <returns>The same writable buffer.</returns>
-    public static IByteBuffer ReplaceBytes( this IByteBuffer source, byte[] sequence, byte[] replacement )
+    public static IWritableByteBuffer ReplaceBytes( this IWritableByteBuffer source, byte[] sequence, byte[] replacement )
     {
-        NonWritableBufferException.ThrowIfNotWritable( source );
-
-        var readableSource = source.MakeReadOnly();
-        var escapeIndex = -1;
-        do
+        if ( sequence.Length == 0 )
         {
-            escapeIndex = readableSource.IndexOf( sequence, escapeIndex );
+            return source;
+        }
 
-            if ( escapeIndex > -1 )
+        var span = source.AsSpan();
+        var result = new WritableByteBuffer( span.Length, source.Endianness );
+
+        int index = 0;
+
+        while ( true )
+        {
+            int match = span[index..].IndexOf( sequence );
+
+            if ( match < 0 )
             {
-                // replace it!
-                source.DiscardAll();
-
-                source.WriteBytes( readableSource.GetBytes( 0, escapeIndex ) );
-                source.WriteBytes( replacement );
-                source.WriteBytes( readableSource.GetBytes( escapeIndex + sequence.Length, readableSource.ReadableBytes - ( escapeIndex + sequence.Length ) ) );
-
-                readableSource = source.MakeReadOnly();
-                escapeIndex += replacement.Length;
+                break;
             }
 
-        } while ( escapeIndex > -1 );
+            match += index;
+
+            result.WriteBytes( span[index..match] );
+            result.WriteBytes( replacement );
+
+            index = match + sequence.Length;
+        }
+
+        result.WriteBytes( span[index..] );
+
+        source.ResetOffset();
+        source.WriteBytes( result.AsSpan() );
 
         return source;
     }

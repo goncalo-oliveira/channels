@@ -32,7 +32,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
         }
     }
 
-    private IByteBuffer TextBuffer { get; set; } = new WritableByteBuffer();
+    private WritableByteBuffer TextBuffer { get; set; } = new WritableByteBuffer();
 
     public WebSocket WebSocket { get; }
 
@@ -158,7 +158,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
     public override Task WriteRawBytesAsync( byte[] data )
         => WriteMessageAsync( new WebSocketMessage
         {
-            Data = new WrappedByteBuffer( data )
+            Data = new ReadableByteBuffer( data )
         } );
 
     public async Task WaitAsync( CancellationToken cancellationToken )
@@ -239,10 +239,10 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                         message = new WebSocketMessage
                         {
                             Type = WebSocketMessageType.Text,
-                            Data = TextBuffer.MakeReadOnly()
+                            Data = TextBuffer.AsReadable()
                         };
 
-                        TextBuffer.DiscardAll();
+                        TextBuffer.ResetOffset();
                     }
                 }
                 else if ( result.MessageType == WebSocketMessageType.Binary )
@@ -259,10 +259,10 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                         message = new WebSocketMessage
                         {
                             Type = WebSocketMessageType.Binary,
-                            Data = Buffer.MakeReadOnly()
+                            Data = Buffer.AsReadable()
                         };
 
-                        Buffer.DiscardAll();
+                        Buffer.ResetOffset();
                     }
                 }
 

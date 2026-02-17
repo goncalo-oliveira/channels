@@ -16,6 +16,11 @@ public interface IChannel : IDisposable, IAsyncDisposable
     bool IsClosed { get; }
 
     /// <summary>
+    /// Gets the channel's buffer endianness
+    /// </summary>
+    Buffers.Endianness BufferEndianness { get; }
+
+    /// <summary>
     /// Gets a data holder available throughout the entire channel session
     /// </summary>
     ChannelData Data { get; }

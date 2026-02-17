@@ -36,7 +36,7 @@ public sealed class BufferLengthAdapter : ChannelAdapter<IByteBuffer>, IInputCha
 
             logger.LogWarning( "IByteBuffer length has exceeded {maxSizeMB:f1} MB.", maxSizeMB );
 
-            data.DiscardAll();
+            data.EnsureReadable().DiscardAll();
 
             if ( closeChannel )
             {

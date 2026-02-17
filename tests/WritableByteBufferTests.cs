@@ -8,7 +8,9 @@ public class WritableByteBufferTests
     [Fact]
     public void TestReplace()
     {
-        var buffer = new WritableByteBuffer(
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteBytes(
         [
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
         ] );
@@ -23,22 +25,9 @@ public class WritableByteBufferTests
 
         Assert.Same( buffer, instance );
 
-        Assert.True( buffer.MakeReadOnly().MatchBytes(
+        Assert.True( buffer.AsReadable().MatchBytes(
         [
             0x00, 0x01, 0x11, 0x02, 0x22, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
         ] ) );
-
-        Assert.Throws<NonWritableBufferException>( () =>
-        {
-            var readable = buffer.MakeReadOnly();
-
-            readable.ReplaceBytes(
-            [
-                0x01, 0x02
-            ],
-            [
-                0x11, 0x12
-            ] );
-        } );
     }
 }
