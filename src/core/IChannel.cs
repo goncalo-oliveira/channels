@@ -5,7 +5,7 @@ namespace Faactory.Channels;
 /// <summary>
 /// A communication channel
 /// </summary>
-public interface IChannel : IDisposable
+public interface IChannel : IDisposable, IAsyncDisposable
 {
     /// <summary>
     /// Gets the identifier of the channel

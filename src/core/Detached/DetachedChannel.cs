@@ -40,6 +40,11 @@ public sealed class DetachedChannel : IChannel
     public void Dispose()
     { }
 
+    public ValueTask DisposeAsync()
+    {
+        return ValueTask.CompletedTask;
+    }
+
     internal void AddChannelService( IChannelService service )
     {
         services.Add( service );
