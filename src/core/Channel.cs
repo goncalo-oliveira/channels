@@ -167,7 +167,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
 
         logger.LogDebug( "Executing output pipeline..." );
 
-        await Output.ExecuteAsync( this, data )
+        await Output.ExecuteAsync( this, data, LifetimeToken )
             .ConfigureAwait( false );
     }
 

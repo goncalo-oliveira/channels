@@ -279,7 +279,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                 */
                 logger.LogDebug( "Executing input pipeline..." );
 
-                await Input.ExecuteAsync( this, message )
+                await Input.ExecuteAsync( this, message, cancellationToken )
                     .ConfigureAwait( false );
             }
             catch ( OperationCanceledException )

@@ -13,7 +13,7 @@ internal sealed class WebSocketTextMessageAdapter( ILoggerFactory loggerFactory 
 {
     private readonly ILogger logger = loggerFactory.CreateLogger<WebSocketTextMessageAdapter>();
 
-    public override Task ExecuteAsync( IAdapterContext context, string data )
+    public override Task ExecuteAsync( IAdapterContext context, string data, CancellationToken cancellationToken )
     {
         /*
         ignore null or empty strings

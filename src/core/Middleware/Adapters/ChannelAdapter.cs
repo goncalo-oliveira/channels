@@ -14,13 +14,13 @@ public abstract class ChannelAdapter<T> : ChannelMiddleware<T>, IChannelAdapter
     /// <summary>
     /// Called when matching data (T) is received by the adapter
     /// </summary>
-    public abstract Task ExecuteAsync( IAdapterContext context, T data );
+    public abstract Task ExecuteAsync( IAdapterContext context, T data, CancellationToken cancellationToken );
 
-    public override Task ExecuteAsync( IChannelContext context, T data )
-        => ExecuteAsync( (IAdapterContext)context, data );
+    public override Task ExecuteAsync( IChannelContext context, T data, CancellationToken cancellationToken )
+        => ExecuteAsync( (IAdapterContext)context, data, cancellationToken );
 
-    public Task ExecuteAsync( IAdapterContext context, object data )
-        => base.ExecuteAsync( context, data );
+    public Task ExecuteAsync( IAdapterContext context, object data, CancellationToken cancellationToken )
+        => base.ExecuteAsync( context, data, cancellationToken );
 
     protected override void OnDataNotSuitable( IChannelContext context, object data )
         => ( (IAdapterContext)context ).Forward( data );

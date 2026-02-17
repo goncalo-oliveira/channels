@@ -23,7 +23,7 @@ public sealed class BufferLengthAdapter : ChannelAdapter<IByteBuffer>, IInputCha
         closeChannel = options.CloseChannel;
     }
     
-    public override Task ExecuteAsync( IAdapterContext context, IByteBuffer data )
+    public override Task ExecuteAsync( IAdapterContext context, IByteBuffer data, CancellationToken cancellationToken )
     {
         if ( data.Length > maxBufferSize )
         {

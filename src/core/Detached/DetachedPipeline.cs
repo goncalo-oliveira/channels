@@ -25,7 +25,7 @@ public sealed class DetachedPipeline
         return this;
     }
 
-    public async Task RunAsync( object obj )
+    public async Task RunAsync( object obj, CancellationToken cancellationToken = default )
     {
         var data = new object[]
         {
@@ -40,7 +40,7 @@ public sealed class DetachedPipeline
             {
                 Context.Clear();
 
-                await adapter.ExecuteAsync( Context, item );
+                await adapter.ExecuteAsync( Context, item, cancellationToken );
 
                 forwarded.AddRange( Context.Forwarded );
             }

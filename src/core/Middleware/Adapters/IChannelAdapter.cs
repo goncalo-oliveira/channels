@@ -10,5 +10,5 @@ public interface IChannelAdapter
     /// </summary>
     /// <param name="context">The adapter context</param>
     /// <param name="data">The data to adapt</param>
-    Task ExecuteAsync( IAdapterContext context, object data );
+    Task ExecuteAsync( IAdapterContext context, object data, CancellationToken cancellationToken = default );
 }

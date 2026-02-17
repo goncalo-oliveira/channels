@@ -101,7 +101,7 @@ internal sealed class UdpChannel : Channel
 
             logger.LogDebug( "Executing input pipeline..." );
 
-            await Input.ExecuteAsync( this, pipelineBuffer )
+            await Input.ExecuteAsync( this, pipelineBuffer, LifetimeToken )
                 .ConfigureAwait( false );
 
             pipelineBuffer.DiscardReadBytes();

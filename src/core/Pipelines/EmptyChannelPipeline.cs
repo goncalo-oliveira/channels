@@ -10,7 +10,7 @@ internal sealed class EmptyChannelPipeline : IChannelPipeline
     public void Dispose()
     { }
 
-    public Task ExecuteAsync( IChannel channel, object data )
+    public Task ExecuteAsync( IChannel channel, object data, CancellationToken cancellationToken )
     {
         return Task.CompletedTask;
     }

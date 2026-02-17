@@ -31,13 +31,13 @@ internal class ChannelPipeline : IChannelPipeline
         }
     }
 
-    public async Task ExecuteAsync( IChannel channel, object data )
+    public async Task ExecuteAsync( IChannel channel, object data, CancellationToken cancellationToken )
     {
         var adapterContext = new AdapterContext( channel );
 
         adapterContext.Forward( data );
 
-        var interrupted = !await ExecuteAdaptersAsync( adapterContext )
+        var interrupted = !await ExecuteAdaptersAsync( adapterContext, cancellationToken )
             .ConfigureAwait( false );
 
         if ( interrupted )
@@ -47,7 +47,7 @@ internal class ChannelPipeline : IChannelPipeline
         }
 
         // execute handlers
-        interrupted = !await ExecuteHandlersAsync( adapterContext )
+        interrupted = !await ExecuteHandlersAsync( adapterContext, cancellationToken )
             .ConfigureAwait( false );
 
         if ( interrupted )
@@ -66,7 +66,7 @@ internal class ChannelPipeline : IChannelPipeline
             .ConfigureAwait( false );
     }
 
-    private async Task<bool> ExecuteAdaptersAsync( AdapterContext context )
+    private async Task<bool> ExecuteAdaptersAsync( AdapterContext context, CancellationToken cancellationToken )
     {
         IChannelAdapter? previousAdapter = null;
         foreach ( var adapter in adapters )
@@ -89,7 +89,7 @@ internal class ChannelPipeline : IChannelPipeline
             {
                 try
                 {
-                    await adapter.ExecuteAsync( context, dataItem )
+                    await adapter.ExecuteAsync( context, dataItem, cancellationToken )
                         .ConfigureAwait( false );
                 }
                 catch ( Exception ex )
@@ -110,7 +110,7 @@ internal class ChannelPipeline : IChannelPipeline
         return ( true );
     }
 
-    private async Task<bool> ExecuteHandlersAsync( AdapterContext adapterContext )
+    private async Task<bool> ExecuteHandlersAsync( AdapterContext adapterContext, CancellationToken cancellationToken )
     {
         if ( handlers == null )
         {
@@ -140,7 +140,7 @@ internal class ChannelPipeline : IChannelPipeline
             {
                 try
                 {
-                    await handler.ExecuteAsync( adapterContext, dataItem )
+                    await handler.ExecuteAsync( adapterContext, dataItem, cancellationToken )
                         .ConfigureAwait( false );
                 }
                 catch ( ObjectDisposedException )

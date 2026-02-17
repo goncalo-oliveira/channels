@@ -17,9 +17,9 @@ public abstract class ChannelMiddleware<T>
     /// </summary>
     protected abstract void OnDataNotSuitable( IChannelContext context, object data );
 
-    public abstract Task ExecuteAsync( IChannelContext context, T data );
+    public abstract Task ExecuteAsync( IChannelContext context, T data, CancellationToken cancellationToken );
 
-    public Task ExecuteAsync( IChannelContext context, object data )
+    public Task ExecuteAsync( IChannelContext context, object data, CancellationToken cancellationToken )
     {
         if ( data == null )
         {
@@ -30,7 +30,7 @@ public abstract class ChannelMiddleware<T>
         if ( data is T t )
         {
             // execute type implementation
-            return ExecuteAsync( context, t );
+            return ExecuteAsync( context, t, cancellationToken );
         }
 
         var targetType = typeof( T );
@@ -43,7 +43,7 @@ public abstract class ChannelMiddleware<T>
             var aggregatedTask = ( (IEnumerable)data ).OfType<T>()
                 .Aggregate(
                     Task.CompletedTask,
-                    ( previousTask, item ) => previousTask.ContinueWith( async t => await ExecuteAsync( context, item ) ).Unwrap()
+                    ( previousTask, item ) => previousTask.ContinueWith( async t => await ExecuteAsync( context, item, cancellationToken ) ).Unwrap()
                 );
 
             return aggregatedTask;
@@ -56,7 +56,7 @@ public abstract class ChannelMiddleware<T>
             var array = Array.CreateInstance( targetType.GetEnumerableElementType()!, 1 );
             array.SetValue( data, 0 );
 
-            return ExecuteAsync( context, (T)(object)array );
+            return ExecuteAsync( context, (T)(object)array, cancellationToken );
         }
 
         // attempt to convert the data type
@@ -65,7 +65,7 @@ public abstract class ChannelMiddleware<T>
             && ( convertedData.GetType() != data.GetType() )
            )
         {
-            return ExecuteAsync( context, convertedData );
+            return ExecuteAsync( context, convertedData, cancellationToken );
         }
 
         OnDataNotSuitable( context, data );
