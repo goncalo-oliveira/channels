@@ -30,7 +30,7 @@ public sealed class NullChannel : IChannel, IAsyncDisposable
     /// <summary>
     /// A singleton instance of the null channel that can be used throughout the application.
     /// </summary>
-    public static readonly NullChannel Instance = new( null );
+    public static readonly IChannel Instance = new NullChannel( null );
 
     public string Id { get; } = Guid.Empty.ToString( "N" );
 
@@ -65,6 +65,14 @@ public sealed class NullChannel : IChannel, IAsyncDisposable
         }
         catch { }
 
+        // if initialization is still running, wait for it to complete
+        try
+        {
+            await initializeTask
+                .ConfigureAwait( false );
+        }
+        catch { }
+
         try
         {
             await StopServicesAsync()
@@ -72,13 +80,11 @@ public sealed class NullChannel : IChannel, IAsyncDisposable
         }
         catch ( OperationCanceledException )
         { }
-
-        initializeTask.TryDispose();
     }
 
     public void Dispose()
     {
-        _ = CloseAsync();
+        DisposeAsync().AsTask().GetAwaiter().GetResult();
     }
 
     public async ValueTask DisposeAsync()
