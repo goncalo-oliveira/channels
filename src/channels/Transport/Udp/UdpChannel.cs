@@ -69,7 +69,7 @@ internal sealed class UdpChannel : Channel
             // trigger data sent
             logger.LogTrace( "sent {bytesSent} bytes", data.Length );
 
-            NotifyDataSent( data.Length );
+            NotifyDataSent( data );
         }
         catch ( Exception ex ) when ( ex is ObjectDisposedException || ex is SocketException )
         {

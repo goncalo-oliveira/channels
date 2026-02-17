@@ -213,13 +213,13 @@ public abstract class Channel : IChannel, IAsyncDisposable
     /// <summary>
     /// Notifies the channel monitors that data has been sent. This method should be called by derived classes when data is sent.
     /// </summary>
-    /// <param name="sent">The number of bytes that were sent.</param>
-    protected void NotifyDataSent( int sent )
+    /// <param name="data">The data that was sent.</param>
+    protected void NotifyDataSent( byte[] data )
     {
         LastSent = DateTimeOffset.UtcNow;
 
         ServiceProvider.GetServices<IChannelMonitor>()
-            .InvokeAll( x => x.DataSent( Info, sent ) );
+            .InvokeAll( x => x.DataSent( Info, data ) );
     }
 
     /// <summary>

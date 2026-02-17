@@ -136,14 +136,16 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
 
         try
         {
+            var bytes = message.Data.ToArray();
+
             await WebSocket.SendAsync(
-                message.Data.ToArray(),
+                bytes,
                 message.Type,
                 endOfMessage: message.EndOfMessage,
                 cancellationToken: LifetimeToken
             );
 
-            NotifyDataSent( message.Data.Length );
+            NotifyDataSent( bytes );
         }
         catch ( WebSocketException ex )
         {

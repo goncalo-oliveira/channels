@@ -23,7 +23,7 @@ public interface IChannelMonitor
     /// <summary>
     /// Triggered when data is sent by the channel
     /// </summary>
-    void DataSent( IChannelInfo channelInfo, int sent );
+    void DataSent( IChannelInfo channelInfo, byte[] data );
 
     /// <summary>
     /// Triggered when a custom event is raised

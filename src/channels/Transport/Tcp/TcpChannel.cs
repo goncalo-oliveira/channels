@@ -13,8 +13,6 @@ internal sealed class TcpChannel : Channel
     private readonly IDisposable? loggerScope;
     private Task receiveTask = Task.CompletedTask;
 
-    //private readonly byte[] socketBuffer = new byte[DefaultBufferLength];
-
     internal TcpChannel( 
           IServiceScope serviceScope
         , Socket socket
@@ -45,7 +43,6 @@ internal sealed class TcpChannel : Channel
     }
 
     public Socket Socket { get; init; }
-
 
     public override async Task CloseAsync()
     {
@@ -158,7 +155,7 @@ internal sealed class TcpChannel : Channel
             }
 
             // trigger data sent
-            NotifyDataSent( totalBytesSent );
+            NotifyDataSent( data );
         }
         catch ( Exception ex ) when ( ex is ObjectDisposedException || ex is SocketException )
         {
