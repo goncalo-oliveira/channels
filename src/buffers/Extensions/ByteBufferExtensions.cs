@@ -1,5 +1,8 @@
 namespace Faactory.Channels.Buffers;
 
+/// <summary>
+/// Provides extension methods for IByteBuffer instances
+/// </summary>
 public static class ByteBufferExtensions
 {
     /// <summary>

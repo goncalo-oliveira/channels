@@ -13,6 +13,9 @@ public sealed class ByteBufferJsonConverterAttribute : JsonConverterAttribute
     /// </summary>
     public ByteBufferSerializerFormat Format { get; set; } = ByteBufferSerializerFormat.Base64;
 
+    /// <summary>
+    /// Creates a new instance of the ByteBufferJsonConverterAttribute class.
+    /// </summary>
     public override JsonConverter? CreateConverter( Type typeToConvert )
         => new ByteBufferJsonConverter( Format );
 }

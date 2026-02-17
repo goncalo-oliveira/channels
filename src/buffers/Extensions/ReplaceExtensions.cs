@@ -1,5 +1,8 @@
 namespace Faactory.Channels.Buffers;
 
+/// <summary>
+/// Provides extension methods for replacing byte sequences in an <see cref="IByteBuffer"/>.
+/// </summary>
 public static class ByteBufferReplaceExtensions
 {
     /// <summary>

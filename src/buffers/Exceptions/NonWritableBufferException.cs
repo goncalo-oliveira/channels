@@ -5,11 +5,18 @@ namespace Faactory.Channels.Buffers;
 /// </summary>
 public sealed class NonWritableBufferException : InvalidOperationException
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NonWritableBufferException"/> class with a default error message.
+    /// </summary>
     public NonWritableBufferException()
         : base( "Invalid operation over a non-writable IByteBuffer." )
     {
     }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NonWritableBufferException"/> class with a specified error message.
+    /// </summary>
+    /// <param name="message">The error message that explains the reason for the exception.</param>
     public NonWritableBufferException( string message )
         : base( message )
     {
