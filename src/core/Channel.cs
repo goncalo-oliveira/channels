@@ -12,7 +12,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
     private readonly ILogger logger;
     private readonly CancellationTokenSource cts = new();
     private readonly Task initializeTask;
-    private Task monitorTask = Task.CompletedTask;
+    private Task idleMonitorTask = Task.CompletedTask;
 
     public Channel( IServiceScope serviceScope )
     {
@@ -72,9 +72,12 @@ public abstract class Channel : IChannel, IAsyncDisposable
 
     public DateTimeOffset? LastSent { get; private set; }
 
-    public IEnumerable<IChannelService> Services { get; init; } = [];
+    protected IEnumerable<IChannelService> Services { get; init; } = [];
 
     public TimeSpan Timeout { get; protected set; } = TimeSpan.FromSeconds( 60 );
+
+    public IChannelService? GetChannelService( Type serviceType )
+        => Services.SingleOrDefault( s => s.GetType() == serviceType );
 
     private int isClosing;
     public virtual async Task CloseAsync()
@@ -94,10 +97,10 @@ public abstract class Channel : IChannel, IAsyncDisposable
 
         logger.LogInformation( "Closed." );
 
-        // if monitor task is running, wait for it to complete
+        // if idle monitor task is running, wait for it to complete
         try
         {
-            await monitorTask
+            await idleMonitorTask
                 .ConfigureAwait( false );
         }
         catch { }
@@ -184,7 +187,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
         // start monitor task if timeout is set
         if ( Timeout > TimeSpan.Zero )
         {
-            monitorTask = MonitorAsync( cts.Token );
+            idleMonitorTask = MonitorIdleStateAsync( cts.Token );
         }
 
         logger.LogDebug( "Initialized" );
@@ -275,12 +278,12 @@ public abstract class Channel : IChannel, IAsyncDisposable
         return Task.WhenAll( tasks );
     }
 
-    private async Task MonitorAsync( CancellationToken cancellationToken )
+    private async Task MonitorIdleStateAsync( CancellationToken cancellationToken )
     {
         LastReceived = DateTimeOffset.UtcNow;
         LastSent = DateTimeOffset.UtcNow;
 
-        logger.LogDebug( "Monitoring started." );
+        logger.LogDebug( "Idle state monitoring started." );
 
         while ( !cancellationToken.IsCancellationRequested )
         {
@@ -309,6 +312,6 @@ public abstract class Channel : IChannel, IAsyncDisposable
             }
         }
 
-        logger.LogDebug( "Monitoring stopped." );
+        logger.LogDebug( "Idle state monitoring stopped." );
     }
 }

@@ -111,8 +111,8 @@ public class ScopedServiceTests
         var channel1 = channelFactory();
         var channel2 = channelFactory();
 
-        var svc1 = channel1.GetService<MyService>();
-        var svc2 = channel2.GetService<MyService>();
+        var svc1 = channel1.GetChannelService<MyService>();
+        var svc2 = channel2.GetChannelService<MyService>();
 
         Assert.NotNull( svc1 );
         Assert.NotNull( svc2 );
@@ -120,8 +120,8 @@ public class ScopedServiceTests
         // ids shouldn't match, since they come from two different channels (different scopes)
         Assert.NotEqual( svc1.Id, svc2.Id );
 
-        var svc1Copy = channel1.GetService<MyService>();
-        var svc2Copy = channel2.GetService<MyService>();
+        var svc1Copy = channel1.GetChannelService<MyService>();
+        var svc2Copy = channel2.GetChannelService<MyService>();
 
         Assert.NotNull( svc1Copy );
         Assert.NotNull( svc2Copy );

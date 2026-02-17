@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Logging;
 using Faactory.Channels.Buffers;
-using Faactory.Channels.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net.Sockets;
 

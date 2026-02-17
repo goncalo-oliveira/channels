@@ -23,8 +23,6 @@ public sealed class DetachedChannel : IChannel
 
     public bool IsClosed { get; private set; }
 
-    public IEnumerable<IChannelService> Services => services.ToArray();
-
     public Task CloseAsync()
     {
         IsClosed = true;
@@ -49,4 +47,7 @@ public sealed class DetachedChannel : IChannel
     {
         services.Add( service );
     }
+
+    public IChannelService? GetChannelService( Type serviceType )
+        => services.SingleOrDefault( s => s.GetType() == serviceType );
 }

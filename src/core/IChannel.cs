@@ -1,5 +1,3 @@
-using Faactory.Channels.Buffers;
-
 namespace Faactory.Channels;
 
 /// <summary>
@@ -16,11 +14,6 @@ public interface IChannel : IDisposable, IAsyncDisposable
     /// Gets if the channel is closed
     /// </summary>
     bool IsClosed { get; }
-
-    /// <summary>
-    /// Gets the channel's input buffer
-    /// </summary>
-    IByteBuffer Buffer { get; }
 
     /// <summary>
     /// Gets a data holder available throughout the entire channel session
@@ -43,9 +36,11 @@ public interface IChannel : IDisposable, IAsyncDisposable
     DateTimeOffset? LastSent { get; }
 
     /// <summary>
-    /// Gets long-running channel services
+    /// Gets a channel service of the specified type, or null if not found
     /// </summary>
-    IEnumerable<IChannelService> Services { get; }
+    /// <param name="serviceType">The type of the channel service to retrieve</param>
+    /// <returns>>The channel service instance if found, or null if not found</returns>
+    IChannelService? GetChannelService( Type serviceType );
 
     /// <summary>
     /// Sends data through the Output pipeline

@@ -46,7 +46,7 @@ public sealed class NullChannel : IChannel, IAsyncDisposable
 
     public DateTimeOffset? LastSent { get; }
 
-    public IEnumerable<IChannelService> Services { get; }
+    private IEnumerable<IChannelService> Services { get; }
 
     public IServiceScope? ChannelScope { get; }
 
@@ -81,6 +81,9 @@ public sealed class NullChannel : IChannel, IAsyncDisposable
         catch ( OperationCanceledException )
         { }
     }
+
+    public IChannelService? GetChannelService( Type serviceType )
+        => Services.SingleOrDefault( s => s.GetType() == serviceType );
 
     public void Dispose()
     {
@@ -124,5 +127,4 @@ public sealed class NullChannel : IChannel, IAsyncDisposable
 
         return Task.WhenAll( tasks );
     }
-
 }

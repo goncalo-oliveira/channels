@@ -24,7 +24,7 @@ public class DetachedChannelTests
     {
         public Task ExecuteAsync( IAdapterContext context, object data )
         {
-            var svc = context.Channel.GetRequiredService<MyChannelService>();
+            var svc = context.Channel.GetRequiredChannelService<MyChannelService>();
 
             context.Forward( svc.Id );
 

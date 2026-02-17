@@ -81,9 +81,9 @@ public abstract class ChannelMiddleware<T>
         var type = typeof( T );
 
         // attempt a byte[] to IByteBuffer transformation
-        if ( type.IsAssignableFrom( typeof( IByteBuffer ) ) && ( data is byte[] ) )
+        if ( type.IsAssignableFrom( typeof( IByteBuffer ) ) && ( data is byte[] ) && context.Channel is Channel channel )
         {
-            result = (T)(IByteBuffer)new WrappedByteBuffer( (byte[])data, context.Channel.Buffer.Endianness );
+            result = (T)(IByteBuffer)new WrappedByteBuffer( (byte[])data, channel.Buffer.Endianness );
 
             return ( true );
         }
