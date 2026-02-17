@@ -8,21 +8,21 @@ namespace Faactory.Channels;
 /// </summary>
 public sealed class DetachedPipeline
 {
-    public List<IChannelAdapter> Adapters { get; } = new List<IChannelAdapter>();
+    public List<IChannelAdapter> Adapters { get; } = [];
     public DetachedContext Context { get; } = new DetachedContext();
 
     public DetachedPipeline AddAdapter( IChannelAdapter adapter )
     {
         Adapters.Add( adapter );
 
-        return ( this );
+        return this;
     }
 
     public DetachedPipeline AddChannelService( IChannelService service )
     {
         ( (DetachedChannel)Context.Channel ).AddChannelService( service );
 
-        return ( this );
+        return this;
     }
 
     public async Task RunAsync( object obj )

@@ -8,7 +8,7 @@ internal class ChannelContext( IChannel channel ) : IChannelContext
 
     public void NotifyCustomEvent( string name, object? data )
     {
-        if ( Channel is TcpChannel channel )
+        if ( Channel is Channel channel )
         {
             channel.NotifyCustomEvent( name, data );
         }

@@ -1,5 +1,4 @@
 using Faactory.Channels.Buffers;
-using Faactory.Channels.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -8,10 +7,12 @@ namespace Faactory.Channels;
 /// <summary>
 /// An abstract class that represents a communication channel.
 /// </summary>
-internal abstract class Channel : IChannel
+public abstract class Channel : IChannel, IAsyncDisposable
 {
     private readonly ILogger logger;
-    private Task? monitorTask;
+    private readonly CancellationTokenSource cts = new();
+    private readonly Task initializeTask;
+    private Task monitorTask = Task.CompletedTask;
 
     public Channel( IServiceScope serviceScope )
     {
@@ -21,13 +22,37 @@ internal abstract class Channel : IChannel
         logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger<Channel>();
 
+        initializeTask = InitializeAsync( cts.Token );
+            
+        _ = initializeTask.ContinueWith(
+            t => logger.LogError( t.Exception?.GetBaseException(), "Init failed" ),
+            CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default
+        );
+
         logger.LogTrace( "Created" );
     }
 
     internal IChannelInfo Info { get; }
     internal IServiceProvider ServiceProvider => ChannelScope.ServiceProvider;
 
+    /// <summary>
+    /// The service scope for the channel.
+    /// </summary>
+    /// <remarks>
+    /// This can be used to resolve services that are specific to the channel, such as channel adapters and handlers.
+    /// The channel scope is disposed when the channel is disposed, so any services resolved from the channel scope will also be disposed when the channel is disposed.
+    /// </remarks>
     protected IServiceScope ChannelScope { get; }
+
+    /// <summary>
+    /// A cancellation token that is triggered when the channel is closed.
+    /// </summary>
+    /// <remarks>
+    /// This can be used by derived classes to cancel any ongoing operations when the channel is closed.
+    /// </remarks>
+    protected CancellationToken LifetimeToken => cts.Token;
 
     public IChannelPipeline Input { get; protected set; } = EmptyChannelPipeline.Instance;
     public IChannelPipeline Output { get; protected set; } = EmptyChannelPipeline.Instance;
@@ -35,7 +60,7 @@ internal abstract class Channel : IChannel
     public string Id { get; } = Guid.NewGuid().ToString( "N" );
 
     private volatile bool isClosed;
-    public bool IsClosed { get => isClosed; protected set => isClosed = value; }
+    public bool IsClosed { get => isClosed; private set => isClosed = value; }
 
     public IByteBuffer Buffer { get; protected set; } = new WritableByteBuffer();
 
@@ -51,17 +76,77 @@ internal abstract class Channel : IChannel
 
     public TimeSpan Timeout { get; protected set; } = TimeSpan.FromSeconds( 60 );
 
-    public abstract Task CloseAsync();
+    private int isClosing;
+    public virtual async Task CloseAsync()
+    {
+        if ( Interlocked.Exchange( ref isClosing, 1 ) == 1 )
+        {
+            return;
+        }
+
+        IsClosed = true;
+
+        try
+        {
+            cts.Cancel();
+        }
+        catch { }
+
+        logger.LogInformation( "Closed." );
+
+        // if monitor task is running, wait for it to complete
+        try
+        {
+            await monitorTask
+                .ConfigureAwait( false );
+        }
+        catch { }
+
+        // if initialization is still running, wait for it to complete
+        if ( initializeTask != null )
+        {
+            try
+            {
+                await initializeTask
+                    .ConfigureAwait( false );
+            }
+            catch { }
+        }
+
+        // notify channel closed
+        try
+        {
+            NotifyChannelClosed();
+        }
+        catch { }
+
+        logger.LogDebug( "Stopping services." );
+
+        // stop channel services
+        try
+        {
+            await StopServicesAsync()
+                .ConfigureAwait( false );
+        }
+        catch { }
+
+        logger.LogDebug( "Stopped services." );
+    }
 
     public virtual void Dispose()
     {
-        // if monitor task is running, wait for it to complete
-        monitorTask?.TryDispose();
+        DisposeAsync().AsTask().GetAwaiter().GetResult();
+
+        GC.SuppressFinalize( this );
+    }
+
+    public virtual async ValueTask DisposeAsync()
+    {
+        await CloseAsync()
+            .ConfigureAwait( false );
 
         Input.Dispose();
         Output.Dispose();
-
-        logger.LogDebug( "Disposed" );
 
         ChannelScope.Dispose();
 
@@ -91,21 +176,52 @@ internal abstract class Channel : IChannel
     protected virtual async Task InitializeAsync( CancellationToken cancellationToken = default )
     {
         // notify channel created
-        this.NotifyChannelCreated();
+        NotifyChannelCreated();
 
         // start long-running services
         await StartServicesAsync( cancellationToken );
 
-        /*
-        Start monitoring the channel if a timeout is set.
-        */
+        // start monitor task if timeout is set
         if ( Timeout > TimeSpan.Zero )
         {
-            monitorTask = MonitorAsync( cancellationToken );
+            monitorTask = MonitorAsync( cts.Token );
         }
 
         logger.LogDebug( "Initialized" );
     }
+
+    private void NotifyChannelCreated()
+        => ServiceProvider.GetServices<IChannelMonitor>()
+            .InvokeAll( x => x.ChannelCreated( Info ) );
+
+    private void NotifyChannelClosed()
+        => ServiceProvider.GetServices<IChannelMonitor>()
+            .InvokeAll( x => x.ChannelClosed( Info ) );
+
+    /// <summary>
+    /// Notifies the channel monitors that data has been received. This method should be called by derived classes when data is received.
+    /// </summary>
+    /// <param name="data">The data that was received.</param>
+    protected void NotifyDataReceived( byte[] data )
+        => ServiceProvider.GetServices<IChannelMonitor>()
+            .InvokeAll( x => x.DataReceived( Info, data ) );
+
+    /// <summary>
+    /// Notifies the channel monitors that data has been sent. This method should be called by derived classes when data is sent.
+    /// </summary>
+    /// <param name="sent">The number of bytes that were sent.</param>
+    protected void NotifyDataSent( int sent )
+        => ServiceProvider.GetServices<IChannelMonitor>()
+            .InvokeAll( x => x.DataSent( Info, sent ) );
+
+    /// <summary>
+    /// Notifies the channel monitors of a custom event. This method should be called by derived classes when a custom event occurs.
+    /// </summary>
+    /// <param name="name">The name of the custom event.</param>
+    /// <param name="data">The data associated with the custom event.</param>
+    public void NotifyCustomEvent( string name, object? data )
+        => ServiceProvider.GetServices<IChannelMonitor>()
+            .InvokeAll( x => x.CustomEvent( Info, name, data ) );
 
     private Task StartServicesAsync( CancellationToken cancellationToken = default )
     {
@@ -129,7 +245,7 @@ internal abstract class Channel : IChannel
         return Task.WhenAll( tasks );
     }
 
-    protected Task StopServicesAsync()
+    private Task StopServicesAsync()
     {
         var tasks = Services.Select( async service =>
         {

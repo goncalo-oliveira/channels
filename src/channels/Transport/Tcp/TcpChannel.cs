@@ -1,12 +1,11 @@
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using Faactory.Channels.Buffers;
-using Faactory.Channels.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
-internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
+internal sealed class TcpChannel : Channel
 {
     private const int DefaultBufferLength = 13312;
 
@@ -14,9 +13,6 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
     private readonly IDisposable? loggerScope;
 
     private readonly byte[] socketBuffer = new byte[DefaultBufferLength];
-
-    private readonly Task initializeTask;
-    private readonly CancellationTokenSource cts = new();
 
     internal TcpChannel( 
           IServiceScope serviceScope
@@ -44,37 +40,14 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
             Services = channelServices;
         }
 
-        initializeTask = InitializeAsync( cts.Token );
-            
-        _ = initializeTask.ContinueWith(
-            t => logger.LogError( t.Exception?.GetBaseException(), "Init failed" ),
-            CancellationToken.None,
-            TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
-            TaskScheduler.Default
-        );
-
         logger.LogDebug( "Created" );
     }
 
     public Socket Socket { get; init; }
 
-    private int isClosing;
 
     public override async Task CloseAsync()
     {
-        if ( Interlocked.Exchange( ref isClosing, 1 ) == 1 )
-        {
-            return;
-        }
-
-        IsClosed = true;
-
-        try
-        {
-            cts.Cancel();
-        }
-        catch { }
-
         try
         {
             Socket.Shutdown( SocketShutdown.Both );
@@ -89,76 +62,19 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
         catch ( Exception )
         {}
 
-        logger.LogInformation( "Closed." );
-
-        try
-        {
-            this.NotifyChannelClosed();
-        }
-        catch ( Exception )
-        { }
-
-        logger.LogDebug( "Stopping services." );
-
-        try
-        {
-            await StopServicesAsync()
-                .ConfigureAwait( false );
-        }
-        catch ( Exception ex )
-        {
-            logger.LogError( ex, "Failed to stop services. {Message}", ex.Message );
-        }
-
-        logger.LogDebug( "Stopped services." );
-
-        try
-        {
-            Socket.Dispose();
-        }
-        catch { }
-
-        initializeTask.TryDispose();
-
-        loggerScope?.Dispose();
-
-        base.Dispose();
-    }
-
-    public override Task WriteAsync( object data )
-    {
-        if ( IsClosed )
-        {
-            logger.LogWarning( "Can't write to a closed channel." );
-
-            return Task.CompletedTask;
-        }
-
-        return base.WriteAsync( data );
-    }
-
-    public override void Dispose()
-    {
-        DisposeAsync().AsTask().GetAwaiter().GetResult();
-
-        GC.SuppressFinalize( this );
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await CloseAsync()
+        await base.CloseAsync()
             .ConfigureAwait( false );
 
-        GC.SuppressFinalize( this );
+        loggerScope?.Dispose();
     }
 
     protected override async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         await base.InitializeAsync( cancellationToken );
 
-        logger.LogInformation( "Ready." );
-
         BeginReceive();
+
+        logger.LogInformation( "Ready." );
     }
 
     #region Socket
@@ -210,7 +126,7 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
         {
             LastReceived = DateTimeOffset.UtcNow;
 
-            this.NotifyDataReceived( data );
+            NotifyDataReceived( data );
 
             Buffer.WriteBytes( data, 0, data.Length );
 
@@ -234,10 +150,7 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
         {
             logger.LogError( ex, "Pipeline execution failed. {Message}", ex.Message );
 
-            if ( !IsClosed )
-            {
-                await CloseAsync().ConfigureAwait( false );
-            }
+            await CloseAsync().ConfigureAwait( false );
         }
         finally
         {
@@ -253,7 +166,7 @@ internal sealed class TcpChannel : Channel, IChannel, IAsyncDisposable
     {
         LastSent = DateTimeOffset.UtcNow;
 
-        this.NotifyDataSent( bytesSent );
+        NotifyDataSent( bytesSent );
     }
 
     private void ReadCallback( IAsyncResult ar )
