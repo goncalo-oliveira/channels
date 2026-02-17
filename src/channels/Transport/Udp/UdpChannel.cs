@@ -69,8 +69,6 @@ internal sealed class UdpChannel : Channel
             // trigger data sent
             logger.LogTrace( "sent {bytesSent} bytes", data.Length );
 
-            LastSent = DateTimeOffset.UtcNow;
-
             NotifyDataSent( data.Length );
         }
         catch ( Exception ex ) when ( ex is ObjectDisposedException || ex is SocketException )
@@ -96,8 +94,6 @@ internal sealed class UdpChannel : Channel
 
         try
         {
-            LastReceived = DateTimeOffset.UtcNow;
-
             NotifyDataReceived( data );
 
             Buffer.WriteBytes( data, 0, data.Length );

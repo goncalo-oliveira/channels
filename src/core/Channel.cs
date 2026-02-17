@@ -68,9 +68,9 @@ public abstract class Channel : IChannel, IAsyncDisposable
 
     public DateTimeOffset Created { get; } = DateTimeOffset.UtcNow;
 
-    public DateTimeOffset? LastReceived { get; protected set; }
+    public DateTimeOffset? LastReceived { get; private set; }
 
-    public DateTimeOffset? LastSent { get; protected set; }
+    public DateTimeOffset? LastSent { get; private set; }
 
     public IEnumerable<IChannelService> Services { get; init; } = [];
 
@@ -203,16 +203,24 @@ public abstract class Channel : IChannel, IAsyncDisposable
     /// </summary>
     /// <param name="data">The data that was received.</param>
     protected void NotifyDataReceived( byte[] data )
-        => ServiceProvider.GetServices<IChannelMonitor>()
+    {
+        LastReceived = DateTimeOffset.UtcNow;
+
+        ServiceProvider.GetServices<IChannelMonitor>()
             .InvokeAll( x => x.DataReceived( Info, data ) );
+    }
 
     /// <summary>
     /// Notifies the channel monitors that data has been sent. This method should be called by derived classes when data is sent.
     /// </summary>
     /// <param name="sent">The number of bytes that were sent.</param>
     protected void NotifyDataSent( int sent )
-        => ServiceProvider.GetServices<IChannelMonitor>()
+    {
+        LastSent = DateTimeOffset.UtcNow;
+
+        ServiceProvider.GetServices<IChannelMonitor>()
             .InvokeAll( x => x.DataSent( Info, sent ) );
+    }
 
     /// <summary>
     /// Notifies the channel monitors of a custom event. This method should be called by derived classes when a custom event occurs.

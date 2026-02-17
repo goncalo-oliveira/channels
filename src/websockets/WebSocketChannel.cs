@@ -143,8 +143,6 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                 cancellationToken: LifetimeToken
             );
 
-            LastSent = DateTimeOffset.UtcNow;
-
             NotifyDataSent( message.Data.Length );
         }
         catch ( WebSocketException ex )
@@ -195,8 +193,6 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                     new ArraySegment<byte>( buffer ),
                     cancellationToken
                 );
-
-                LastReceived = DateTimeOffset.UtcNow;
 
                 if ( result.MessageType == WebSocketMessageType.Close )
                 {
