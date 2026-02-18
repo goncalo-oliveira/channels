@@ -40,7 +40,7 @@ public interface IWritableByteBuffer : IByteBuffer
     /// </summary>
     /// <param name="value">The value to write</param>
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
-    IWritableByteBuffer WriteByteBuffer( IReadableByteBuffer value );
+    IWritableByteBuffer WriteBytes( IReadableByteBuffer value );
 
     /// <summary>
     /// Writes a range of bytes from a readonly span

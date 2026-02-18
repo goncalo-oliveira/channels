@@ -26,7 +26,7 @@ internal sealed class WebSocketTextMessageAdapter( ILoggerFactory loggerFactory 
         context.Forward( new WebSocketMessage
         {
             Type = System.Net.WebSockets.WebSocketMessageType.Text,
-            Data = new WrappedByteBuffer( Encoding.UTF8.GetBytes( data ) )
+            Data = new ReadableByteBuffer( Encoding.UTF8.GetBytes( data ) )
         } );
 
         logger.LogDebug( "Forwarded WebSocketMessage with text data." );

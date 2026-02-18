@@ -98,7 +98,7 @@ public sealed class WritableByteBuffer( int capacity, Endianness endianness = En
         return this;
     }
 
-    public IWritableByteBuffer WriteByteBuffer( IReadableByteBuffer value )
+    public IWritableByteBuffer WriteBytes( IReadableByteBuffer value )
     {
         var bytes = value.ToArray();
 
