@@ -100,10 +100,10 @@ public abstract class ChannelMiddleware<T>
             return true;
         }
 
-        // IReadableByteBuffer -> byte[] conversion
-        if ( type.IsArray && type.GetElementType() == typeof( byte ) && data is IReadableByteBuffer buffer )
+        // IByteBuffer -> byte[] conversion
+        if ( type.IsArray && type.GetElementType() == typeof( byte ) && data is IByteBuffer buffer )
         {
-            result = (T)(object)buffer.ReadBytes( buffer.ReadableBytes );
+            result = (T)(object)buffer.ToArray();
 
             return true;
         }
