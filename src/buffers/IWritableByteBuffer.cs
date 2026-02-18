@@ -3,8 +3,15 @@ namespace Faactory.Channels.Buffers;
 /// <summary>
 /// A buffer handling interface with write capabilities
 /// </summary>
+[Serialization.ByteBufferJsonConverter]
 public interface IWritableByteBuffer : IByteBuffer
 {
+    /// <summary>
+    /// Discards all written bytes and reallocates the buffer to its initial capacity.
+    /// </summary>
+    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
+    IWritableByteBuffer Clear();
+
     /// <summary>
     /// Resets the writing offset to the beginning of the buffer, effectively discarding all written bytes. Current buffer capacity remains unchanged.
     /// </summary>
@@ -43,7 +50,7 @@ public interface IWritableByteBuffer : IByteBuffer
     IWritableByteBuffer WriteBytes( IReadableByteBuffer value );
 
     /// <summary>
-    /// Writes a range of bytes from a readonly span
+    /// Writes a range of bytes from a <see cref="ReadOnlySpan{T}"/>
     /// </summary>
     /// <param name="value">The value to write</param>
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>

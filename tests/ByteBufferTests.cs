@@ -8,95 +8,43 @@ namespace Faactory.Channels.Tests;
 public class ByteBufferTests
 {
     [Fact]
-    public void TestMakeReadOnly()
+    public void Test_As_Readable()
     {
-        /*
-        When the buffer is already read-only and the endianness doesn't change
-        the instance returned should be the same as the original.
-        */
-        IByteBuffer source = new ReadableByteBuffer( [0x00, 0x01], Endianness.BigEndian );
-        IByteBuffer readOnly = source.EnsureReadable();
-
-        Assert.Equal( source, readOnly );
-        Assert.IsType<IReadableByteBuffer>( readOnly, exactMatch: false );
-        Assert.IsNotType<IWritableByteBuffer>( readOnly, exactMatch: false );
-        
-        /*
-        However, if the endianness changes, the returned instance should be
-        a new instance with the new endianness, even if the buffer is already
-        read-only.
-        */
-
-        source = new ReadableByteBuffer( [0x00, 0x01], Endianness.BigEndian );
-        readOnly = source.EnsureReadable( Endianness.LittleEndian );
-
-        Assert.NotEqual( source, readOnly );
-        Assert.IsType<IReadableByteBuffer>( readOnly, exactMatch: false );
-        Assert.IsNotType<IWritableByteBuffer>( readOnly, exactMatch: false );
-
         /*
         If the buffer is not read-only, the returned instance should be a new
         instance with the same endianness.
         */
 
-        source = new WritableByteBuffer()
+        var writable = new WritableByteBuffer()
             .WriteBytes( [0x00, 0x01] );
         
-        readOnly = source.EnsureReadable();
+        var readble = writable.AsReadable();
 
-        Assert.NotEqual( source, readOnly );
-        Assert.IsType<IReadableByteBuffer>( readOnly, exactMatch: false );
-        Assert.IsNotType<IWritableByteBuffer>( readOnly, exactMatch: false );
+        Assert.NotEqual( (IByteBuffer)writable, readble);
+        Assert.IsType<IReadableByteBuffer>( readble, exactMatch: false );
+        Assert.IsType<IWritableByteBuffer>( writable, exactMatch: false );
     }
 
     [Fact]
-    public void TestMakeWritable()
+    public void Test_As_Writable()
     {
-        /*
-        When the buffer is already writable and the endianness doesn't change
-        the instance returned should be the same as the original.
-        */
-        IByteBuffer source = new WritableByteBuffer()
-            .WriteBytes( [0x00, 0x01] );
-
-        IByteBuffer writable = source.EnsureWritable();
-
-        Assert.Equal( source, writable );
-        Assert.IsType<IWritableByteBuffer>( writable, exactMatch: false );
-        Assert.IsNotType<IReadableByteBuffer>( writable, exactMatch: false );
-
-        /*
-        However, if the endianness changes, the returned instance should be
-        a new instance with the new endianness, even if the buffer is already
-        writable.
-        */
-
-        source = new WritableByteBuffer()
-            .WriteBytes( [0x00, 0x01] );
-
-        writable = source.EnsureWritable( Endianness.LittleEndian );
-
-        Assert.NotEqual( source, writable );
-        Assert.IsType<IWritableByteBuffer>( writable, exactMatch: false );
-        Assert.IsNotType<IReadableByteBuffer>( writable, exactMatch: false );
-
         /*
         If the buffer is not writable, the returned instance should be a new
         instance with the same endianness.
         */
 
-        source = new ReadableByteBuffer( [0x00, 0x01], Endianness.BigEndian );
-        writable = source.EnsureWritable();
+        var readable = new ReadableByteBuffer( [0x00, 0x01], Endianness.BigEndian );
+        var writable = readable.AsWritable();
 
-        Assert.NotEqual( source, writable );
+        Assert.NotEqual( (IByteBuffer)readable, writable );
         Assert.IsType<IWritableByteBuffer>( writable, exactMatch: false );
-        Assert.IsNotType<IReadableByteBuffer>( writable, exactMatch: false );
+        Assert.IsType<IReadableByteBuffer>( readable, exactMatch: false );
     }
 
     [Fact]
-    public void TestFindBytes()
+    public void Test_FindBytes()
     {
-        IReadableByteBuffer source = new ReadableByteBuffer(
+        var source = new ReadableByteBuffer(
             [0x00, 0x01, 0x02, 0x03]
         );
 

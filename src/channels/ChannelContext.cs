@@ -2,7 +2,11 @@ namespace Faactory.Channels;
 
 internal class ChannelContext( IChannel channel ) : IChannelContext
 {
-    public IChannel Channel { get; } = channel;
+    public IChannel Channel => channel;
+
+    public Buffers.Endianness BufferEndianness => Channel is Channel c
+        ? c.Buffer.Endianness
+        : Buffers.Endianness.BigEndian;
 
     public IWritableBuffer Output { get; } = new WritableBuffer();
 

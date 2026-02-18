@@ -19,8 +19,6 @@ public sealed class DetachedChannel : IChannel
 
     public DateTimeOffset? LastSent { get; }
 
-    public Endianness BufferEndianness { get; init; } = Endianness.BigEndian;
-
     public bool IsClosed { get; private set; }
 
     public Task CloseAsync()

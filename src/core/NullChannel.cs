@@ -36,8 +36,6 @@ public sealed class NullChannel : IChannel, IAsyncDisposable
 
     public bool IsClosed => true;
 
-    public Endianness BufferEndianness => Endianness.BigEndian;
-
     public ChannelData Data { get; } = [];
 
     public DateTimeOffset Created { get; } = DateTimeOffset.UtcNow;

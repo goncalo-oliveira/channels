@@ -80,23 +80,17 @@ public abstract class ChannelMiddleware<T>
     {
         var type = typeof( T );
 
-        // attempt a byte[] to IByteBuffer transformation
-        if ( type.IsAssignableFrom( typeof( IByteBuffer ) ) && ( data is byte[] ) )
+        // byte[] -> IReadableByteBuffer conversion
+        if ( typeof( IReadableByteBuffer ).IsAssignableFrom( type ) && data is byte[] bytes )
         {
-            result = (T)(IByteBuffer)new ReadableByteBuffer( (byte[])data, context.Channel.BufferEndianness );
+            result = (T)(IReadableByteBuffer)new ReadableByteBuffer( bytes, context.BufferEndianness );
 
             return true;
         }
 
-        // attempt an IByteBuffer to byte[] transformation
-        if (
-            type.IsArray && type.GetElementType() == typeof( byte )  
-            &&
-            data.GetType().IsAssignableTo( typeof( IByteBuffer ) )
-        )
+        // IReadableByteBuffer -> byte[] conversion
+        if ( type.IsArray && type.GetElementType() == typeof( byte ) && data is IReadableByteBuffer buffer )
         {
-            var buffer = ( (IByteBuffer)data ).EnsureReadable();
-
             result = (T)(object)buffer.ReadBytes( buffer.ReadableBytes );
 
             return true;

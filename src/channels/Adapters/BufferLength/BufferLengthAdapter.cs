@@ -7,7 +7,7 @@ namespace Faactory.Channels.Adapters;
 /// <summary>
 /// This adapter ensures the length of the input buffer doesn't exceed a maximum value. Configure with BufferLengthAdapterOptions.
 /// </summary>
-public sealed class BufferLengthAdapter : ChannelAdapter<IByteBuffer>, IInputChannelAdapter
+public sealed class BufferLengthAdapter : ChannelAdapter<IReadableByteBuffer>, IInputChannelAdapter
 {
     private readonly int maxBufferSize;
     private readonly bool closeChannel;
@@ -23,7 +23,7 @@ public sealed class BufferLengthAdapter : ChannelAdapter<IByteBuffer>, IInputCha
         closeChannel = options.CloseChannel;
     }
     
-    public override Task ExecuteAsync( IAdapterContext context, IByteBuffer data, CancellationToken cancellationToken )
+    public override Task ExecuteAsync( IAdapterContext context, IReadableByteBuffer data, CancellationToken cancellationToken )
     {
         if ( data.Length > maxBufferSize )
         {
@@ -31,12 +31,12 @@ public sealed class BufferLengthAdapter : ChannelAdapter<IByteBuffer>, IInputCha
             // this usually means we are accumulating data and that
             // 1. we are not properly adapting/handling it
             // 2. the data being sent doesn't have the expected structure/format
-            // in these situations we either close ther channel or discard the data
+            // in these situations we either close the channel or discard the data
             var maxSizeMB = maxBufferSize / 1024.0 / 1024.0;
 
-            logger.LogWarning( "IByteBuffer length has exceeded {maxSizeMB:f1} MB.", maxSizeMB );
+            logger.LogWarning( "IReadableByteBuffer length has exceeded {maxSizeMB:f1} MB.", maxSizeMB );
 
-            data.EnsureReadable().DiscardAll();
+            data.DiscardAll();
 
             if ( closeChannel )
             {

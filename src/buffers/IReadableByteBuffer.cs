@@ -3,6 +3,7 @@ namespace Faactory.Channels.Buffers;
 /// <summary>
 /// A buffer handling interface with read-only capabilities
 /// </summary>
+[Serialization.ByteBufferJsonConverter]
 public interface IReadableByteBuffer : IByteBuffer
 {
     /// <summary>
@@ -51,7 +52,7 @@ public interface IReadableByteBuffer : IByteBuffer
     byte[] GetBytes( int offset, int length );
 
     /// <summary>
-    /// Gets a range of bytes at the given offset without moving the buffer index as readonly span
+    /// Gets a range of bytes at the given offset without moving the buffer index as <see cref="ReadOnlySpan{T}"/>
     /// </summary>
     /// <param name="offset">The offset to start reading the value</param>
     /// <param name="length">The number of bytes to read</param>
@@ -142,7 +143,7 @@ public interface IReadableByteBuffer : IByteBuffer
     byte[] ReadBytes( int length );
 
     /// <summary>
-    /// Reads a range of bytes as readonly span
+    /// Reads a range of bytes as <see cref="ReadOnlySpan{T}"/>
     /// </summary>
     /// <param name="length">The number of bytes to read</param>
     /// <returns>A readonly span value</returns>

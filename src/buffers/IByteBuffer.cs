@@ -22,5 +22,9 @@ public interface IByteBuffer
     /// <returns>A byte[] value</returns>
     byte[] ToArray();
 
+    /// <summary>
+    /// Gets the used portion of the buffer as a <see cref="ReadOnlySpan{T}"/>
+    /// </summary>
+    /// <returns>A <see cref="ReadOnlySpan{T}"/> representing the used portion of the buffer</returns>
     ReadOnlySpan<byte> AsSpan();
 }

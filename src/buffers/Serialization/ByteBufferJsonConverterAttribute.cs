@@ -17,5 +17,5 @@ public sealed class ByteBufferJsonConverterAttribute : JsonConverterAttribute
     /// Creates a new instance of the ByteBufferJsonConverterAttribute class.
     /// </summary>
     public override JsonConverter? CreateConverter( Type typeToConvert )
-        => new ByteBufferJsonConverter( Format );
+        => new ByteBufferJsonConverterFactory( Format );
 }

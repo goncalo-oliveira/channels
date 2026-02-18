@@ -131,7 +131,7 @@ public class WrappedByteBufferTests
 
         var options = new JsonSerializerOptions();
         options.Converters.Add( 
-            new Buffers.Serialization.ByteBufferJsonConverter(
+            new Buffers.Serialization.ByteBufferJsonConverterFactory(
                 Buffers.Serialization.ByteBufferSerializerFormat.HexString ) );
 
         var json = JsonSerializer.Serialize( buffer, options );

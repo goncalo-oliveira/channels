@@ -54,8 +54,6 @@ public abstract class Channel : IChannel, IAsyncDisposable
     /// </remarks>
     protected CancellationToken LifetimeToken => cts.Token;
 
-    public Endianness BufferEndianness => Buffer.Endianness;
-
     public IChannelPipeline Input { get; protected set; } = EmptyChannelPipeline.Instance;
     public IChannelPipeline Output { get; protected set; } = EmptyChannelPipeline.Instance;
 

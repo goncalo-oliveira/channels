@@ -60,7 +60,7 @@ public class ChannelAdapterTests
         Assert.Equal( data, contextDataItems.Single() );
     }
 
-    // adapter<IByteBuffer>.execute( byte[] ) should wrap data in an IByteBuffer
+    // adapter<IReadableByteBuffer>.execute( byte[] ) should wrap data in an IReadableByteBuffer
     [Fact]
     public async Task TestBufferMutation()
     {
@@ -73,12 +73,12 @@ public class ChannelAdapterTests
 
         Assert.Single( context.Forwarded );
 
-        var contextData = Assert.IsType<IByteBuffer>( context.Forwarded.Single(), exactMatch: false );
+        var contextData = Assert.IsType<IReadableByteBuffer>( context.Forwarded.Single(), exactMatch: false );
 
         Assert.True( data.SequenceEqual( contextData.ToArray() ) );
     }
 
-    // adapter<byte[]>.execute( IByteBuffer ) should unwrap IByteBuffer data
+    // adapter<byte[]>.execute( IReadableByteBuffer ) should unwrap IReadableByteBuffer data
     [Fact]
     public async Task TestByteArrayMutation()
     {
@@ -116,9 +116,9 @@ public class ChannelAdapterTests
         }
     }
 
-    private class BufferAdapter : ChannelAdapter<IByteBuffer>
+    private class BufferAdapter : ChannelAdapter<IReadableByteBuffer>
     {
-        public override Task ExecuteAsync( IAdapterContext context, IByteBuffer data, CancellationToken cancellationToken )
+        public override Task ExecuteAsync( IAdapterContext context, IReadableByteBuffer data, CancellationToken cancellationToken )
         {
             context.Forward( data );
 

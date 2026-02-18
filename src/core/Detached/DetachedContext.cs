@@ -13,6 +13,8 @@ public sealed class DetachedContext : IAdapterContext, IWritableBuffer
 
     public IChannel Channel { get; } = new DetachedChannel();
 
+    public Buffers.Endianness BufferEndianness => Buffers.Endianness.BigEndian;
+
     public IWritableBuffer Output => this;
 
     public object[] Forwarded => forwarded.ToArray();

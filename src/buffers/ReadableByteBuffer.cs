@@ -151,7 +151,7 @@ public sealed class ReadableByteBuffer( byte[] buffer, Endianness endianness = E
     }
 
     /// <summary>
-    /// Gets a ReadOnlySpan<byte> from the buffer at the specified offset and length.
+    /// Gets a <see cref="ReadOnlySpan{T}"/> from the buffer at the specified offset and length.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset or length is out of range or there are not enough bytes to read the specified length.</exception>
     public ReadOnlySpan<byte> GetSpan( int offset, int length )
@@ -424,11 +424,15 @@ public sealed class ReadableByteBuffer( byte[] buffer, Endianness endianness = E
     }
 
     /// <summary>
-    /// Returns the underlying byte array of the buffer.
+    /// Returns the underlying buffer as a byte array.
     /// </summary>
     public byte[] ToArray()
         => buffer;
 
+    /// <summary>
+    /// Gets the underlying buffer as a <see cref="ReadOnlySpan{T}"/>
+    /// </summary>
+    /// <returns>A <see cref="ReadOnlySpan{T}"/> representing the used portion of the buffer</returns>
     public ReadOnlySpan<byte> AsSpan()
         => buffer.AsSpan();
 
