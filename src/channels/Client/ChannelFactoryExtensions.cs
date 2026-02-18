@@ -28,6 +28,7 @@ public static class ChannelFactoryClientExtensions
     /// <summary>
     /// Creates a Channels client with the specified client name
     /// </summary>
+    /// <param name="factory">The channel factory to create the client from</param>
     /// <param name="clientName">The name of the client</param>
     /// <returns>A client instance that gives access to a channel for communication</returns>
     public static IChannelsClient CreateClientChannel( this IChannelFactory factory, string clientName )

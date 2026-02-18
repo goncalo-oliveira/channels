@@ -1,8 +1,10 @@
 using Faactory.Channels.Adapters;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
+/// <summary>
+/// Extension methods for adding a buffer length adapter to the channel builder
+/// </summary>
 public static class BufferLengthAdapterChannelBuilderExtensions
 {
     /// <summary>

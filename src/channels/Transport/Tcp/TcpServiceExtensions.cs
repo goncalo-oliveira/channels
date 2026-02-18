@@ -4,11 +4,15 @@ using Microsoft.Extensions.Hosting;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
+/// <summary>
+/// Extension methods for adding TCP channel listeners to the service collection.
+/// </summary>
 public static class ChannelsTcpServiceExtensions
 {
     /// <summary>
     /// Adds a TCP channel listener to the service collection using the default channel pipeline.
     /// </summary>
+    /// <param name="services">The service collection to add the listener to.</param>
     /// <param name="configure">A delegate that configures the TCP channel listener options.</param>
     public static IServiceCollection AddTcpChannelListener( this IServiceCollection services, Action<TcpChannelListenerOptions>? configure = null )
         => services.AddTcpChannelListener( ChannelBuilder.DefaultChannelName, configure );
@@ -16,6 +20,7 @@ public static class ChannelsTcpServiceExtensions
     /// <summary>
     /// Adds a TCP channel listener to the service collection using the default channel pipeline.
     /// </summary>
+    /// <param name="services">The service collection to add the listener to.</param>
     /// <param name="port">The port to listen on.</param>
     public static IServiceCollection AddTcpChannelListener( this IServiceCollection services, int port )
         => services.AddTcpChannelListener( ChannelBuilder.DefaultChannelName, port );
@@ -23,6 +28,7 @@ public static class ChannelsTcpServiceExtensions
     /// <summary>
     /// Adds a TCP channel listener to the service collection.
     /// </summary>
+    /// <param name="services">The service collection to add the listener to.</param>
     /// <param name="channelName">The name of the channel pipeline to use.</param>
     /// <param name="configure">A delegate that configures the TCP channel listener options.</param>
     public static IServiceCollection AddTcpChannelListener( this IServiceCollection services, string channelName, Action<TcpChannelListenerOptions>? configure = null )
@@ -42,6 +48,7 @@ public static class ChannelsTcpServiceExtensions
     /// <summary>
     /// Adds a TCP channel listener to the service collection.
     /// </summary>
+    /// <param name="services">The service collection to add the listener to.</param>
     /// <param name="channelName">The name of the channel pipeline to use.</param>
     /// <param name="port">The port to listen on.</param>
     public static IServiceCollection AddTcpChannelListener( this IServiceCollection services, string channelName, int port )

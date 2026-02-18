@@ -4,11 +4,15 @@ using Microsoft.Extensions.Hosting;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
+/// <summary>
+/// Extension methods for adding UDP channel listeners to the service collection.
+/// </summary>
 public static class ChannelsUdpServiceExtensions
 {
     /// <summary>
     /// Adds an UDP channel listener to the service collection using the default channel pipeline.
     /// </summary>
+    /// <param name="services">The service collection to add the listener to.</param>
     /// <param name="configure">A delegate that configures the UDP channel listener options.</param>
     public static IServiceCollection AddUdpChannelListener( this IServiceCollection services, Action<UdpChannelListenerOptions>? configure = null )
         => services.AddUdpChannelListener( ChannelBuilder.DefaultChannelName, configure );
@@ -16,6 +20,7 @@ public static class ChannelsUdpServiceExtensions
     /// <summary>
     /// Adds an UDP channel listener to the service collection using the default channel pipeline.
     /// </summary>
+    /// <param name="services">The service collection to add the listener to.</param>
     /// <param name="port">The port to listen on.</param>
     public static IServiceCollection AddUdpChannelListener( this IServiceCollection services, int port )
         => services.AddUdpChannelListener( ChannelBuilder.DefaultChannelName, port );
@@ -23,6 +28,7 @@ public static class ChannelsUdpServiceExtensions
     /// <summary>
     /// Adds an UDP channel listener to the service collection.
     /// </summary>
+    /// <param name="services">The service collection to add the listener to.</param>
     /// <param name="channelName">The name of the channel pipeline to use.</param>
     /// <param name="configure">A delegate that configures the UDP channel listener options.</param>
     public static IServiceCollection AddUdpChannelListener( this IServiceCollection services, string channelName, Action<UdpChannelListenerOptions>? configure = null )
@@ -42,6 +48,7 @@ public static class ChannelsUdpServiceExtensions
     /// <summary>
     /// Adds an UDP channel listener to the service collection.
     /// </summary>
+    /// <param name="services">The service collection to add the listener to.</param>
     /// <param name="channelName">The name of the channel pipeline to use.</param>
     /// <param name="port">The port to listen on.</param>
     public static IServiceCollection AddUdpChannelListener( this IServiceCollection services, string channelName, int port )

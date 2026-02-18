@@ -5,20 +5,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
-internal class ChannelPipeline : IChannelPipeline
+internal class ChannelPipeline( ILoggerFactory loggerFactory, IEnumerable<IChannelAdapter> channelAdapters, IEnumerable<IChannelHandler>? channelHandlers = null ) : IChannelPipeline
 {
-    private readonly ILogger logger;
-    private readonly IEnumerable<IChannelAdapter> adapters;
-    private readonly IEnumerable<IChannelHandler> handlers;
-
-    public ChannelPipeline( ILoggerFactory loggerFactory
-        , IEnumerable<IChannelAdapter> channelAdapters
-        , IEnumerable<IChannelHandler>? channelHandlers = null )
-    {
-        logger = loggerFactory.CreateLogger<ChannelPipeline>();
-        adapters = channelAdapters;
-        handlers = channelHandlers ?? Enumerable.Empty<IChannelHandler>();
-    }
+    private readonly ILogger logger = loggerFactory.CreateLogger<ChannelPipeline>();
+    private readonly IEnumerable<IChannelAdapter> adapters = channelAdapters;
+    private readonly IEnumerable<IChannelHandler> handlers = channelHandlers ?? [];
 
     public void Dispose()
     {
@@ -73,7 +64,7 @@ internal class ChannelPipeline : IChannelPipeline
         {
             var adapterData = context.Flush();
 
-            if ( !adapterData.Any() )
+            if ( adapterData.Length == 0 )
             {
                 // no data available on the pipeline
                 // interrupt the workflow
@@ -107,7 +98,7 @@ internal class ChannelPipeline : IChannelPipeline
             previousAdapter = adapter;
         }
 
-        return ( true );
+        return true;
     }
 
     private async Task<bool> ExecuteHandlersAsync( AdapterContext adapterContext, CancellationToken cancellationToken )
@@ -115,7 +106,7 @@ internal class ChannelPipeline : IChannelPipeline
         if ( handlers == null )
         {
             // this is true for output pipelines
-            return ( true );
+            return true;
         }
 
         var handlerData = adapterContext.Flush();
@@ -124,14 +115,14 @@ internal class ChannelPipeline : IChannelPipeline
         {
             // no data forwarded from the adapters
             logger.LogDebug( "No data forwarded from the adapters." );
-            return ( true );
+            return true;
         }
 
         if ( !handlers.Any() )
         {
             // no handlers
             logger.LogWarning( "No data handlers were registered." );
-            return ( true );
+            return true;
         }
 
         foreach ( var handler in handlers )
@@ -148,7 +139,7 @@ internal class ChannelPipeline : IChannelPipeline
                     // socket was disposed
                     logger.LogError( "Channel is closed." );
 
-                    return ( false );
+                    return false;
                 }
                 catch ( Exception ex )
                 {
@@ -158,12 +149,12 @@ internal class ChannelPipeline : IChannelPipeline
                         handler.GetType().Name
                     );
 
-                    return ( false );
+                    return false;
                 }
             }
         }
 
-        return ( true );
+        return true;
     }
 
     internal static IChannelPipeline CreateInput( IServiceProvider provider, string name )

@@ -3,11 +3,15 @@ using Faactory.Channels.Client;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
+/// <summary>
+/// Extension methods for adding channels client services to the service collection
+/// </summary>
 public static class ChannelsClientServiceExtensions
 {
     /// <summary>
     /// Adds a channels client to the service collection and binds it to the default channel (pipeline configuration)
     /// </summary>
+    /// <param name="services">The service collection to add the client services to</param>
     /// <param name="clientName">The name of the client</param>
     /// <param name="configure">A delegate to configure the client options</param>
     public static IServiceCollection AddChannelsNamedClient( this IServiceCollection services, string clientName, Action<ChannelsClientOptions> configure )
@@ -16,6 +20,7 @@ public static class ChannelsClientServiceExtensions
     /// <summary>
     /// Adds a channels client to the service collection and binds it to the default channel (pipeline configuration)
     /// </summary>
+    /// <param name="services">The service collection to add the client services to</param>
     /// <param name="clientName">The name of the client</param>
     /// <param name="hostUrl">The URL of the service host</param>
     /// <exception cref="ArgumentException">Thrown when the host URL is not a valid URI</exception>
@@ -26,6 +31,7 @@ public static class ChannelsClientServiceExtensions
     /// <summary>
     /// Adds a channels client to the service collection
     /// </summary>
+    /// <param name="services">The service collection to add the client services to</param>
     /// <param name="clientName">The name of the client</param>
     /// <param name="channelName">The name of the channel (pipeline configuration) to use with the client</param>
     /// <param name="configure">A delegate to configure the client options</param>
@@ -47,6 +53,7 @@ public static class ChannelsClientServiceExtensions
     /// <summary>
     /// Adds a channels client to the service collection
     /// </summary>
+    /// <param name="services">The service collection to add the client services to</param>
     /// <param name="clientName">The name of the client</param>
     /// <param name="channelName">The name of the channel (pipeline configuration) to use with the client</param>
     /// <param name="hostUrl">The URL of the service host</param>
@@ -82,6 +89,7 @@ public static class ChannelsClientServiceExtensions
     /// <summary>
     /// Adds a default channels client to the service collection
     /// </summary>
+    /// <param name="services">The service collection to add the client services to</param>
     /// <param name="channelName">The name of the channel (pipeline configuration) to use with the client</param>
     /// <param name="configure">A delegate to configure the client options</param>
     public static IServiceCollection AddChannelsClient( this IServiceCollection services, string channelName, Action<ChannelsClientOptions> configure )
@@ -90,6 +98,7 @@ public static class ChannelsClientServiceExtensions
     /// <summary>
     /// Adds a default channels client to the service collection and binds it to the default channel (pipeline configuration)
     /// </summary>
+    /// <param name="services">The service collection to add the client services to</param>
     /// <param name="configure">A delegate to configure the client options</param>
     public static IServiceCollection AddChannelsClient( this IServiceCollection services, Action<ChannelsClientOptions> configure )
         => services.AddChannelsNamedClient( ChannelFactoryClientExtensions.DefaultClientName, ChannelBuilder.DefaultChannelName, configure );
@@ -97,6 +106,7 @@ public static class ChannelsClientServiceExtensions
     /// <summary>
     /// Adds a default channels client to the service collection
     /// </summary>
+    /// <param name="services">The service collection to add the client services to</param>
     /// <param name="channelName">The name of the channel (pipeline configuration) to use with the client</param>
     /// <param name="hostUrl">The URL of the service host</param>
     public static IServiceCollection AddChannelsClient( this IServiceCollection services, string channelName, string hostUrl )
@@ -105,6 +115,7 @@ public static class ChannelsClientServiceExtensions
     /// <summary>
     /// Adds a default channels client to the service collection and binds it to the default channel (pipeline configuration)
     /// </summary>
+    /// <param name="services">The service collection to add the client services to</param>
     /// <param name="hostUrl">The URL of the service host</param>
     public static IServiceCollection AddChannelsClient( this IServiceCollection services, string hostUrl )
         => services.AddChannelsNamedClient( ChannelFactoryClientExtensions.DefaultClientName, ChannelBuilder.DefaultChannelName, hostUrl );

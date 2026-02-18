@@ -2,12 +2,14 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
-/*
-the main interface for configuring channels
-*/
-
+/// <summary>
+/// Defines a builder for configuring named channels.
+/// </summary>
 public interface INamedChannelBuilder
 {
+    /// <summary>
+    /// Gets the service collection to which the named channel is being added.
+    /// </summary>
     IServiceCollection Services { get; }
 
     /// <summary>
@@ -15,6 +17,5 @@ public interface INamedChannelBuilder
     /// </summary>
     /// <param name="name">The name of the channel.</param>
     /// <param name="configure">A delegate that configures the channel options.</param>
-    /// <returns></returns>
     INamedChannelBuilder Add( string name, Action<IChannelBuilder> configure );
 }

@@ -1,7 +1,6 @@
 using System.Text;
 using Faactory.Channels.Adapters;
 using Faactory.Channels.Buffers;
-using Faactory.Channels.Handlers;
 using Microsoft.Extensions.Logging;
 
 namespace Faactory.Channels.WebSockets.Adapters;

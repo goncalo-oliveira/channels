@@ -2,11 +2,15 @@ using Faactory.Channels.Adapters;
 
 namespace Faactory.Channels;
 
+/// <summary>
+/// Extension methods for adding anonymous channel adapters to the channel builder
+/// </summary>
 public static class AnonymousAdapterChannelBuilderExtensions
 {
     /// <summary>
     /// Adds a transient service for the anonymous channel adapter to the input pipeline
     /// </summary>
+    /// <param name="builder">The channel builder to add the adapter to</param>
     /// <param name="action">The anonymous adapter action</param>
     /// <typeparam name="TData">The data type expected by the adapter</typeparam>
     public static IChannelBuilder AddInputAdapter<TData>( this IChannelBuilder builder, Action<IAdapterContext, TData> action )
@@ -20,12 +24,13 @@ public static class AnonymousAdapterChannelBuilderExtensions
             } );
         });
 
-        return ( builder );
+        return builder;
     }
 
     /// <summary>
     /// Adds a transient service for the anonymous channel adapter to the input pipeline
     /// </summary>
+    /// <param name="builder">The channel builder to add the adapter to</param>
     /// <param name="action">The anonymous adapter action</param>
     /// <typeparam name="TData">The data type expected by the adapter</typeparam>
     public static IChannelBuilder AddInputAdapter<TData>( this IChannelBuilder builder, Action<IServiceProvider, IAdapterContext, TData> action )
@@ -39,12 +44,13 @@ public static class AnonymousAdapterChannelBuilderExtensions
             } );
         });
 
-        return ( builder );
+        return builder;
     }
 
     /// <summary>
     /// Adds a transient service for the anonymous channel adapter to the output pipeline
     /// </summary>
+    /// <param name="builder">The channel builder to add the adapter to</param>
     /// <param name="action">The anonymous adapter action</param>
     /// <typeparam name="TData">The data type expected by the adapter</typeparam>
     public static IChannelBuilder AddOutputAdapter<TData>( this IChannelBuilder builder, Action<IAdapterContext, TData> action )
@@ -64,6 +70,7 @@ public static class AnonymousAdapterChannelBuilderExtensions
     /// <summary>
     /// Adds a transient service for the anonymous channel adapter to the output pipeline
     /// </summary>
+    /// <param name="builder">The channel builder to add the adapter to</param>
     /// <param name="action">The anonymous adapter action</param>
     /// <typeparam name="TData">The data type expected by the adapter</typeparam>
     public static IChannelBuilder AddOutputAdapter<TData>( this IChannelBuilder builder, Action<IServiceProvider, IAdapterContext, TData> action )

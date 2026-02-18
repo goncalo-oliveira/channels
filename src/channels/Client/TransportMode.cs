@@ -1,5 +1,8 @@
 namespace Faactory.Channels.Client;
 
+/// <summary>
+/// Defines the transport mode for a channel
+/// </summary>
 public enum ChannelTransportMode
 {
     /// <summary>

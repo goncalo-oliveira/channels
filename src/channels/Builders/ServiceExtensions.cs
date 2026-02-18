@@ -2,6 +2,9 @@ using Faactory.Channels;
 
 namespace Microsoft.Extensions.DependencyInjection;
 
+/// <summary>
+/// Extension methods for adding channels services to the service collection.
+/// </summary>
 public static class ChannelsBuilderServiceExtensions
 {
     /// <summary>
@@ -14,6 +17,7 @@ public static class ChannelsBuilderServiceExtensions
     /// <summary>
     /// Adds a default channel to the service collection.
     /// </summary>
+    /// <param name="services">The service collection to add the channel services to.</param>
     /// <param name="configure">A delegate that configures the channel options.</param>
     /// <returns></returns>
     public static IServiceCollection AddChannels( this IServiceCollection services, Action<IChannelBuilder> configure )

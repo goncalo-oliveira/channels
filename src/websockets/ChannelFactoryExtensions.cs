@@ -9,11 +9,15 @@ using Microsoft.Extensions.Options;
 
 namespace Faactory.Channels.WebSockets;
 
+/// <summary>
+/// Extension methods for creating WebSocket channels from an <see cref="IChannelFactory"/> instance.
+/// </summary>
 public static class ChannelFactoryWebSocketExtensions
 {
     /// <summary>
     /// Creates a WebSocket channel
     /// </summary>
+    /// <param name="factory">The channel factory to create the channel from</param>
     /// <param name="webSocket">The WebSocket instance to use for the channel</param>
     /// <param name="channelName">The name of the channel (pipeline configuration) to use with the channel</param>
     /// <returns>>A WebSocket channel instance that gives access to the WebSocket and the channel pipelines for communication</returns>

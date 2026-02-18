@@ -13,6 +13,9 @@ public sealed class BufferLengthAdapter : ChannelAdapter<IReadableByteBuffer>, I
     private readonly bool closeChannel;
     private readonly ILogger logger;
 
+    /// <summary>
+    /// Initializes a new instance of the BufferLengthAdapter class.
+    /// </summary>
     public BufferLengthAdapter( ILoggerFactory loggerFactory, IOptions<BufferLengthAdapterOptions> optionsAccessor )
     {
         logger = loggerFactory.CreateLogger<BufferLengthAdapter>();
@@ -23,6 +26,9 @@ public sealed class BufferLengthAdapter : ChannelAdapter<IReadableByteBuffer>, I
         closeChannel = options.CloseChannel;
     }
     
+    /// <summary>
+    /// Executes the adapter logic. If the length of the input buffer exceeds the maximum buffer size, it either closes the channel or discards the data based on the configuration. Otherwise, it forwards the data to the next adapter in the pipeline.
+    /// </summary>
     public override Task ExecuteAsync( IAdapterContext context, IReadableByteBuffer data, CancellationToken cancellationToken )
     {
         if ( data.Length > maxBufferSize )
