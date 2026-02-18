@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Faactory.Channels.Udp;
 
-internal sealed class ChannelsUdpClient : IChannelsClient, IDisposable, IAsyncDisposable
+internal sealed class ChannelsUdpClient : IChannelsClient
 {
     private readonly ILogger logger;
     private readonly CancellationTokenSource cts = new();
@@ -115,10 +115,14 @@ internal sealed class ChannelsUdpClient : IChannelsClient, IDisposable, IAsyncDi
 
                 logger.LogDebug( "Received {N} bytes from {EndPoint}.", receiveResult.Buffer.Length, receiveResult.RemoteEndPoint );
 
-                await udpChannel.ExecuteInputPipelineAsync( receiveResult.Buffer );
+                var buffer = receiveResult.Buffer.ToArray();
+
+                await udpChannel.ExecuteInputPipelineAsync( buffer );
             }
             catch ( OperationCanceledException )
-            { }
+            {
+                break;
+            }
             catch ( Exception ex )
             {
                 logger.LogError( "Failed to received data. {Error}.", ex.Message );

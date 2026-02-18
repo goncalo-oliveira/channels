@@ -57,12 +57,15 @@ public abstract class ChannelService : IChannelService
         }
     }
 
+    /// <summary>
+    /// Disposes the service, ensuring that any resources are released and the channel reference is cleared.
+    /// </summary>
     public virtual void Dispose()
     {
-        GC.SuppressFinalize( this );
-
         cancellationTokenSource?.Cancel();
         Channel = NullChannel.Instance;
+
+        GC.SuppressFinalize( this );
     }
 
     /// <summary>

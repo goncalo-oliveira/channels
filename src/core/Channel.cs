@@ -14,6 +14,10 @@ public abstract class Channel : IChannel, IAsyncDisposable
     private readonly Task initializeTask;
     private Task idleMonitorTask = Task.CompletedTask;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Channel"/> class with the specified service scope.
+    /// </summary>
+    /// <param name="serviceScope">The service scope for the channel. This scope is used to resolve services that are specific to the channel, such as channel adapters and handlers.</param>
     public Channel( IServiceScope serviceScope )
     {
         ChannelScope = serviceScope;
@@ -54,32 +58,74 @@ public abstract class Channel : IChannel, IAsyncDisposable
     /// </remarks>
     protected CancellationToken LifetimeToken => cts.Token;
 
+    /// <summary>
+    /// The pipeline for processing incoming data.
+    /// </summary>
     public IChannelPipeline Input { get; protected set; } = EmptyChannelPipeline.Instance;
+
+    /// <summary>
+    /// The pipeline for processing outgoing data.
+    /// </summary>
     public IChannelPipeline Output { get; protected set; } = EmptyChannelPipeline.Instance;
 
+    /// <summary>
+    /// The unique identifier for the channel.
+    /// </summary>
     public string Id { get; } = Guid.NewGuid().ToString( "N" );
 
     private volatile bool isClosed;
+
+    /// <summary>
+    /// Gets whether the channel is closed. Once a channel is closed, it cannot be reopened.
+    /// </summary>
     public bool IsClosed { get => isClosed; private set => isClosed = value; }
 
+    /// <summary>
+    /// A buffer for storing unprocessed incoming data.
+    /// </summary>
     public IWritableByteBuffer Buffer { get; protected set; } = new WritableByteBuffer();
 
+    /// <summary>
+    /// The data associated with the channel.
+    /// </summary>
     public ChannelData Data { get; protected set; } = [];
 
+    /// <summary>
+    /// The timestamp when the channel was created.
+    /// </summary>
     public DateTimeOffset Created { get; } = DateTimeOffset.UtcNow;
 
+    /// <summary>
+    /// The timestamp when the channel last received data.
+    /// </summary>
     public DateTimeOffset? LastReceived { get; private set; }
 
+    /// <summary>
+    /// The timestamp when the channel last sent data.
+    /// </summary>
     public DateTimeOffset? LastSent { get; private set; }
 
+    /// <summary>
+    /// The channel services associated with the channel.
+    /// </summary>
     protected IEnumerable<IChannelService> Services { get; init; } = [];
 
+    /// <summary>
+    /// A timeout value that determines how long the channel can be idle (i.e., without sending or receiving data) before it is automatically closed.
+    /// </summary>
     public TimeSpan Timeout { get; protected set; } = TimeSpan.FromSeconds( 60 );
 
+    /// <summary>
+    /// Gets a channel service of the specified type.
+    /// </summary>
     public IChannelService? GetChannelService( Type serviceType )
         => Services.SingleOrDefault( s => s.GetType() == serviceType );
 
     private int isClosing;
+
+    /// <summary>
+    /// Closes the channel. Once a channel is closed, it cannot be reopened.
+    /// </summary>
     public virtual async Task CloseAsync()
     {
         if ( Interlocked.Exchange( ref isClosing, 1 ) == 1 )
@@ -136,6 +182,9 @@ public abstract class Channel : IChannel, IAsyncDisposable
         logger.LogDebug( "Stopped services." );
     }
 
+    /// <summary>
+    /// Disposes the channel and releases all resources.
+    /// </summary>
     public virtual void Dispose()
     {
         DisposeAsync().AsTask().GetAwaiter().GetResult();
@@ -143,6 +192,9 @@ public abstract class Channel : IChannel, IAsyncDisposable
         GC.SuppressFinalize( this );
     }
 
+    /// <summary>
+    /// Asynchronously disposes the channel and releases all resources.
+    /// </summary>
     public virtual async ValueTask DisposeAsync()
     {
         await CloseAsync()
@@ -156,6 +208,9 @@ public abstract class Channel : IChannel, IAsyncDisposable
         GC.SuppressFinalize( this );
     }
 
+    /// <summary>
+    /// Writes data to the output pipeline. This method executes the output pipeline and sends the processed data to the underlying transport.
+    /// </summary>
     public virtual async Task WriteAsync( object data )
     {
         if ( IsClosed )
@@ -171,6 +226,10 @@ public abstract class Channel : IChannel, IAsyncDisposable
             .ConfigureAwait( false );
     }
 
+    /// <summary>
+    /// Writes raw bytes to the underlying transport. This method should be implemented by derived classes to send data to the remote endpoint. The data passed to this method is the output of the output pipeline.
+    /// </summary>
+    /// <param name="data">The data to write to the underlying transport, after being processed by the output pipeline.</param>
     public abstract Task WriteRawBytesAsync( byte[] data );
 
     /// <summary>

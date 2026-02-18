@@ -20,5 +20,10 @@ public interface IChannelContext
     /// </summary>
     IWritableBuffer Output { get; }
 
+    /// <summary>
+    /// Notifies a custom event to the channel
+    /// </summary>
+    /// <param name="name">The event name</param>
+    /// <param name="data">The event data</param>
     void NotifyCustomEvent( string name, object? data = null );
 }

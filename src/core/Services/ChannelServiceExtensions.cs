@@ -1,6 +1,9 @@
 namespace Faactory.Channels;
 
-public static class ChannelServiceChannelExtensions
+/// <summary>
+/// Extension methods for channel services
+/// </summary>
+public static class ChannelServiceExtensions
 {
     /// <summary>
     /// Gets a channel service of the specified type, or null if not found

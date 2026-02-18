@@ -17,8 +17,20 @@ public abstract class ChannelMiddleware<T>
     /// </summary>
     protected abstract void OnDataNotSuitable( IChannelContext context, object data );
 
+    /// <summary>
+    /// Executes the middleware logic for the received data
+    /// </summary>
+    /// <param name="context">The channel context</param>
+    /// <param name="data">The received data</param>
+    /// <param name="cancellationToken">The cancellation token</param>
     public abstract Task ExecuteAsync( IChannelContext context, T data, CancellationToken cancellationToken );
 
+    /// <summary>
+    /// Executes the middleware logic for the received data, with type conversion and enumerable support
+    /// </summary>
+    /// <param name="context">The channel context</param>
+    /// <param name="data">The received data</param>
+    /// <param name="cancellationToken">The cancellation token</param>
     public Task ExecuteAsync( IChannelContext context, object data, CancellationToken cancellationToken )
     {
         if ( data == null )
