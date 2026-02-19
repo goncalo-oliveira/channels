@@ -12,7 +12,7 @@ Take note that this adapter is an `IOutputChannelAdapter`.
 public class UTFEncoderAdapter : ChannelAdapter<string>, IOutputChannelAdapter
 {
     //
-    public override Task ExecuteAsync( IAdapterContext context, string data )
+    public override Task ExecuteAsync( IAdapterContext context, string data, CancellationToken cancellationToken )
     {
         var bytes = Encoding.UTF8.GetBytes( data );
 

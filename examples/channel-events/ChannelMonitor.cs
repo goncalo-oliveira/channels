@@ -24,11 +24,11 @@ public class ChannelMonitor( ILogger<ChannelMonitor> logger ) : IChannelMonitor
         );
     }
 
-    public void DataSent( IChannelInfo channelInfo, int sent )
+    public void DataSent( IChannelInfo channelInfo, byte[] data )
     {
         logger.LogInformation(
-            "Channel sent {sent} bytes.",
-            sent
+            "Channel sent {Length} bytes.",
+            data.Length
         );
     }
 

@@ -11,7 +11,7 @@ or executing a command.
 
 public class WordHandler : ChannelHandler<MatchCollection>
 {
-    public override Task ExecuteAsync( IChannelContext context, MatchCollection data )
+    public override Task ExecuteAsync( IChannelContext context, MatchCollection data, CancellationToken cancellationToken )
     {
         var response = $"received {data.Count} word(s).\n";
 

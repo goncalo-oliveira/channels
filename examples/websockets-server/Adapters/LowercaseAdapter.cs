@@ -11,7 +11,7 @@ Take note that this adapter is an `IInputChannelAdapter`.
 
 public partial class LowercaseAdapter : ChannelAdapter<char[]>, IInputChannelAdapter
 {
-    public override Task ExecuteAsync( IAdapterContext context, char[] letters )
+    public override Task ExecuteAsync( IAdapterContext context, char[] letters, CancellationToken cancellationToken )
     {
         var lowercase = letters
             .Select( c => char.ToLowerInvariant( c ) )

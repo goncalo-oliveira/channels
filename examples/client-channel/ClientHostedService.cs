@@ -3,11 +3,8 @@ using Microsoft.Extensions.Hosting;
 
 namespace Faactory.Channels.Examples;
 
-internal sealed class ClientHostedService( IChannelsClientFactory channelsClientFactory, IHostApplicationLifetime hostApplicationLifetime ) : BackgroundService
+internal sealed class ClientHostedService( IChannelFactory channelFactory, IHostApplicationLifetime hostApplicationLifetime ) : BackgroundService
 {
-    private readonly IChannelsClientFactory clientFactory = channelsClientFactory;
-    private readonly IHostApplicationLifetime appLifetime = hostApplicationLifetime;
-
     protected override async Task ExecuteAsync( CancellationToken stoppingToken )
     {
         /*
@@ -16,7 +13,7 @@ internal sealed class ClientHostedService( IChannelsClientFactory channelsClient
 
         await Task.Delay( 5000, stoppingToken ); // wait for the server to start
 
-        using var client = clientFactory.Create();
+        using var client = channelFactory.CreateClientChannel();
 
         // wait for the client to connect
         while ( client.Channel.IsClosed )
@@ -32,6 +29,6 @@ internal sealed class ClientHostedService( IChannelsClientFactory channelsClient
         // close the client channel
         await client.CloseAsync();
 
-        appLifetime.StopApplication();
+        hostApplicationLifetime.StopApplication();
     }
 }

@@ -19,7 +19,7 @@ public partial class LetterAdapter( ILoggerFactory loggerFactory ) : ChannelAdap
 {
     private readonly ILogger logger = loggerFactory.CreateLogger<LetterAdapter>();
 
-    public override Task ExecuteAsync( IAdapterContext context, WebSocketMessage data )
+    public override Task ExecuteAsync( IAdapterContext context, WebSocketMessage data, CancellationToken cancellationToken )
     {
         if ( data.Type != WebSocketMessageType.Text )
         {
