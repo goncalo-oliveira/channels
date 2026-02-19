@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Faactory.Channels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace tests;
 
@@ -20,11 +21,12 @@ internal sealed class TestServer( IHost host, IServiceProvider serviceProvider, 
         await Application.StopAsync( cancellationToken ).ConfigureAwait( false );
     }
 
-    public static async Task<TestServer> CreateAsync( Action<IChannelBuilder>? configureChannel = null, Action<IServiceCollection>? configureServices = null, CancellationToken cancellationToken = default )
+    public static async Task<TestServer> StartAsync( Action<IChannelBuilder>? configureChannel = null, Action<IServiceCollection>? configureServices = null, CancellationToken cancellationToken = default )
     {
         var builder = Host.CreateApplicationBuilder();
 
-        builder.Services.AddLogging();
+        builder.Logging.ClearProviders(); // remove default logging providers to reduce test output noise
+
         builder.Services.AddChannels( options => configureChannel?.Invoke( options ) );
 
         builder.Services.AddTcpChannelListener( options =>
