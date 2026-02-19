@@ -91,6 +91,11 @@ internal class ChannelPipeline( ILoggerFactory loggerFactory, IEnumerable<IChann
                         adapter.GetType().Name
                     );
 
+                    /*
+                    If the middleware throws an exception, the channel is likely in an inconsistent state and should be closed.
+                    */
+                    _ = context.Channel.CloseAsync();
+
                     return false;
                 }
             }
@@ -101,7 +106,7 @@ internal class ChannelPipeline( ILoggerFactory loggerFactory, IEnumerable<IChann
         return true;
     }
 
-    private async Task<bool> ExecuteHandlersAsync( AdapterContext adapterContext, CancellationToken cancellationToken )
+    private async Task<bool> ExecuteHandlersAsync( AdapterContext context, CancellationToken cancellationToken )
     {
         if ( handlers == null )
         {
@@ -109,9 +114,9 @@ internal class ChannelPipeline( ILoggerFactory loggerFactory, IEnumerable<IChann
             return true;
         }
 
-        var handlerData = adapterContext.Flush();
+        var handlerData = context.Flush();
 
-        if ( !handlerData.Any() )
+        if ( handlerData.Length == 0)
         {
             // no data forwarded from the adapters
             logger.LogDebug( "No data forwarded from the adapters." );
@@ -131,7 +136,7 @@ internal class ChannelPipeline( ILoggerFactory loggerFactory, IEnumerable<IChann
             {
                 try
                 {
-                    await handler.ExecuteAsync( adapterContext, dataItem, cancellationToken )
+                    await handler.ExecuteAsync( context, dataItem, cancellationToken )
                         .ConfigureAwait( false );
                 }
                 catch ( ObjectDisposedException )
@@ -148,6 +153,11 @@ internal class ChannelPipeline( ILoggerFactory loggerFactory, IEnumerable<IChann
                         "Failed to execute '{TypeName}' handler. Pipeline interrupted.",
                         handler.GetType().Name
                     );
+
+                    /*
+                    If the middleware throws an exception, the channel is likely in an inconsistent state and should be closed.
+                    */
+                    _ = context.Channel.CloseAsync();
 
                     return false;
                 }
