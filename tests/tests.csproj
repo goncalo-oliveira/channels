@@ -26,6 +26,7 @@
     <ProjectReference Include="..\src\buffers\buffers.csproj" />
     <ProjectReference Include="..\src\core\core.csproj" />
     <ProjectReference Include="..\src\channels\channels.csproj" />
+    <ProjectReference Include="..\src\websockets\websockets.csproj" />
   </ItemGroup>
 
 </Project>
