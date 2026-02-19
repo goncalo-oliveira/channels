@@ -105,6 +105,15 @@ public abstract class ChannelMiddleware<T>
         {
             result = (T)(object)buffer.ToArray();
 
+            /*
+            because a byte[] doesn't offer structured access to the data, at this point the buffer is discarded and considered consumed.
+            we could use DiscardAll, but that does an extra allocation. Skipping the bytes just moves the offset and avoids the allocation.
+            */
+            if ( data is IReadableByteBuffer readableBuffer )
+            {
+                readableBuffer.SkipBytes( readableBuffer.ReadableBytes );
+            }
+
             return true;
         }
 

@@ -40,6 +40,8 @@ internal sealed class TcpChannel : Channel
         }
 
         logger.LogDebug( "Created" );
+
+        BeginInitialize();
     }
 
     public Socket Socket { get; init; }

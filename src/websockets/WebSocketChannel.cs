@@ -30,6 +30,8 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
         {
             Services = channelServices;
         }
+
+        BeginInitialize();
     }
 
     private WritableByteBuffer TextBuffer { get; set; } = new WritableByteBuffer();

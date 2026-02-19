@@ -35,6 +35,10 @@ internal sealed class UdpChannel : Channel
         {
             Services = channelServices;
         }
+
+        logger.LogDebug( "Created" );
+
+        BeginInitialize();
     }
 
     internal UdpRemote Remote { get; init; }

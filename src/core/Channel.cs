@@ -11,7 +11,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
 {
     private readonly ILogger logger;
     private readonly CancellationTokenSource cts = new();
-    private readonly Task initializeTask;
+    private Task initializeTask = Task.CompletedTask;
     private Task idleMonitorTask = Task.CompletedTask;
 
     /// <summary>
@@ -26,6 +26,18 @@ public abstract class Channel : IChannel, IAsyncDisposable
         logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger<Channel>();
 
+        logger.LogTrace( "Created" );
+    }
+
+    internal IChannelInfo Info { get; }
+    internal IServiceProvider ServiceProvider => ChannelScope.ServiceProvider;
+
+    /// <summary>
+    /// Begins the asynchronous initialization of the channel.
+    /// This method should be called by derived classes when the channel is created.
+    /// </summary>
+    protected void BeginInitialize()
+    {
         initializeTask = InitializeAsync( cts.Token );
             
         _ = initializeTask.ContinueWith(
@@ -34,12 +46,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
             TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler.Default
         );
-
-        logger.LogTrace( "Created" );
     }
-
-    internal IChannelInfo Info { get; }
-    internal IServiceProvider ServiceProvider => ChannelScope.ServiceProvider;
 
     /// <summary>
     /// The service scope for the channel.
@@ -152,15 +159,12 @@ public abstract class Channel : IChannel, IAsyncDisposable
         catch { }
 
         // if initialization is still running, wait for it to complete
-        if ( initializeTask != null )
+        try
         {
-            try
-            {
-                await initializeTask
-                    .ConfigureAwait( false );
-            }
-            catch { }
+            await initializeTask
+                .ConfigureAwait( false );
         }
+        catch { }
 
         // notify channel closed
         try
