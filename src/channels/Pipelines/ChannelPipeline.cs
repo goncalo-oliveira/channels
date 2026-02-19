@@ -44,11 +44,6 @@ internal class ChannelPipeline( ILoggerFactory loggerFactory, IEnumerable<IChann
         if ( interrupted )
         {
             // pipeline was interrupted
-            // TODO: this could potentially be an option
-            // by default (as is now) the pipeline is interrupted if a handler crashes
-            // interrupting here means that in the output buffer doesn't get written
-            // maybe that isn't always the case and the output buffer should be written nonetheless
-            // same thing for adapters
             return;
         }
 
@@ -108,12 +103,6 @@ internal class ChannelPipeline( ILoggerFactory loggerFactory, IEnumerable<IChann
 
     private async Task<bool> ExecuteHandlersAsync( AdapterContext context, CancellationToken cancellationToken )
     {
-        if ( handlers == null )
-        {
-            // this is true for output pipelines
-            return true;
-        }
-
         var handlerData = context.Flush();
 
         if ( handlerData.Length == 0)
