@@ -6,10 +6,10 @@ An extension library to use the Channels middleware with WebSockets.
 
 Unlike TCP or UDP Channels, the library does not provide a low-level server to handle WebSocket connections. Instead, it provides a factory to create a Channel on top of an existing WebSocket connection. It also provides extension methods to make it super easy to integrate with the ASP.NET Core middleware.
 
-Also unlike the TCP and UDP Channels, the WebSockets middleware does not deliver raw byte buffers to the input pipeline. Instead, it delivers a `WebSocketMessage` instance, which contains the message type and payload, since web sockets support both binary and text messages.
+Unlike TCP and UDP Channels, WebSocket channels deliver complete `WebSocketMessage` instances to the input pipeline rather than raw byte buffers.
 
 > [!TIP]
-> Messages delivered to the input pipeline are always complete messages (`WebSocketMessage.EndOfMessage: true`). If a fragmented message is received, the channel will buffer the fragments until it is complete and only then deliver it to the input pipeline.
+> The channel guarantees that the input pipeline only receives complete messages (`EndOfMessage == true`). Fragmented frames are internally buffered until completion.
 
 When writing to the output pipeline, the library provides built-in middleware for sending binary, text or fragmented messages, so either of the following types can be directly written to the output pipeline:
 
