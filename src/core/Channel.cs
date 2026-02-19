@@ -32,12 +32,19 @@ public abstract class Channel : IChannel, IAsyncDisposable
     internal IChannelInfo Info { get; }
     internal IServiceProvider ServiceProvider => ChannelScope.ServiceProvider;
 
+    private int initializeStarted;
+
     /// <summary>
     /// Begins the asynchronous initialization of the channel.
     /// This method should be called by derived classes when the channel is created.
     /// </summary>
     protected void BeginInitialize()
     {
+        if ( Interlocked.Exchange( ref initializeStarted, 1 ) == 1 )
+        {
+            return;
+        }
+
         initializeTask = InitializeAsync( cts.Token );
             
         _ = initializeTask.ContinueWith(

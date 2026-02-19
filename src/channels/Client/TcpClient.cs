@@ -104,6 +104,10 @@ internal sealed class TcpClient : IChannelsClient
 
                 continue;
             }
+            finally
+            {
+                socket?.Dispose();
+            }
         }
 
         /*

@@ -6,13 +6,11 @@ namespace Faactory.Channels.Buffers;
 /// <summary>
 /// A writable byte buffer implementation that allows writing various primitive types and byte arrays with automatic resizing
 /// </summary>
-/// <param name="capacity">The initial capacity of the buffer</param>
-/// <param name="endianness">The endianness of the buffer</param>
-public sealed class WritableByteBuffer( int capacity, Endianness endianness = Endianness.BigEndian ) : IWritableByteBuffer
+public sealed class WritableByteBuffer : IWritableByteBuffer
 {
     internal const int InitialCapacity = 1024;
 
-    private byte[] buffer = new byte[capacity];
+    private byte[] buffer;
     private int writeOffset = 0;
 
     /// <summary>
@@ -24,9 +22,22 @@ public sealed class WritableByteBuffer( int capacity, Endianness endianness = En
     { }
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="WritableByteBuffer"/> class with the specified initial capacity and endianness.
+    /// </summary>
+    /// <param name="capacity">The initial capacity of the buffer</param>
+    /// <param name="endianness">The endianness of the buffer</param>
+    public WritableByteBuffer( int capacity, Endianness endianness = Endianness.BigEndian )
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero( capacity, nameof( capacity ) );
+
+        buffer = new byte[capacity];
+        Endianness = endianness;
+    }
+
+    /// <summary>
     /// Gets the endianness of the buffer, which determines how multi-byte values are written.
     /// </summary>
-    public Endianness Endianness { get; } = endianness;
+    public Endianness Endianness { get; }
 
     /// <summary>
     /// Gets the length of the used portion of the buffer.
