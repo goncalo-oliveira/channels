@@ -1,4 +1,5 @@
 using System;
+using System.Buffers.Binary;
 using System.Linq;
 using Faactory.Channels.Buffers;
 using Xunit;
@@ -72,7 +73,7 @@ public class ByteBufferTests
     }
 
     [Fact]
-    public void TestIndexOf()
+    public void Test_IndexOf()
     {
         var buffer = new ReadableByteBuffer( [0x00, 0x01, 0x02, 0x03, 0x04, 0x05] );
 
@@ -128,7 +129,7 @@ public class ByteBufferTests
     }
 
     [Fact]
-    public void TestAny()
+    public void Test_Any()
     {
         var buffer = new ReadableByteBuffer( [0x00, 0x01, 0x02, 0x03, 0x04, 0x05] );
 
@@ -138,7 +139,7 @@ public class ByteBufferTests
     }
 
     [Fact]
-    public void TestUndoRead()
+    public void Test_UndoRead()
     {
         var buffer = new ReadableByteBuffer( [0x00, 0x01, 0x02, 0x03] );
 
@@ -159,5 +160,47 @@ public class ByteBufferTests
         buffer.ResetOffset();
 
         Assert.Throws<ArgumentOutOfRangeException>( () => buffer.UndoRead( 1 ) );
+    }
+
+    [Fact]
+    public void Writable_GrowsCorrectly()
+    {
+        var buffer = new WritableByteBuffer();
+
+        for ( int i = 0; i < 10000; i++ )
+        {
+            buffer.WriteInt32( i );
+        }
+
+        Assert.Equal( 10000 * 4, buffer.Length );
+
+        // get private buffer field using reflection
+        var field = typeof( WritableByteBuffer ).GetField( "buffer", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance );
+        var internalBuffer = (byte[])field!.GetValue( buffer )!;
+
+        /*
+        initial capacity is 1024
+        every time the buffer needs to grow, it doubles its capacity
+        writing 4 bytes at a time, the buffer will grow as follows:
+        1024 -> 2048 -> 4096 -> 8192 -> 16384 -> 32768 -> 65536 -> 131072 -> etc...
+        the first 1024 need 256 writes, the next 1024 need 256 writes, the next 2048 need 512 writes, etc...
+        how many times the buffer needs to grow to accommodate 10000 * 4 bytes?
+        10000 * 4 = 40000 bytes
+        1024 -> 2048 -> 4096 -> 8192 -> 16384 -> 32768 -> 65536
+        the buffer needs to grow 6 times to accommodate 40000 bytes, which means the final capacity will be 65536 bytes
+        */
+
+        Assert.Equal( 65536, internalBuffer.Length );
+
+        var span = buffer.AsSpan();
+
+        for ( int i = 0; i < 10000; i++ )
+        {
+            var value = BinaryPrimitives.ReadInt32BigEndian(
+                span.Slice( i * 4, 4 )
+            );
+
+            Assert.Equal( i, value );
+        }
     }
 }
