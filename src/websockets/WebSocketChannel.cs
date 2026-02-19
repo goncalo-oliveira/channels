@@ -121,7 +121,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
     {
         await base.InitializeAsync( cancellationToken );
 
-        monitorTask = MonitorAsync( LifetimeToken );
+        monitorTask = MonitorWebSocketStateAsync( LifetimeToken );
         receiveTask = ReceiveAsync( LifetimeToken );
     }
 
@@ -304,7 +304,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
         logger.LogDebug( "Receive task canceled." );
     }
 
-    private async Task MonitorAsync( CancellationToken cancellationToken )
+    private async Task MonitorWebSocketStateAsync( CancellationToken cancellationToken )
     {
         while ( !cancellationToken.IsCancellationRequested )
         {
