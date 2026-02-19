@@ -2,11 +2,12 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Faactory.Channels;
 using Faactory.Channels.Adapters;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace Faactory.Channels.Tests;
+namespace tests;
 
 public class ScopedServiceTests
 {

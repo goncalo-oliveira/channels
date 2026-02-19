@@ -4,11 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Faactory.Channels;
 using Faactory.Channels.Adapters;
 using Faactory.Channels.Buffers;
 using Xunit;
 
-namespace Faactory.Channels.Tests;
+namespace tests;
 
 public class ChannelAdapterTests
 {

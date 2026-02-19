@@ -1,15 +1,10 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Faactory.Channels;
 using Faactory.Channels.Adapters;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
-using Xunit;
 
-namespace Faactory.Channels.Tests;
+namespace tests;
 
 public class CustomEventTests
 {

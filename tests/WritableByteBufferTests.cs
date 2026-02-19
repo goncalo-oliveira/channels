@@ -1,7 +1,7 @@
 using Faactory.Channels.Buffers;
 using Xunit;
 
-namespace Faactory.Channels.Tests;
+namespace tests;
 
 public class WritableByteBufferTests
 {

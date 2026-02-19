@@ -5,7 +5,7 @@ using Faactory.Channels.Buffers;
 using Faactory.Channels.Buffers.Serialization;
 using Xunit;
 
-namespace Faactory.Channels.Tests;
+namespace tests;
 
 public class ByteBufferSerializationTests
 {

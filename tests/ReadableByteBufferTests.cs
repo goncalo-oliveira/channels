@@ -1,9 +1,10 @@
 using System;
 using System.Text.Json;
 using Faactory.Channels.Buffers;
+using Faactory.Channels.Buffers.Serialization;
 using Xunit;
 
-namespace Faactory.Channels.Tests;
+namespace tests;
 
 public class WrappedByteBufferTests
 {
@@ -131,8 +132,8 @@ public class WrappedByteBufferTests
 
         var options = new JsonSerializerOptions();
         options.Converters.Add( 
-            new Buffers.Serialization.ByteBufferJsonConverterFactory(
-                Buffers.Serialization.ByteBufferSerializerFormat.HexString ) );
+            new ByteBufferJsonConverterFactory(
+                ByteBufferSerializerFormat.HexString ) );
 
         var json = JsonSerializer.Serialize( buffer, options );
 
@@ -161,8 +162,8 @@ public class WrappedByteBufferTests
     {
         public required string Id { get; set; }
         public int Number { get; set; }
-        [Buffers.Serialization.ByteBufferJsonConverter( 
-            Format = Buffers.Serialization.ByteBufferSerializerFormat.HexString 
+        [ByteBufferJsonConverter( 
+            Format = ByteBufferSerializerFormat.HexString 
         )]
         public required IByteBuffer Buffer { get; set; }
     }
