@@ -29,7 +29,7 @@ graph LR;
     a2 --> h2[/Handler/]
 ```
 
-For data going through the channel output, only *adapters* are applicable. Whatever comes out from the pipeline is delivered to an internal handler that writes the data to the channel's underlying socket.
+For data going through the channel output, only *adapters* are applicable. Whatever comes out from the pipeline is delivered to a built-in handler that writes the data to the channel's underlying transport.
 
 ```mermaid
 graph LR;
@@ -39,6 +39,9 @@ graph LR;
     end
     a2 --> channelOutput([Output])
 ```
+
+> [!IMPORTANT]
+> If an adapter or handler throws an exception, the channel is closed. This is a safety mechanism to prevent the channel from being in an inconsistent state. If you need to handle exceptions differently, you can catch them within the adapter or handler and handle them accordingly.
 
 ## Middleware Characteristics
 
@@ -145,7 +148,7 @@ At any point, within an adapter or handler, we can write data to the channel out
 ### 1. Write to the Output buffer (recommended)
 
 The middleware context gives us access to an output buffer that we can write to. This **IS** the recommended method. Writing to the output buffer doesn't immediately trigger the output pipeline. Instead, it is only triggered at the end of the (input) pipeline, after all adapters and handlers have executed (fully).
-If the pipeline is interrupted, because an adapter didn't forward any data or a handler crashed, the data in the buffer will be discarded and never written to the channel.
+If the pipeline is interrupted, because an adapter didn't forward any data, the data in the buffer will be discarded and never written to the channel.
 
 ```csharp
 public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Message> data )
@@ -178,7 +181,7 @@ Install the package from NuGet
 dotnet add package Faactory.Channels
 ```
 
-The first step is to add the library to the DI container and configure the channel pipelines. These configurations are always *named*, which means that we can have multiple channel configurations for different purposes. Nonetheless, if we only need one channel pipeline, we can do it all at once by configuring a *default` configuration.
+The first step is to add the library to the DI container and configure the channel pipelines. These configurations are always *named*, which means that we can have multiple channel configurations for different purposes. Nonetheless, if we only need one channel pipeline, we can do it all at once by setting a *default* configuration.
 
 ```csharp
 IServiceCollection services = ...;
@@ -239,7 +242,11 @@ We can use multiple listeners in the same application, each with its own configu
 
 Although raw data handling in the adapters can be done with `byte[]`, it is recommended to use a `IReadableByteBuffer` instance instead, particularly for reading data.
 
-Data received in the adapters that is not read will remain in the channel's input buffer. When more data is received, it is delivered again along with the newly received data. If an adapter uses `byte[]` instead, the data in the input buffer is automatically marked as read and discarded. This means that if an adapter uses `byte[]` and fails to execute for any reason, the data is lost. If the same adapter uses `IReadableByteBuffer`, the data is not lost and will be redelivered when more data is received.
+Data received in an adapter that is not explicitly read remains in the channel’s internal input buffer. When more data arrives, it is delivered again together with the previously unread bytes.
+
+If an adapter uses `byte[]`, however, the internal buffer is automatically marked as fully read and discarded before the adapter executes. This means that if the adapter does not process the data (or fails), those bytes are lost.
+
+When using `IReadableByteBuffer`, unread data is preserved and will be redelivered when additional data is received, making it the preferred option for framing and partial reads.
 
 ## Channel Scope
 
@@ -323,7 +330,7 @@ The service is added by using the builder's `AddChannelService` method.
 ```csharp
 IChannelBuilder channel = ...;
 
-chanel.AddChannelService<MyService>();
+channel.AddChannelService<MyService>();
 ```
 
 ## Channel Data
