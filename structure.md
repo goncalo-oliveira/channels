@@ -6,10 +6,12 @@ This documents attempts to expose the class and interface structures.
 
 ```mermaid
 graph LR
-    IChannel --> Channel
-    ConnectedSocket --> Channel
-    Channel --> ClientChannel
-    Channel --> ServiceChannel
+    Channel --> IChannel
+    TcpChannel --> Channel
+    UdpChannel --> Channel
+    WebSocketChannel --> Channel
+    TcpListener --> TcpChannel
+    UdpListener --> UdpChannel
 ```
 
 ## Adapters
