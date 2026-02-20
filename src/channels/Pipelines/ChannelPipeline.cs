@@ -91,6 +91,8 @@ internal class ChannelPipeline( ILoggerFactory loggerFactory, IEnumerable<IChann
                     */
                     _ = context.Channel.CloseAsync();
 
+                    Metrics.MiddlewareExceptions.Add( 1 );
+
                     return false;
                 }
             }
@@ -147,6 +149,8 @@ internal class ChannelPipeline( ILoggerFactory loggerFactory, IEnumerable<IChann
                     If the middleware throws an exception, the channel is likely in an inconsistent state and should be closed.
                     */
                     _ = context.Channel.CloseAsync();
+
+                    Metrics.MiddlewareExceptions.Add( 1 );
 
                     return false;
                 }

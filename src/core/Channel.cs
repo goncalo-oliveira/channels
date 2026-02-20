@@ -11,6 +11,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
 {
     private readonly ILogger logger;
     private readonly CancellationTokenSource cts = new();
+    private readonly Lazy<IChannelMonitor[]> monitors;
     private Task initializeTask = Task.CompletedTask;
     private Task idleMonitorTask = Task.CompletedTask;
 
@@ -25,6 +26,8 @@ public abstract class Channel : IChannel, IAsyncDisposable
 
         logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger<Channel>();
+
+        monitors = new( () => ServiceProvider.GetServices<IChannelMonitor>().ToArray() );
 
         logger.LogTrace( "Created" );
     }
@@ -264,35 +267,49 @@ public abstract class Channel : IChannel, IAsyncDisposable
     }
 
     private void NotifyChannelCreated()
-        => ServiceProvider.GetServices<IChannelMonitor>()
-            .InvokeAll( x => x.ChannelCreated( Info ) );
+    {
+        Metrics.ActiveChannels.Add( 1 );
+
+        monitors.Value.InvokeAll( x => x.ChannelCreated( Info ) );
+    }
 
     private void NotifyChannelClosed()
-        => ServiceProvider.GetServices<IChannelMonitor>()
-            .InvokeAll( x => x.ChannelClosed( Info ) );
+    {
+        Metrics.ActiveChannels.Add( -1 );
+
+        monitors.Value.InvokeAll( x => x.ChannelClosed( Info ) );
+    }
 
     /// <summary>
     /// Notifies the channel monitors that data has been received. This method should be called by derived classes when data is received.
     /// </summary>
     /// <param name="data">The data that was received.</param>
-    protected void NotifyDataReceived( byte[] data )
+    protected void NotifyDataReceived( ReadOnlySpan<byte> data )
     {
         LastReceived = DateTimeOffset.UtcNow;
 
-        ServiceProvider.GetServices<IChannelMonitor>()
-            .InvokeAll( x => x.DataReceived( Info, data ) );
+        Metrics.BytesReceived.Add( data.Length );
+
+        foreach ( var service in monitors.Value )
+        {
+            service.DataReceived( Info, data );
+        }
     }
 
     /// <summary>
     /// Notifies the channel monitors that data has been sent. This method should be called by derived classes when data is sent.
     /// </summary>
     /// <param name="data">The data that was sent.</param>
-    protected void NotifyDataSent( byte[] data )
+    protected void NotifyDataSent( ReadOnlySpan<byte> data )
     {
         LastSent = DateTimeOffset.UtcNow;
 
-        ServiceProvider.GetServices<IChannelMonitor>()
-            .InvokeAll( x => x.DataSent( Info, data ) );
+        Metrics.BytesSent.Add( data.Length );
+
+        foreach ( var service in monitors.Value )
+        {
+            service.DataSent( Info, data );
+        }
     }
 
     /// <summary>
@@ -301,8 +318,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
     /// <param name="name">The name of the custom event.</param>
     /// <param name="data">The data associated with the custom event.</param>
     public void NotifyCustomEvent( string name, object? data )
-        => ServiceProvider.GetServices<IChannelMonitor>()
-            .InvokeAll( x => x.CustomEvent( Info, name, data ) );
+        => monitors.Value.InvokeAll( x => x.CustomEvent( Info, name, data ) );
 
     private Task StartServicesAsync( CancellationToken cancellationToken = default )
     {
@@ -372,6 +388,8 @@ public abstract class Channel : IChannel, IAsyncDisposable
 
                     await CloseAsync()
                         .ConfigureAwait( false );
+
+                    Metrics.IdleTimeouts.Add( 1 );
 
                     break;
                 }

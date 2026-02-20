@@ -6,3 +6,4 @@ using System.Runtime.CompilerServices;
 
 #endif
 
+[assembly:InternalsVisibleTo( "faactory.channels" )]
