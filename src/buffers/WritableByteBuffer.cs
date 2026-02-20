@@ -162,16 +162,12 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     }
 
     /// <summary>
-    /// Writes the contents of another <see cref="IReadableByteBuffer"/> to this buffer.
+    /// Writes the contents of another <see cref="IByteBuffer"/> to this buffer.
     /// </summary>
-    /// <param name="value">The readable buffer whose contents are to be written</param>
+    /// <param name="value">The buffer whose contents are to be written</param>
     /// <returns>The current buffer instance</returns>
-    public IWritableByteBuffer WriteBytes( IReadableByteBuffer value )
-    {
-        var bytes = value.ToArray();
-
-        return WriteBytes( bytes, 0, bytes.Length );
-    }
+    public IWritableByteBuffer WriteBytes( IByteBuffer value )
+        => WriteBytes( value.AsSpan() );
 
     /// <summary>
     /// Writes the contents of a <see cref="ReadOnlySpan{T}"/> to the buffer.
