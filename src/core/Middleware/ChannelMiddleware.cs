@@ -93,28 +93,41 @@ public abstract class ChannelMiddleware<T>
         var type = typeof( T );
 
         // byte[] -> IReadableByteBuffer conversion
-        if ( typeof( IReadableByteBuffer ).IsAssignableFrom( type ) && data is byte[] bytes )
+        // byte[] -> IByteBuffer conversion
+        if ( data is byte[] bytes && ( typeof( IReadableByteBuffer ).IsAssignableFrom( type ) || typeof( IByteBuffer ).IsAssignableFrom( type ) ) )
         {
-            result = (T)(IReadableByteBuffer)new ReadableByteBuffer( bytes, context.BufferEndianness );
+            result = (T)(object)new ReadableByteBuffer( bytes, context.BufferEndianness );
 
             return true;
         }
 
-        // IByteBuffer -> byte[] conversion
-        if ( type.IsArray && type.GetElementType() == typeof( byte ) && data is IByteBuffer buffer )
+        // IByteBuffer -> T
+        if ( data is IByteBuffer buffer )
         {
-            result = (T)(object)buffer.ToArray();
-
-            /*
-            because a byte[] doesn't offer structured access to the data, at this point the buffer is discarded and considered consumed.
-            we could use DiscardAll, but that does an extra allocation. Skipping the bytes just moves the offset and avoids the allocation.
-            */
-            if ( data is IReadableByteBuffer readableBuffer )
+            // IByteBuffer -> byte[] conversion
+            if ( type.IsArray && type.GetElementType() == typeof( byte ) )
             {
-                readableBuffer.SkipBytes( readableBuffer.ReadableBytes );
+                result = (T)(object)buffer.ToArray();
+
+                /*
+                because a byte[] doesn't offer structured access to the data, at this point the buffer is discarded and considered consumed.
+                we could use DiscardAll, but that does an extra allocation. Skipping the bytes just moves the offset and avoids the allocation.
+                */
+                if ( data is IReadableByteBuffer readableBuffer )
+                {
+                    readableBuffer.SkipBytes( readableBuffer.ReadableBytes );
+                }
+
+                return true;
             }
 
-            return true;
+            // IByteBuffer pass-through conversion
+            if ( typeof( IByteBuffer ).IsAssignableFrom( type ) )
+            {
+                result = (T)buffer;
+
+                return true;
+            }
         }
 
         result = default;
