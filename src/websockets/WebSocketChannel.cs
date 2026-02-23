@@ -207,7 +207,9 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                     break;
                 }
 
-                NotifyDataReceived( buffer[..result.Count] );
+                var span = buffer.AsSpan( 0, result.Count );
+
+                NotifyDataReceived( span );
 
                 /*
                 Unlike TCP and UDP channels, data received from a WebSocket
@@ -230,7 +232,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                 if ( result.MessageType == WebSocketMessageType.Text )
                 {
                     // reassemble fragmented text messages
-                    TextBuffer.WriteBytes( buffer, 0, result.Count );
+                    TextBuffer.WriteBytes( span );
 
                     /*
                     If the message is complete, create a new WebSocketMessage.
@@ -250,7 +252,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                 else if ( result.MessageType == WebSocketMessageType.Binary )
                 {
                     // reassemble fragmented binary messages
-                    Buffer.WriteBytes( buffer, 0, result.Count );
+                    Buffer.WriteBytes( span );
 
                     /*
                     If the message is complete, create a new WebSocketMessage.

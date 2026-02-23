@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,10 +29,10 @@ public class CustomEventTests
         public void ChannelCreated(IChannelInfo channelInfo)
         { }
 
-        public void DataReceived(IChannelInfo channelInfo, byte[] data)
+        public void DataReceived(IChannelInfo channelInfo, ReadOnlySpan<byte> data)
         { }
 
-        public void DataSent(IChannelInfo channelInfo, byte[] data)
+        public void DataSent(IChannelInfo channelInfo, ReadOnlySpan<byte> data)
         { }
 
         public void CustomEvent( IChannelInfo channelInfo, string name, object? data )

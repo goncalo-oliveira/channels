@@ -192,6 +192,10 @@ internal sealed class TcpChannel : Channel
                 logger.LogDebug( "Remaining buffer length: {Length} byte(s).", Buffer.Length );
             }
         }
+        catch ( OperationCanceledException )
+        {
+            // Expected shutdown
+        }
         catch ( Exception ex )
         {
             logger.LogError( ex, "Pipeline execution failed. {Message}", ex.Message );

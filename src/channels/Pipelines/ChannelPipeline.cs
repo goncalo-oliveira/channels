@@ -75,8 +75,15 @@ internal class ChannelPipeline( ILoggerFactory loggerFactory, IEnumerable<IChann
             {
                 try
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     await adapter.ExecuteAsync( context, dataItem, cancellationToken )
                         .ConfigureAwait( false );
+                }
+                catch ( OperationCanceledException )
+                {
+                    // Expected shutdown
+                    throw;
                 }
                 catch ( Exception ex )
                 {
@@ -127,8 +134,15 @@ internal class ChannelPipeline( ILoggerFactory loggerFactory, IEnumerable<IChann
             {
                 try
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     await handler.ExecuteAsync( context, dataItem, cancellationToken )
                         .ConfigureAwait( false );
+                }
+                catch ( OperationCanceledException )
+                {
+                    // Expected shutdown
+                    throw;
                 }
                 catch ( ObjectDisposedException )
                 {

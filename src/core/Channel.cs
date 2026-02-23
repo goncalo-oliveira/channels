@@ -236,8 +236,16 @@ public abstract class Channel : IChannel, IAsyncDisposable
 
         logger.LogDebug( "Executing output pipeline..." );
 
-        await Output.ExecuteAsync( this, data, LifetimeToken )
-            .ConfigureAwait( false );
+        try
+        {
+            await Output.ExecuteAsync( this, data, LifetimeToken )
+                .ConfigureAwait( false );
+        }
+        catch ( OperationCanceledException )
+        {
+            // Expected shutdown
+            return;
+        }
     }
 
     /// <summary>
