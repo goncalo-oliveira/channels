@@ -98,25 +98,17 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
         }
     }
 
-    public override async ValueTask DisposeAsync()
+    protected override async ValueTask DisposeAsyncCore()
     {
-        await CloseAsync()
+        await base.DisposeAsyncCore()
             .ConfigureAwait( false );
 
         try
         {
-            await monitorTask;
+            await Task.WhenAll( monitorTask, receiveTask )
+                .ConfigureAwait( false );
         }
         catch {} 
-
-        try
-        {
-            await receiveTask;
-        }
-        catch {}
-
-        await base.DisposeAsync()
-            .ConfigureAwait( false );
     }
 
     protected override async Task InitializeAsync( CancellationToken cancellationToken )

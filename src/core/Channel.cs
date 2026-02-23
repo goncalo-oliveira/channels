@@ -160,22 +160,6 @@ public abstract class Channel : IChannel, IAsyncDisposable
 
         logger.LogInformation( "Closed." );
 
-        // if idle monitor task is running, wait for it to complete
-        try
-        {
-            await idleMonitorTask
-                .ConfigureAwait( false );
-        }
-        catch { }
-
-        // if initialization is still running, wait for it to complete
-        try
-        {
-            await initializeTask
-                .ConfigureAwait( false );
-        }
-        catch { }
-
         // notify channel closed
         try
         {
@@ -199,9 +183,9 @@ public abstract class Channel : IChannel, IAsyncDisposable
     /// <summary>
     /// Disposes the channel and releases all resources.
     /// </summary>
-    public virtual void Dispose()
+    public void Dispose()
     {
-        DisposeAsync().AsTask().GetAwaiter().GetResult();
+        Dispose( true );
 
         GC.SuppressFinalize( this );
     }
@@ -209,17 +193,68 @@ public abstract class Channel : IChannel, IAsyncDisposable
     /// <summary>
     /// Asynchronously disposes the channel and releases all resources.
     /// </summary>
-    public virtual async ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
+    {
+        await DisposeAsyncCore()
+            .ConfigureAwait( false );
+
+        Dispose( true );
+
+        GC.SuppressFinalize( this );
+    }
+
+    private int disposed;
+    /// <summary>
+    /// Performs the dispose operations for the channel.
+    /// Override this method in derived classes to perform any additional cleanup operations when the channel is disposed.
+    /// </summary>
+    protected virtual void Dispose( bool disposing )
+    {
+        if ( Interlocked.Exchange( ref disposed, 1 ) == 1 )
+        {
+            return;
+        }
+
+        if ( !disposing )
+        {
+            return;
+        }
+
+        try
+        {
+            Input.Dispose();
+        }
+        catch { }
+
+        try
+        {
+            Output.Dispose();
+        }
+        catch { }
+
+        try
+        {
+            ChannelScope.Dispose();
+        }
+        catch { }
+    }
+
+    /// <summary>
+    /// Performs the asynchronous dispose operations for the channel.
+    /// Override this method in derived classes to perform any additional asynchronous cleanup operations when the channel is disposed.
+    /// </summary>
+    protected virtual async ValueTask DisposeAsyncCore()
     {
         await CloseAsync()
             .ConfigureAwait( false );
 
-        Input.Dispose();
-        Output.Dispose();
-
-        ChannelScope.Dispose();
-
-        GC.SuppressFinalize( this );
+        // wait for any pending operations to complete
+        try
+        {
+            await Task.WhenAll( idleMonitorTask, initializeTask )
+                .ConfigureAwait( false );
+        }
+        catch { }
     }
 
     /// <summary>

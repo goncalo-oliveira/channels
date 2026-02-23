@@ -9,9 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Faactory.Channels" Version="2.0.0-preview.9" />
+    <!-- <PackageReference Include="Faactory.Channels" Version="2.0.0-preview.9" /> -->
     <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.15.0-beta.1" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.15.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\channels\channels.csproj" />
   </ItemGroup>
 
 </Project>
