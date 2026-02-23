@@ -284,6 +284,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
     private void NotifyChannelClosed()
     {
         Metrics.ActiveChannels.Add( -1 );
+        Metrics.ChannelDuration.Record( ( DateTimeOffset.UtcNow - Created ).TotalMilliseconds );
 
         monitors.Value.InvokeAll( x => x.ChannelClosed( Info ) );
     }
@@ -296,7 +297,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
     {
         LastReceived = DateTimeOffset.UtcNow;
 
-        Metrics.BytesReceived.Add( data.Length );
+        Metrics.DataReceived.Add( data.Length );
 
         foreach ( var service in monitors.Value )
         {
@@ -312,7 +313,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
     {
         LastSent = DateTimeOffset.UtcNow;
 
-        Metrics.BytesSent.Add( data.Length );
+        Metrics.DataSent.Add( data.Length );
 
         foreach ( var service in monitors.Value )
         {

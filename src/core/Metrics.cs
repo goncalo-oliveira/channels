@@ -9,17 +9,17 @@ internal static class Metrics
         Version = typeof( Metrics ).Assembly.GetName().Version?.ToString()
     } );
 
-    public static readonly Counter<long> BytesReceived =
-        Meter.CreateCounter<long>( "channels.bytes_received", "bytes", "Total number of bytes received" );
+    public static readonly Counter<long> DataReceived =
+        Meter.CreateCounter<long>( "channels.data_received", "bytes", "Total number of bytes received" );
 
-    public static readonly Counter<long> BytesSent =
-        Meter.CreateCounter<long>( "channels.bytes_sent", "bytes", "Total number of bytes sent" );
+    public static readonly Counter<long> DataSent =
+        Meter.CreateCounter<long>( "channels.data_sent", "bytes", "Total number of bytes sent" );
 
     public static readonly UpDownCounter<long> ActiveChannels =
         Meter.CreateUpDownCounter<long>( "channels.active", description: "Number of active channels" );
 
     public static readonly Histogram<double> ChannelDuration =
-        Meter.CreateHistogram<double>( "channels.lifetime_duration", "ms", "Channel lifetime duration in milliseconds" );
+        Meter.CreateHistogram<double>( "channels.duration", "ms", "Channel lifetime duration in milliseconds" );
 
     public static readonly Counter<long> MiddlewareExceptions =
         Meter.CreateCounter<long>( "channels.middleware_exceptions", description: "Total number of middleware exceptions" );
