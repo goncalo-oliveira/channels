@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Faactory.Channels.WebSockets" Version="2.0.0-preview.9" />
+    <PackageReference Include="Faactory.Channels.WebSockets" Version="2.0.0" />
   </ItemGroup>
 
 </Project>
