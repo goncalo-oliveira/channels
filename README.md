@@ -5,14 +5,6 @@ A middleware-based communication library for TCP, UDP, and WebSockets. Read the 
 ![dotnet workflow](https://github.com/goncalo-oliveira/channels/actions/workflows/dotnet.yml/badge.svg)
 [![read the docs](https://img.shields.io/badge/read%20the%20docs-33466b)](https://channels.docs.faactory.io)
 
-## Related Projects
-
-The following are projects that extend the functionality of this library.
-
-- [Parcel Protocol](https://github.com/goncalo-oliveira/channels-parcel)
-- [Prometheus Metrics](https://github.com/goncalo-oliveira/channels-prometheus)
-- [Teltonika Protocol](https://www.nuget.org/packages/Faactory.Channels.Teltonika)
-
 ## Design
 
 The concept behind this library is to apply a *middleware pipeline* to data coming in and out from the open communication channels.
