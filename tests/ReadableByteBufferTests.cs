@@ -1,16 +1,17 @@
 using System;
 using System.Text.Json;
 using Faactory.Channels.Buffers;
+using Faactory.Channels.Buffers.Serialization;
 using Xunit;
 
-namespace Faactory.Channels.Tests;
+namespace tests;
 
 public class WrappedByteBufferTests
 {
     [Fact]
     public void TestDiscardRead()
     {
-        var buffer = new WrappedByteBuffer(
+        var buffer = new ReadableByteBuffer(
         [
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
         ] );
@@ -25,7 +26,7 @@ public class WrappedByteBufferTests
     [Fact]
     public void TestDiscardAll()
     {
-        var buffer = new WrappedByteBuffer(
+        var buffer = new ReadableByteBuffer(
         [
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
         ] );
@@ -40,7 +41,7 @@ public class WrappedByteBufferTests
     [Fact]
     public void TestMatches()
     {
-        var buffer = new WrappedByteBuffer(
+        var buffer = new ReadableByteBuffer(
         [
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
         ] );
@@ -69,22 +70,12 @@ public class WrappedByteBufferTests
         [
             0x00, 0x01
         ], 1 ) );
-
-        Assert.Throws<NonReadableBufferException>( () =>
-        {
-            var writable = buffer.MakeWritable();
-
-            writable.MatchBytes(
-            [
-                0x00, 0x01
-            ] );
-        } );
     }
 
     [Fact]
     public void TestFind()
     {
-        var buffer = new WrappedByteBuffer(
+        var buffer = new ReadableByteBuffer(
         [
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
         ] );
@@ -98,22 +89,12 @@ public class WrappedByteBufferTests
         [
             0x02, 0x03
         ], 3 ) );
-
-        Assert.Throws<NonReadableBufferException>( () =>
-        {
-            var writable = buffer.MakeWritable();
-
-            writable.IndexOf(
-            [
-                0x02, 0x03
-            ] );
-        } );
     }
 
     [Fact]
     public void TestBufferSerializationBase64()
     {
-        IByteBuffer buffer = new WrappedByteBuffer(
+        IByteBuffer buffer = new ReadableByteBuffer(
         [
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
         ] );
@@ -130,7 +111,7 @@ public class WrappedByteBufferTests
         {
             Id = Guid.NewGuid().ToString( "N" ),
             Number = Random.Shared.Next(),
-            Buffer = (IByteBuffer)new WrappedByteBuffer(
+            Buffer = (IByteBuffer)new ReadableByteBuffer(
             [
                 0x00, 0x01, 0x02, 0x03, 0x04, 0x05
             ] )
@@ -144,15 +125,15 @@ public class WrappedByteBufferTests
     [Fact]
     public void TestBufferSerializationHex()
     {
-        IByteBuffer buffer = new WrappedByteBuffer(
+        IByteBuffer buffer = new ReadableByteBuffer(
         [
             0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
         ] );
 
         var options = new JsonSerializerOptions();
         options.Converters.Add( 
-            new Faactory.Channels.Buffers.Serialization.ByteBufferJsonConverter( 
-                Faactory.Channels.Buffers.Serialization.ByteBufferSerializerFormat.HexString ) );
+            new ByteBufferJsonConverterFactory(
+                ByteBufferSerializerFormat.HexString ) );
 
         var json = JsonSerializer.Serialize( buffer, options );
 
@@ -166,7 +147,7 @@ public class WrappedByteBufferTests
         {
             Id = Guid.NewGuid().ToString( "N" ),
             Number = Random.Shared.Next(),
-            Buffer = new WrappedByteBuffer(
+            Buffer = new ReadableByteBuffer(
             [
                 0x00, 0x01, 0x02, 0x03, 0x04, 0x05
             ] )
@@ -181,8 +162,8 @@ public class WrappedByteBufferTests
     {
         public required string Id { get; set; }
         public int Number { get; set; }
-        [Faactory.Channels.Buffers.Serialization.ByteBufferJsonConverter( 
-            Format = Faactory.Channels.Buffers.Serialization.ByteBufferSerializerFormat.HexString 
+        [ByteBufferJsonConverter( 
+            Format = ByteBufferSerializerFormat.HexString 
         )]
         public required IByteBuffer Buffer { get; set; }
     }

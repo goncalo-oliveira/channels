@@ -10,7 +10,7 @@ or executing a command.
 
 public class LetterHandler : ChannelHandler<char[]>
 {
-    public override Task ExecuteAsync( IChannelContext context, char[] letters )
+    public override Task ExecuteAsync( IChannelContext context, char[] letters, CancellationToken cancellationToken )
     {
         /*
         we want to respond with a string that contains all the letters that were received

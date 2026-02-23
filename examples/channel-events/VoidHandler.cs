@@ -8,7 +8,7 @@ This handler does nothing... it exists only to consume the data received from th
 
 public class VoidHandler : ChannelHandler<byte[]>
 {
-    public override Task ExecuteAsync( IChannelContext context, byte[] data )
+    public override Task ExecuteAsync( IChannelContext context, byte[] data, CancellationToken cancellationToken )
     {
         return Task.CompletedTask;
     }

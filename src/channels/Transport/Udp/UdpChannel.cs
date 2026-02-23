@@ -1,13 +1,13 @@
 using Microsoft.Extensions.Logging;
 using Faactory.Channels.Buffers;
 using Microsoft.Extensions.DependencyInjection;
+using System.Net.Sockets;
 
 namespace Faactory.Channels.Udp;
 
-internal sealed class UdpChannel : Channel, IChannel
+internal sealed class UdpChannel : Channel
 {
-    private readonly Task initializeTask;
-    private readonly CancellationTokenSource cts = new();
+    private readonly SemaphoreSlim pipelineLock = new( 1, 1 );
     private readonly ILogger logger;
     private readonly IDisposable? loggerScope;
 
@@ -36,50 +36,30 @@ internal sealed class UdpChannel : Channel, IChannel
             Services = channelServices;
         }
 
-        initializeTask = InitializeAsync( cts.Token ).ContinueWith( _ =>
-        {
-            logger.LogInformation( "Ready." );
-        } );
+        logger.LogDebug( "Created" );
+
+        BeginInitialize();
     }
 
     internal UdpRemote Remote { get; init; }
 
     internal event Action<UdpChannel>? Closed;
 
-    public override Task CloseAsync()
+
+    public override async Task CloseAsync()
     {
+        await base.CloseAsync().ConfigureAwait( false );
+
         try
         {
-            cts.Cancel();
+            Closed?.Invoke( this );
         }
-        catch { }
-
-        OnDisconnected();
-
-        return Task.CompletedTask;
-    }
-
-    public override Task WriteAsync( object data )
-    {
-        if ( IsClosed )
+        catch ( Exception ex )
         {
-            logger.LogWarning( "Can't write to a closed channel." );
-
-            return Task.CompletedTask;
+            logger.LogError( ex, "Closed handler failed. {Message}", ex.Message );
         }
-
-        return base.WriteAsync( data );
-    }
-
-    public override void Dispose()
-    {
-        base.Dispose();
 
         loggerScope?.Dispose();
-
-        logger.LogDebug( "Disposed." );
-
-        GC.SuppressFinalize( this );
     }
 
     public override async Task WriteRawBytesAsync( byte[] data )
@@ -92,69 +72,64 @@ internal sealed class UdpChannel : Channel, IChannel
             // trigger data sent
             logger.LogTrace( "sent {bytesSent} bytes", data.Length );
 
-            LastSent = DateTimeOffset.UtcNow;
-
-            this.NotifyDataSent( data.Length );
+            NotifyDataSent( data );
         }
-        catch ( ObjectDisposedException )
+        catch ( Exception ex ) when ( ex is ObjectDisposedException || ex is SocketException )
         {
             // socket is closed
             logger.LogTrace( "Disconnected." );
 
-            OnDisconnected();
+            _ = CloseAsync();
         }
     }
 
-    internal void Receive( byte[] data )
+    internal async Task ExecuteInputPipelineAsync( byte[] data )
     {
-        LastReceived = DateTimeOffset.UtcNow;
-
-        this.NotifyDataReceived( data );
-
-        Buffer.WriteBytes( data, 0, data.Length );
-
-        var pipelineBuffer = Buffer.MakeReadOnly();
-
-        logger.LogDebug( "Executing input pipeline..." );
-
-        Task.Run( () => Input.ExecuteAsync( this, pipelineBuffer ) )
-            .ConfigureAwait( false )
-            .GetAwaiter()
-            .GetResult();
-
-        pipelineBuffer.DiscardReadBytes();
-
-        Buffer = pipelineBuffer.MakeWritable();
-
-        if ( Buffer.Length > 0 )
+        try
         {
-            logger.LogDebug( "Remaining buffer length: {Length} byte(s).", Buffer.Length );
+            await pipelineLock.WaitAsync( LifetimeToken )
+                .ConfigureAwait( false );
         }
-    }
-
-    private async void OnDisconnected()
-    {
-        if ( IsClosed )
+        catch ( OperationCanceledException )
         {
             return;
         }
 
-        IsClosed = true;
-
-        logger.LogInformation( "Closed." );
-        
         try
         {
-            this.NotifyChannelClosed();
+            NotifyDataReceived( data );
+
+            Buffer.WriteBytes( data, 0, data.Length );
+
+            var pipelineBuffer = Buffer.AsReadable();
+
+            logger.LogDebug( "Executing input pipeline..." );
+
+            await Input.ExecuteAsync( this, pipelineBuffer, LifetimeToken )
+                .ConfigureAwait( false );
+
+            pipelineBuffer.DiscardReadBytes();
+
+            Buffer = pipelineBuffer.AsWritable();
+
+            if ( Buffer.Length > 0 )
+            {
+                logger.LogDebug( "Remaining buffer length: {Length} byte(s).", Buffer.Length );
+            }
         }
-        catch ( Exception )
-        { }
+        catch ( OperationCanceledException )
+        {
+            // Expected shutdown
+        }
+        catch ( Exception ex )
+        {
+            logger.LogError( ex, "Pipeline execution failed. {Message}", ex.Message );
 
-        await StopServicesAsync()
-            .ConfigureAwait( false );
-
-        Closed?.Invoke( this );
-
-        Dispose();
+            await CloseAsync().ConfigureAwait( false );
+        }
+        finally
+        {
+            pipelineLock.Release();
+        }
     }
 }

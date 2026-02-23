@@ -16,9 +16,10 @@ public sealed class WebSocketMessage
     /// <summary>
     /// Gets the message data.
     /// </summary>
-    public IByteBuffer Data { get; init; } = EmptyByteBuffer.Instance;
+    public IReadableByteBuffer Data { get; init; } = EmptyByteBuffer.Instance;
 
     /// <summary>
     /// Gets a value indicating whether the message is the end of a message. The default value is <c>true</c>.
+    /// </summary>
     public bool EndOfMessage { get; init; } = true;
 }

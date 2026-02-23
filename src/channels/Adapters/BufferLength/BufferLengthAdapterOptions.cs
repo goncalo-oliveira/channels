@@ -5,6 +5,9 @@ namespace Faactory.Channels.Adapters;
 /// </summary>
 public sealed class BufferLengthAdapterOptions
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BufferLengthAdapterOptions"/> class with default values.
+    /// </summary>
     public BufferLengthAdapterOptions()
     {
         MaxLength = 1024 * 1024;

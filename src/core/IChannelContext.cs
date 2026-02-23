@@ -11,9 +11,19 @@ public interface IChannelContext
     IChannel Channel { get; }
 
     /// <summary>
+    /// Gets the channel's buffer endianness
+    /// </summary>
+    Buffers.Endianness BufferEndianness { get; }
+
+    /// <summary>
     /// Gets the output buffer
     /// </summary>
     IWritableBuffer Output { get; }
 
+    /// <summary>
+    /// Notifies a custom event to the channel
+    /// </summary>
+    /// <param name="name">The event name</param>
+    /// <param name="data">The event data</param>
     void NotifyCustomEvent( string name, object? data = null );
 }

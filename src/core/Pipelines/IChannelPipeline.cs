@@ -8,5 +8,5 @@ public interface IChannelPipeline : IDisposable
     /// <summary>
     /// Executes the pipeline
     /// </summary>
-    Task ExecuteAsync( IChannel channel, object data );
+    Task ExecuteAsync( IChannel channel, object data, CancellationToken cancellationToken = default );
 }

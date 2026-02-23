@@ -6,10 +6,10 @@ namespace Faactory.Channels.WebSockets;
 
 internal static class WebSocketChannelMiddleware
 {
-    public static Task InvokeAsync( HttpContext httpContext, IWebSocketChannelFactory channelFactory )
+    public static Task InvokeAsync( HttpContext httpContext, IChannelFactory channelFactory )
         => InvokeNamedAsync( httpContext, channelFactory, ChannelBuilder.DefaultChannelName );
 
-    public static async Task InvokeNamedAsync( HttpContext httpContext, IWebSocketChannelFactory channelFactory, string channelName )
+    public static async Task InvokeNamedAsync( HttpContext httpContext, IChannelFactory channelFactory, string channelName )
     {
             // make sure this is a WebSocket request
             if ( !httpContext.WebSockets.IsWebSocketRequest )
@@ -23,7 +23,7 @@ internal static class WebSocketChannelMiddleware
             using var ws = await httpContext.WebSockets.AcceptWebSocketAsync();
 
             // create a WebSocket channel using the factory
-            using var channel = channelFactory.CreateChannel( ws, channelName );
+            using var channel = channelFactory.CreateWebSocketChannel( ws, channelName );
 
             /*
             this creates a linked token source that will cancel when either of the following happens:

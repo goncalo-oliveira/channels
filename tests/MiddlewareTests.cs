@@ -1,12 +1,12 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Faactory.Channels;
 using Faactory.Channels.Adapters;
 using Faactory.Channels.Handlers;
 using Xunit;
 
-namespace Faactory.Channels.Tests;
+namespace tests;
 
 public class ChannelMiddlewareTests
 {
@@ -16,7 +16,7 @@ public class ChannelMiddlewareTests
         var context = new DetachedContext();
         var handler = new IdentityHandler();
 
-        await handler.ExecuteAsync( context, new object() );
+        await handler.ExecuteAsync( context, new object(), CancellationToken.None );
 
         Assert.True( handler.notSuitable );
     }
@@ -39,7 +39,7 @@ public class ChannelMiddlewareTests
         Instead, the data is aggregated and forwarded in the same order as received.
         */
 
-        await adapter.ExecuteAsync( context, data );
+        await adapter.ExecuteAsync( context, data, CancellationToken.None );
 
         // context.Forwarded should have 10 elements
         // the order should be the same as the input data
@@ -55,7 +55,7 @@ public class ChannelMiddlewareTests
     {
         internal bool notSuitable;
 
-        public override Task ExecuteAsync( IChannelContext context, DeviceIdentity data )
+        public override Task ExecuteAsync( IChannelContext context, DeviceIdentity data, CancellationToken cancellationToken )
         {
             var value = data.ToString();
 
@@ -91,7 +91,7 @@ public class ChannelMiddlewareTests
 
     private class NullAdapter : ChannelAdapter<string>, IInputChannelAdapter
     {
-        public override Task ExecuteAsync( IAdapterContext context, string data )
+        public override Task ExecuteAsync( IAdapterContext context, string data, CancellationToken cancellationToken )
         {
             context.Forward( data );
 

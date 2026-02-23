@@ -8,13 +8,14 @@
     <Nullable>enable</Nullable>
     <LangVersion>preview</LangVersion>
     <PackageId>Faactory.Channels.Buffers</PackageId>
-    <Version>1.1.2</Version>
+    <Version>2.0.0-preview.10</Version>
     <Authors>Goncalo Oliveira</Authors>
     <Description>Channels Buffers</Description>
     <RepositoryUrl>https://github.com/goncalo-oliveira/channels</RepositoryUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageReadmeFile>README.buffers.md</PackageReadmeFile>
     <PackageIcon>faactory.png</PackageIcon>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

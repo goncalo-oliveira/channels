@@ -1,11 +1,10 @@
 using System.Net.Sockets;
 using Faactory.Channels.Client;
-using Faactory.Channels.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels.Tcp;
 
-internal sealed class TcpClient : IChannelsClient, IDisposable
+internal sealed class TcpClient : IChannelsClient
 {
     private readonly CancellationTokenSource cts = new();
     private readonly string channelName;
@@ -24,33 +23,39 @@ internal sealed class TcpClient : IChannelsClient, IDisposable
         connectTask = ConnectAsync( cts.Token );
     }
 
-    public IChannel Channel { get; private set; } = NullChannel.Instance;
+    private IChannel channel = NullChannel.Instance;
+    public IChannel Channel => channel;
 
     private IServiceScope Scope { get; }
     private IServiceProvider ServiceProvider => Scope.ServiceProvider;
 
-    public Task CloseAsync()
+    public async Task CloseAsync()
     {
         cts.Cancel();
 
-        return Channel.CloseAsync();
-    }
-
-    public void Dispose()
-    {
-        try
-        {
-            cts.Cancel();
-        }
-        catch { }
-
-        connectTask.WaitForCompletion();
+        await Channel.CloseAsync();
 
         try
         {
             socket?.Dispose();
         }
         catch { }
+
+        try
+        {
+            await connectTask;
+        }
+        catch { }
+    }
+
+    public void Dispose()
+    {
+        DisposeAsync().AsTask().GetAwaiter().GetResult();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await CloseAsync().ConfigureAwait( false );
     }
 
     private async Task ConnectAsync( CancellationToken cancellationToken )
@@ -60,21 +65,37 @@ internal sealed class TcpClient : IChannelsClient, IDisposable
             return;
         }
 
-        socket = new Socket( SocketType.Stream, ProtocolType.Tcp );
-
         var reconnectDelay = options.ReconnectDelay;
 
         while ( Channel.IsClosed && !cancellationToken.IsCancellationRequested )
         {
-            await socket.ConnectAsync( options.Host, options.Port, cancellationToken )
-                .ConfigureAwait( false );
+            socket = new Socket( SocketType.Stream, ProtocolType.Tcp );
 
-            if ( cancellationToken.IsCancellationRequested )
+            try
+            {
+                await socket.ConnectAsync( options.Host, options.Port, cancellationToken )
+                    .ConfigureAwait( false );
+
+                if ( !socket.Connected )
+                {
+                    throw new SocketException( (int) SocketError.NotConnected );
+                }
+
+                var ch = CreateChannel( socket );
+
+                var previousChannel = Interlocked.Exchange( ref channel, ch );
+
+                if ( previousChannel != null )
+                {
+                    await previousChannel.DisposeAsync()
+                        .ConfigureAwait( false );
+                }
+            }
+            catch ( OperationCanceledException )
             {
                 break;
             }
-
-            if ( !socket.Connected )
+            catch
             {
                 await Task.Delay( reconnectDelay, cancellationToken );
 
@@ -83,8 +104,10 @@ internal sealed class TcpClient : IChannelsClient, IDisposable
 
                 continue;
             }
-
-            Channel = CreateChannel( socket );
+            finally
+            {
+                socket?.Dispose();
+            }
         }
 
         /*

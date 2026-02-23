@@ -59,7 +59,7 @@ public interface IChannelBuilder
     /// <summary>
     /// Adds a transient service for the channel handler to the input pipeline
     /// </summary>
-    /// <typeparam name="TAdapter">The type of the handler implementation</typeparam>
+    /// <typeparam name="THandler">The type of the handler implementation</typeparam>
     IChannelBuilder AddInputHandler<THandler>() where THandler : class, IChannelHandler;
 
     /// <summary>

@@ -1,283 +1,363 @@
+using System.Buffers;
 using System.Buffers.Binary;
 
 namespace Faactory.Channels.Buffers;
 
 /// <summary>
-/// A writable IByteBuffer
+/// A writable byte buffer implementation that allows writing various primitive types and byte arrays with automatic resizing
 /// </summary>
-public sealed class WritableByteBuffer : IByteBuffer
+public sealed class WritableByteBuffer : IWritableByteBuffer
 {
-    private readonly List<byte> buffer;
+    internal const int InitialCapacity = 1024;
 
+    private byte[] buffer;
+    private int writeOffset = 0;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WritableByteBuffer"/> class with the default initial capacity and specified endianness.
+    /// </summary>
+    /// <param name="endianness">The endianness of the buffer</param>
     public WritableByteBuffer( Endianness endianness = Endianness.BigEndian )
-    {
-        buffer = [];
-        Endianness = endianness;
-    }
+        : this( InitialCapacity, endianness )
+    { }
 
-    public WritableByteBuffer( byte[] source, Endianness endianness = Endianness.BigEndian )
-    {
-        buffer = new List<byte>( source );
-        Endianness = endianness;
-    }
-
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WritableByteBuffer"/> class with the specified initial capacity and endianness.
+    /// </summary>
+    /// <param name="capacity">The initial capacity of the buffer</param>
+    /// <param name="endianness">The endianness of the buffer</param>
     public WritableByteBuffer( int capacity, Endianness endianness = Endianness.BigEndian )
     {
-        buffer = new List<byte>( capacity );
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero( capacity, nameof( capacity ) );
+
+        buffer = new byte[capacity];
         Endianness = endianness;
     }
 
+    /// <summary>
+    /// Gets the endianness of the buffer, which determines how multi-byte values are written.
+    /// </summary>
     public Endianness Endianness { get; }
-    public bool IsReadable => false;
-    public bool IsWritable => true;
-    public int Length => buffer.Count;
-    public int ReadableBytes
-        => throw new NonReadableBufferException();
 
-    public int Offset
-        => throw new NonReadableBufferException();
+    /// <summary>
+    /// Gets the length of the used portion of the buffer.
+    /// </summary>
+    public int Length => writeOffset;
 
-    public IByteBuffer DiscardAll()
+    /// <summary>
+    /// Discards all written bytes and reallocates the buffer to its initial capacity.
+    /// </summary>
+    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
+    public IWritableByteBuffer Clear()
     {
-        buffer.Clear();
+        buffer = new byte[InitialCapacity];
+        writeOffset = 0;
 
-        return ( this );
+        return this;
     }
 
-    public IByteBuffer DiscardReadBytes()
-        => throw new NonReadableBufferException();
-
-    public bool GetBoolean( int offset )
-        => throw new NonReadableBufferException();
-
-    public byte GetByte( int offset )
-        => throw new NonReadableBufferException();
-
-    public byte[] GetBytes( int offset, int length )
-        => throw new NonReadableBufferException();
-
-    public IByteBuffer GetByteBuffer( int offset, int length )
-        => throw new NonReadableBufferException();
-
-    public double GetDouble( int offset )
-        => throw new NonReadableBufferException();
-
-    public float GetSingle( int offset )
-        => throw new NonReadableBufferException();
-
-    public short GetInt16( int offset )
-        => throw new NonReadableBufferException();
-
-    public int GetInt32( int offset )
-        => throw new NonReadableBufferException();
-
-    public long GetInt64( int offset )
-        => throw new NonReadableBufferException();
-
-    public ushort GetUInt16( int offset )
-        => throw new NonReadableBufferException();
-
-    public uint GetUInt32( int offset )
-        => throw new NonReadableBufferException();
-
-    public ulong GetUInt64( int offset )
-        => throw new NonReadableBufferException();
-
-    public bool ReadBoolean()
-        => throw new NonReadableBufferException();
-
-    public byte ReadByte()
-        => throw new NonReadableBufferException();
-
-    public byte[] ReadBytes( int length )
-        => throw new NonReadableBufferException();
-
-    public IByteBuffer ReadByteBuffer( int length )
-        => throw new NonReadableBufferException();
-
-    public double ReadDouble()
-        => throw new NonReadableBufferException();
-
-    public float ReadSingle()
-        => throw new NonReadableBufferException();
-
-    public short ReadInt16()
-        => throw new NonReadableBufferException();
-
-    public int ReadInt32()
-        => throw new NonReadableBufferException();
-
-    public long ReadInt64()
-        => throw new NonReadableBufferException();
-
-    public ushort ReadUInt16()
-        => throw new NonReadableBufferException();
-
-    public uint ReadUInt32()
-        => throw new NonReadableBufferException();
-
-    public ulong ReadUInt64()
-        => throw new NonReadableBufferException();
-
-    public IByteBuffer ResetOffset()
-        => throw new NonReadableBufferException();
-
-    public IByteBuffer SkipBytes( int length )
-        => throw new NonReadableBufferException();
-
-    public byte[] ToArray() => buffer.ToArray();
-
-    public IByteBuffer UndoRead( int length )
-        => throw new NonReadableBufferException();
-
-    public IByteBuffer WriteBoolean( bool value )
+    /// <summary>
+    /// Resets the writing offset to the beginning of the buffer, effectively discarding all written bytes. Current buffer capacity remains unchanged.
+    /// </summary>
+    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
+    public IWritableByteBuffer ResetOffset()
     {
-        var bytes = BitConverter.GetBytes( value );
+        writeOffset = 0;
 
-        return WriteBytes( bytes, 0, bytes.Length );
+        return this;
     }
 
-    public IByteBuffer WriteByte( byte value )
+    /// <summary>
+    /// Gets the entire buffer as a byte[] no matter where the reading/writing offset is
+    /// </summary>
+    /// <returns>A byte[] value</returns>
+    public byte[] ToArray()
     {
-        buffer.Add( value );
+        var dest = new byte[Length];
 
-        return ( this );
+        Array.Copy( buffer, 0, dest, 0, Length );
+
+        return dest;
     }
 
-    public IByteBuffer WriteBytes( byte[] value, int startIndex, int length )
+    /// <summary>
+    /// Gets the used portion of the buffer as a <see cref="ReadOnlySpan{T}"/>
+    /// </summary>
+    /// <returns>A <see cref="ReadOnlySpan{T}"/> representing the used portion of the buffer</returns>
+    public ReadOnlySpan<byte> AsSpan()
+        => buffer.AsSpan( 0, writeOffset );
+
+    private void EnsureCapacity( int additionalLength )
     {
-        var bytes = value.Skip( startIndex )
-            .Take( length );
+        int required = writeOffset + additionalLength;
 
-        buffer.AddRange( bytes );
+        if ( required <= buffer.Length )
+        {
+            return;
+        }
 
-        return ( this );
+        int newSize = buffer.Length;
+
+        while ( newSize < required )
+        {
+            newSize *= 2;
+        }
+
+        var newBuffer = new byte[newSize];
+
+        Array.Copy( buffer, 0, newBuffer, 0, writeOffset );
+
+        buffer = newBuffer;
     }
 
-    public IByteBuffer WriteByteBuffer( IByteBuffer value )
+    private void WritePrimitive<T>( T value, int size, SpanAction<byte, T> writer )
     {
-        var bytes = value.ToArray();
+        EnsureCapacity( size );
 
-        return WriteBytes( bytes, 0, bytes.Length );
+        var span = buffer.AsSpan( writeOffset, size );
+
+        writer( span, value );
+
+        writeOffset += size;
     }
 
-    public IByteBuffer WriteDouble( double value )
-    {
-        var span = new Span<byte>( new byte[ sizeof( double ) ]);
-        if ( Endianness == Endianness.BigEndian )
-        {
-            BinaryPrimitives.WriteDoubleBigEndian( span, value );
-        }
-        else
-        {
-            BinaryPrimitives.WriteDoubleLittleEndian( span, value );
-        }
+    /// <summary>
+    /// Writes a boolean value to the buffer as a single byte (1 for true, 0 for false).
+    /// </summary>
+    /// <param name="value">The boolean value to write</param>
+    /// <returns>The current buffer instance</returns>
+    public IWritableByteBuffer WriteBoolean( bool value )
+        => WriteByte( value ? (byte)1 : (byte)0 );
 
-        return WriteBytes( span.ToArray(), 0, span.Length );
+    /// <summary>
+    /// Writes a byte value to the buffer.
+    /// </summary>
+    /// <param name="value">The byte value to write</param>
+    /// <returns>The current buffer instance</returns>
+    public IWritableByteBuffer WriteByte( byte value )
+    {
+        EnsureCapacity( 1 );
+
+        buffer[writeOffset++] = value;
+
+        return this;
     }
 
-    public IByteBuffer WriteSingle( float value )
+    /// <summary>
+    /// Writes a byte array to the buffer.
+    /// </summary>
+    /// <param name="value">The byte array to write</param>
+    /// <param name="startIndex">The starting index in the byte array</param>
+    /// <param name="length">The number of bytes to write</param>
+    /// <returns>The current buffer instance</returns>
+    public IWritableByteBuffer WriteBytes( byte[] value, int startIndex, int length )
     {
-        var span = new Span<byte>( new byte[ sizeof( float ) ]);
-        if ( Endianness == Endianness.BigEndian )
-        {
-            BinaryPrimitives.WriteSingleBigEndian( span, value );
-        }
-        else
-        {
-            BinaryPrimitives.WriteSingleLittleEndian( span, value );
-        }
+        EnsureCapacity( length );
 
-        return WriteBytes( span.ToArray(), 0, span.Length );
+        Array.Copy( value, startIndex, buffer, writeOffset, length );
+
+        writeOffset += length;
+
+        return this;
     }
 
-    public IByteBuffer WriteInt16( Int16 value )
-    {
-        var span = new Span<byte>( new byte[ sizeof( Int16 ) ]);
-        if ( Endianness == Endianness.BigEndian )
-        {
-            BinaryPrimitives.WriteInt16BigEndian( span, value );
-        }
-        else
-        {
-            BinaryPrimitives.WriteInt16LittleEndian( span, value );
-        }
+    /// <summary>
+    /// Writes the contents of another <see cref="IByteBuffer"/> to this buffer.
+    /// </summary>
+    /// <param name="value">The buffer whose contents are to be written</param>
+    /// <returns>The current buffer instance</returns>
+    public IWritableByteBuffer WriteBytes( IByteBuffer value )
+        => WriteBytes( value.AsSpan() );
 
-        return WriteBytes( span.ToArray(), 0, span.Length );
+    /// <summary>
+    /// Writes the contents of a <see cref="ReadOnlySpan{T}"/> to the buffer.
+    /// </summary>
+    /// <param name="value">The span containing the bytes to write</param>
+    /// <returns>The current buffer instance</returns>
+    public IWritableByteBuffer WriteBytes( ReadOnlySpan<byte> value )
+    {
+        EnsureCapacity( value.Length );
+
+        value.CopyTo( buffer.AsSpan( writeOffset ) );
+
+        writeOffset += value.Length;
+
+        return this;
     }
 
-    public IByteBuffer WriteInt32( Int32 value )
+    /// <summary>
+    /// Writes a double value to the buffer, taking into account the endianness of the buffer.
+    /// </summary>
+    /// <param name="value">The double value to write</param>
+    /// <returns>The current buffer instance</returns>
+    public IWritableByteBuffer WriteDouble( double value )
     {
-        var span = new Span<byte>( new byte[ sizeof( Int32 ) ]);
-        if ( Endianness == Endianness.BigEndian )
+        WritePrimitive( value, sizeof( double ), ( span, val ) =>
         {
-            BinaryPrimitives.WriteInt32BigEndian( span, value );
-        }
-        else
-        {
-            BinaryPrimitives.WriteInt32LittleEndian( span, value );
-        }
+            if ( Endianness == Endianness.BigEndian )
+            {
+                BinaryPrimitives.WriteDoubleBigEndian( span, val );
+            }
+            else
+            {
+                BinaryPrimitives.WriteDoubleLittleEndian( span, val );
+            }
+        } );
 
-        return WriteBytes( span.ToArray(), 0, span.Length );
+        return this;
     }
 
-    public IByteBuffer WriteInt64( Int64 value )
+    /// <summary>
+    /// Writes a float value to the buffer, taking into account the endianness of the buffer.
+    /// </summary>
+    /// <param name="value">The float value to write</param>
+    /// <returns>The current buffer instance</returns>
+    public IWritableByteBuffer WriteSingle( float value )
     {
-        var span = new Span<byte>( new byte[ sizeof( Int64 ) ]);
-        if ( Endianness == Endianness.BigEndian )
+        WritePrimitive( value, sizeof( float ), ( span, val ) =>
         {
-            BinaryPrimitives.WriteInt64BigEndian( span, value );
-        }
-        else
-        {
-            BinaryPrimitives.WriteInt64LittleEndian( span, value );
-        }
+            if ( Endianness == Endianness.BigEndian )
+            {
+                BinaryPrimitives.WriteSingleBigEndian( span, val );
+            }
+            else
+            {
+                BinaryPrimitives.WriteSingleLittleEndian( span, val );
+            }
+        } );
 
-        return WriteBytes( span.ToArray(), 0, span.Length );
+        return this;
     }
 
-    public IByteBuffer WriteUInt16( UInt16 value )
+    /// <summary>
+    /// Writes a short (Int16) value to the buffer, taking into account the endianness of the buffer.
+    /// </summary>
+    /// <param name="value">The short value to write</param>
+    /// <returns>The current buffer instance</returns>
+    public IWritableByteBuffer WriteInt16( short value )
     {
-        var span = new Span<byte>( new byte[ sizeof( UInt16 ) ]);
-        if ( Endianness == Endianness.BigEndian )
+        WritePrimitive( value, sizeof( short ), ( span, val ) =>
         {
-            BinaryPrimitives.WriteUInt16BigEndian( span, value );
-        }
-        else
-        {
-            BinaryPrimitives.WriteUInt16LittleEndian( span, value );
-        }
+            if ( Endianness == Endianness.BigEndian )
+            {
+                BinaryPrimitives.WriteInt16BigEndian( span, val );
+            }
+            else
+            {
+                BinaryPrimitives.WriteInt16LittleEndian( span, val );
+            }
+        } );
 
-        return WriteBytes( span.ToArray(), 0, span.Length );
+        return this;
     }
 
-    public IByteBuffer WriteUInt32( UInt32 value )
+    /// <summary>
+    /// Writes an int (Int32) value to the buffer, taking into account the endianness of the buffer.
+    /// </summary>
+    /// <param name="value">The int value to write</param>
+    /// <returns>The current buffer instance</returns>
+    public IWritableByteBuffer WriteInt32( int value )
     {
-        var span = new Span<byte>( new byte[ sizeof( UInt32 ) ]);
-        if ( Endianness == Endianness.BigEndian )
+        WritePrimitive( value, sizeof( int ), ( span, val ) =>
         {
-            BinaryPrimitives.WriteUInt32BigEndian( span, value );
-        }
-        else
-        {
-            BinaryPrimitives.WriteUInt32LittleEndian( span, value );
-        }
+            if ( Endianness == Endianness.BigEndian )
+            {
+                BinaryPrimitives.WriteInt32BigEndian( span, val );
+            }
+            else
+            {
+                BinaryPrimitives.WriteInt32LittleEndian( span, val );
+            }
+        } );
 
-        return WriteBytes( span.ToArray(), 0, span.Length );
+        return this;
     }
 
-    public IByteBuffer WriteUInt64( UInt64 value )
+    /// <summary>
+    /// Writes a long (Int64) value to the buffer, taking into account the endianness of the buffer.
+    /// </summary>
+    /// <param name="value">The long value to write</param>
+    /// <returns>The current buffer instance</returns>
+    public IWritableByteBuffer WriteInt64( long value )
     {
-        var span = new Span<byte>( new byte[ sizeof( UInt64 ) ]);
-        if ( Endianness == Endianness.BigEndian )
+        WritePrimitive( value, sizeof( long ), ( span, val ) =>
         {
-            BinaryPrimitives.WriteUInt64BigEndian( span, value );
-        }
-        else
-        {
-            BinaryPrimitives.WriteUInt64LittleEndian( span, value );
-        }
+            if ( Endianness == Endianness.BigEndian )
+            {
+                BinaryPrimitives.WriteInt64BigEndian( span, val );
+            }
+            else
+            {
+                BinaryPrimitives.WriteInt64LittleEndian( span, val );
+            }
+        } );
 
-        return WriteBytes( span.ToArray(), 0, span.Length );
+        return this;
+    }
+
+    /// <summary>
+    /// Writes an unsigned short (UInt16) value to the buffer, taking into account the endianness of the buffer.
+    /// </summary>
+    /// <param name="value">The unsigned short value to write</param>
+    /// <returns>The current buffer instance</returns>
+    public IWritableByteBuffer WriteUInt16( ushort value )
+    {
+        WritePrimitive( value, sizeof( ushort ), ( span, val ) =>
+        {
+            if ( Endianness == Endianness.BigEndian )
+            {
+                BinaryPrimitives.WriteUInt16BigEndian( span, val );
+            }
+            else
+            {
+                BinaryPrimitives.WriteUInt16LittleEndian( span, val );
+            }
+        } );
+
+        return this;
+    }
+
+    /// <summary>
+    /// Writes an unsigned int (UInt32) value to the buffer, taking into account the endianness of the buffer.
+    /// </summary>
+    /// <param name="value">The unsigned int value to write</param>
+    /// <returns>The current buffer instance</returns>
+    public IWritableByteBuffer WriteUInt32( uint value )
+    {
+        WritePrimitive( value, sizeof( uint ), ( span, val ) =>
+        {
+            if ( Endianness == Endianness.BigEndian )
+            {
+                BinaryPrimitives.WriteUInt32BigEndian( span, val );
+            }
+            else
+            {
+                BinaryPrimitives.WriteUInt32LittleEndian( span, val );
+            }
+        } );
+
+        return this;
+    }
+
+    /// <summary>
+    /// Writes an unsigned long (UInt64) value to the buffer, taking into account the endianness of the buffer.
+    /// </summary>
+    /// <param name="value">The unsigned long value to write</param>
+    /// <returns>The current buffer instance</returns>
+    public IWritableByteBuffer WriteUInt64( ulong value )
+    {
+        WritePrimitive( value, sizeof( ulong ), ( span, val ) =>
+        {
+            if ( Endianness == Endianness.BigEndian )
+            {
+                BinaryPrimitives.WriteUInt64BigEndian( span, val );
+            }
+            else
+            {
+                BinaryPrimitives.WriteUInt64LittleEndian( span, val );
+            }
+        } );
+
+        return this;
     }
 }

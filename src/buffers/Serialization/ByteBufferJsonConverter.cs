@@ -4,48 +4,70 @@ using System.Text.Json.Serialization;
 namespace Faactory.Channels.Buffers.Serialization;
 
 /// <summary>
-/// Converts a IByteBuffer value to or from JSON
+/// A JSON converter factory for IByteBuffer types, allowing serialization and deserialization of byte buffers in either Base64 or Hex string formats.
 /// </summary>
-public sealed class ByteBufferJsonConverter : JsonConverter<IByteBuffer>
+/// <param name="format">The format to use for serialization and deserialization. Default is Base64.</param>
+public sealed class ByteBufferJsonConverterFactory( ByteBufferSerializerFormat format = ByteBufferSerializerFormat.Base64 ) : JsonConverterFactory
 {
-    public ByteBufferSerializerFormat Format { get; }
+    /// <summary>
+    /// Determines whether the converter can convert the specified type. It checks if the type is assignable from IByteBuffer.
+    /// </summary>
+    /// <param name="typeToConvert">The type to check for compatibility with IByteBuffer.</param>
+    /// <returns>True if the type can be converted; otherwise, false.</returns>
+    public override bool CanConvert( Type typeToConvert )
+        => typeof(IByteBuffer).IsAssignableFrom( typeToConvert );
 
-    public ByteBufferJsonConverter( ByteBufferSerializerFormat format = ByteBufferSerializerFormat.Base64 )
+    /// <summary>
+    /// Creates a JSON converter for the specified type. It generates a converter for types that implement IByteBuffer, using the specified format for serialization and deserialization.
+    /// </summary>
+    /// <param name="typeToConvert">The type to create a converter for.</param>
+    /// <param name="options">The JSON serializer options.</param>
+    /// <returns>A JSON converter for the specified type.</returns>
+    public override JsonConverter CreateConverter( Type typeToConvert, JsonSerializerOptions options )
     {
-        Format = format;
+        var converterType = typeof( ByteBufferJsonConverter<> )
+            .MakeGenericType( typeToConvert );
+
+        return (JsonConverter)Activator.CreateInstance( converterType, format )!;
     }
 
-    public override IByteBuffer? Read( ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options )
+    private sealed class ByteBufferJsonConverter<TBuffer>( ByteBufferSerializerFormat format ) : JsonConverter<TBuffer> where TBuffer : class, IByteBuffer
     {
-        if ( reader.TokenType != JsonTokenType.String )
+        public override TBuffer? Read( ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options )
         {
-            throw new NotSupportedException( "Expected a string value." );
+            if ( typeToConvert == typeof( IWritableByteBuffer ) )
+            {
+                throw new NotSupportedException(
+                    "Deserialization to IWritableByteBuffer is not supported."
+                );
+            }
+
+            if ( reader.TokenType != JsonTokenType.String )
+            {
+                throw new NotSupportedException( "Expected a string." );
+            }
+
+            var value = reader.GetString();
+
+            if ( value is null )
+            {
+                return null;
+            }
+
+            var bytes = format == ByteBufferSerializerFormat.HexString
+                ? Convert.FromHexString(value)
+                : Convert.FromBase64String(value);
+
+            return new ReadableByteBuffer(bytes) as TBuffer;
         }
 
-        var value = reader.GetString();
-
-        if ( value == null )
+        public override void Write( Utf8JsonWriter writer, TBuffer value, JsonSerializerOptions options )
         {
-            return ( null );
-        }
-
-        if ( Format == ByteBufferSerializerFormat.HexString )
-        {
-            return new WrappedByteBuffer( Convert.FromHexString( value ) );
-        }
-
-        return new WrappedByteBuffer( Convert.FromBase64String( value ) );
-    }
-
-    public override void Write( Utf8JsonWriter writer, IByteBuffer value, JsonSerializerOptions options )
-    {
-        if ( Format == ByteBufferSerializerFormat.HexString )
-        {
-            writer.WriteStringValue( value.ToHexString() );
-        }
-        else
-        {
-            writer.WriteStringValue( value.ToBase64String() );
+            writer.WriteStringValue(
+                format == ByteBufferSerializerFormat.HexString
+                    ? value.ToHexString()
+                    : value.ToBase64String()
+            );
         }
     }
 }

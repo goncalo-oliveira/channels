@@ -1,8 +1,5 @@
-#pragma warning disable CA1859 // Use concrete types when possible for improved performance
-
 using System.Net.WebSockets;
 using Faactory.Channels.Buffers;
-using Faactory.Channels.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -12,10 +9,8 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
 {
     private readonly ILogger logger;
     private readonly IDisposable? loggerScope;
-    private readonly Task initializeTask;
-    private readonly Task monitorTask;
-    private readonly Task receiveTask;
-    private readonly CancellationTokenSource cts = new();
+    private Task monitorTask = Task.CompletedTask;
+    private Task receiveTask = Task.CompletedTask;
 
     internal WebSocketChannel( IServiceScope serviceScope, WebSocket socket, ChannelOptions options, IChannelPipeline inputPipeline, IChannelPipeline outputPipeline, IEnumerable<IChannelService>? channelServices = null )
         : base( serviceScope )
@@ -36,29 +31,19 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
             Services = channelServices;
         }
 
-        initializeTask = base.InitializeAsync( cts.Token ).ContinueWith( _ =>
-        {
-            logger.LogInformation( "Ready." );
-        });
-
-        monitorTask = MonitorAsync( cts.Token );
-        receiveTask = ReceiveAsync( cts.Token );
+        BeginInitialize();
     }
 
-    private IByteBuffer TextBuffer { get; set; } = new WritableByteBuffer();
+    private WritableByteBuffer TextBuffer { get; set; } = new WritableByteBuffer();
 
     public WebSocket WebSocket { get; }
 
     public override async Task CloseAsync()
     {
-        /*
-        Cancel the monitor and receive tasks.
-        */
-        try
+        if ( IsClosed )
         {
-            cts.Cancel();
+            return;
         }
-        catch { }
 
         /*
         If the WebSocket is open or connecting, close it.
@@ -68,34 +53,19 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
             await CloseWebSocket();
         }
 
-        /*
-        If channel is already closed, return.
-        */
+        await base.CloseAsync()
+            .ConfigureAwait( false );
+
+        loggerScope?.Dispose();
+    }
+
+    private async Task CloseWebSocket()
+    {
         if ( IsClosed )
         {
             return;
         }
 
-        // flag the channel as closed
-        IsClosed = true;
-
-        logger.LogInformation( "Closed." );
-
-        // notify the channel is closed
-        try
-        {
-            this.NotifyChannelClosed();
-        }
-        catch ( Exception )
-        { }
-
-        // stop all channel services
-        await StopServicesAsync()
-            .ConfigureAwait( false );
-    }
-
-    private async Task CloseWebSocket()
-    {
         try
         {
             await WebSocket.CloseAsync(
@@ -128,49 +98,48 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
         }
     }
 
-    public override void Dispose()
+    protected override async ValueTask DisposeAsyncCore()
     {
+        await base.DisposeAsyncCore()
+            .ConfigureAwait( false );
+
         try
         {
-            cts.Cancel();
+            await Task.WhenAll( monitorTask, receiveTask )
+                .ConfigureAwait( false );
         }
-        catch { }
-
-        initializeTask.WaitForCompletion();
-        monitorTask.WaitForCompletion();
-        receiveTask.WaitForCompletion();
-
-        initializeTask.TryDispose();
-        monitorTask.TryDispose();
-        receiveTask.TryDispose();
-
-        WebSocket.Dispose();
-
-        base.Dispose(); // can't forget to dispose the base class
-
-        logger.LogDebug( "Disposed." );
-
-        loggerScope?.Dispose();
-
-        GC.SuppressFinalize( this );
+        catch {} 
     }
 
-    protected override Task InitializeAsync( CancellationToken cancellationToken ) => initializeTask;
+    protected override async Task InitializeAsync( CancellationToken cancellationToken )
+    {
+        await base.InitializeAsync( cancellationToken );
+
+        monitorTask = MonitorWebSocketStateAsync( LifetimeToken );
+        receiveTask = ReceiveAsync( LifetimeToken );
+    }
 
     internal async Task WriteMessageAsync( WebSocketMessage message )
     {
+        if ( IsClosed )
+        {
+            logger.LogWarning( "Cannot send data to a closed channel." );
+
+            return;
+        }
+
         try
         {
+            var bytes = message.Data.ToArray();
+
             await WebSocket.SendAsync(
-                message.Data.ToArray(),
+                bytes,
                 message.Type,
                 endOfMessage: message.EndOfMessage,
-                cancellationToken: CancellationToken.None
+                cancellationToken: LifetimeToken
             );
 
-            LastSent = DateTimeOffset.UtcNow;
-
-            this.NotifyDataSent( message.Data.Length );
+            NotifyDataSent( bytes );
         }
         catch ( WebSocketException ex )
         {
@@ -181,18 +150,16 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
     }
 
     public override Task WriteRawBytesAsync( byte[] data )
-    {
-        return WriteMessageAsync( new WebSocketMessage
+        => WriteMessageAsync( new WebSocketMessage
         {
-            Data = new WrappedByteBuffer( data )
+            Data = new ReadableByteBuffer( data )
         } );
-    }
 
     public async Task WaitAsync( CancellationToken cancellationToken )
     {
         var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(
             [
-                cts.Token,
+                LifetimeToken,
                 cancellationToken
             ]
         );
@@ -223,8 +190,6 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                     cancellationToken
                 );
 
-                LastReceived = DateTimeOffset.UtcNow;
-
                 if ( result.MessageType == WebSocketMessageType.Close )
                 {
                     logger.LogDebug( "Received close message." );
@@ -234,7 +199,9 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                     break;
                 }
 
-                this.NotifyDataReceived( buffer[..result.Count] );
+                var span = buffer.AsSpan( 0, result.Count );
+
+                NotifyDataReceived( span );
 
                 /*
                 Unlike TCP and UDP channels, data received from a WebSocket
@@ -257,7 +224,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                 if ( result.MessageType == WebSocketMessageType.Text )
                 {
                     // reassemble fragmented text messages
-                    TextBuffer.WriteBytes( buffer, 0, result.Count );
+                    TextBuffer.WriteBytes( span );
 
                     /*
                     If the message is complete, create a new WebSocketMessage.
@@ -268,16 +235,16 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                         message = new WebSocketMessage
                         {
                             Type = WebSocketMessageType.Text,
-                            Data = TextBuffer.MakeReadOnly()
+                            Data = TextBuffer.AsReadable()
                         };
 
-                        TextBuffer.DiscardAll();
+                        TextBuffer.ResetOffset();
                     }
                 }
                 else if ( result.MessageType == WebSocketMessageType.Binary )
                 {
                     // reassemble fragmented binary messages
-                    Buffer.WriteBytes( buffer, 0, result.Count );
+                    Buffer.WriteBytes( span );
 
                     /*
                     If the message is complete, create a new WebSocketMessage.
@@ -288,10 +255,10 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                         message = new WebSocketMessage
                         {
                             Type = WebSocketMessageType.Binary,
-                            Data = Buffer.MakeReadOnly()
+                            Data = Buffer.AsReadable()
                         };
 
-                        Buffer.DiscardAll();
+                        Buffer.ResetOffset();
                     }
                 }
 
@@ -308,7 +275,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                 */
                 logger.LogDebug( "Executing input pipeline..." );
 
-                await Input.ExecuteAsync( this, message )
+                await Input.ExecuteAsync( this, message, cancellationToken )
                     .ConfigureAwait( false );
             }
             catch ( OperationCanceledException )
@@ -333,7 +300,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
         logger.LogDebug( "Receive task canceled." );
     }
 
-    private async Task MonitorAsync( CancellationToken cancellationToken )
+    private async Task MonitorWebSocketStateAsync( CancellationToken cancellationToken )
     {
         while ( !cancellationToken.IsCancellationRequested )
         {
@@ -357,5 +324,3 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
         logger.LogDebug( "Monitor task canceled." );
     }
 }
-
-#pragma warning restore CA1859 // Use concrete types when possible for improved performance

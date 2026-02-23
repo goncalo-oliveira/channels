@@ -10,5 +10,6 @@ public interface IChannelHandler
     /// </summary>
     /// <param name="context">The channel context</param>
     /// <param name="data">The data to process</param>
-    Task ExecuteAsync( IChannelContext context, object data );
+    /// <param name="cancellationToken">The cancellation token</param>
+    Task ExecuteAsync( IChannelContext context, object data, CancellationToken cancellationToken = default );
 }

@@ -17,9 +17,21 @@ public abstract class ChannelMiddleware<T>
     /// </summary>
     protected abstract void OnDataNotSuitable( IChannelContext context, object data );
 
-    public abstract Task ExecuteAsync( IChannelContext context, T data );
+    /// <summary>
+    /// Executes the middleware logic for the received data
+    /// </summary>
+    /// <param name="context">The channel context</param>
+    /// <param name="data">The received data</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    public abstract Task ExecuteAsync( IChannelContext context, T data, CancellationToken cancellationToken );
 
-    public Task ExecuteAsync( IChannelContext context, object data )
+    /// <summary>
+    /// Executes the middleware logic for the received data, with type conversion and enumerable support
+    /// </summary>
+    /// <param name="context">The channel context</param>
+    /// <param name="data">The received data</param>
+    /// <param name="cancellationToken">The cancellation token</param>
+    public Task ExecuteAsync( IChannelContext context, object data, CancellationToken cancellationToken )
     {
         if ( data == null )
         {
@@ -30,7 +42,7 @@ public abstract class ChannelMiddleware<T>
         if ( data is T t )
         {
             // execute type implementation
-            return ExecuteAsync( context, t );
+            return ExecuteAsync( context, t, cancellationToken );
         }
 
         var targetType = typeof( T );
@@ -43,7 +55,7 @@ public abstract class ChannelMiddleware<T>
             var aggregatedTask = ( (IEnumerable)data ).OfType<T>()
                 .Aggregate(
                     Task.CompletedTask,
-                    ( previousTask, item ) => previousTask.ContinueWith( async t => await ExecuteAsync( context, item ) ).Unwrap()
+                    ( previousTask, item ) => previousTask.ContinueWith( async t => await ExecuteAsync( context, item, cancellationToken ) ).Unwrap()
                 );
 
             return aggregatedTask;
@@ -56,7 +68,7 @@ public abstract class ChannelMiddleware<T>
             var array = Array.CreateInstance( targetType.GetEnumerableElementType()!, 1 );
             array.SetValue( data, 0 );
 
-            return ExecuteAsync( context, (T)(object)array );
+            return ExecuteAsync( context, (T)(object)array, cancellationToken );
         }
 
         // attempt to convert the data type
@@ -65,7 +77,7 @@ public abstract class ChannelMiddleware<T>
             && ( convertedData.GetType() != data.GetType() )
            )
         {
-            return ExecuteAsync( context, convertedData );
+            return ExecuteAsync( context, convertedData, cancellationToken );
         }
 
         OnDataNotSuitable( context, data );
@@ -80,25 +92,42 @@ public abstract class ChannelMiddleware<T>
     {
         var type = typeof( T );
 
-        // attempt a byte[] to IByteBuffer transformation
-        if ( type.IsAssignableFrom( typeof( IByteBuffer ) ) && ( data is byte[] ) )
+        // byte[] -> IReadableByteBuffer conversion
+        // byte[] -> IByteBuffer conversion
+        if ( data is byte[] bytes && ( typeof( IReadableByteBuffer ).IsAssignableFrom( type ) || typeof( IByteBuffer ).IsAssignableFrom( type ) ) )
         {
-            result = (T)(IByteBuffer)new WrappedByteBuffer( (byte[])data, context.Channel.Buffer.Endianness );
+            result = (T)(object)new ReadableByteBuffer( bytes, context.BufferEndianness );
 
-            return ( true );
+            return true;
         }
 
-        // attempt an IByteBuffer to byte[] transformation
-        if (
-            type.IsArray && type.GetElementType() == typeof( byte )  
-            &&
-            data.GetType().IsAssignableTo( typeof( IByteBuffer ) )
-        )
+        // IByteBuffer -> T
+        if ( data is IByteBuffer buffer )
         {
-            var buffer = (IByteBuffer)data;
-            result = (T)(object)buffer.ReadBytes( buffer.ReadableBytes );
+            // IByteBuffer -> byte[] conversion
+            if ( type.IsArray && type.GetElementType() == typeof( byte ) )
+            {
+                result = (T)(object)buffer.ToArray();
 
-            return ( true );
+                /*
+                because a byte[] doesn't offer structured access to the data, at this point the buffer is discarded and considered consumed.
+                we could use DiscardAll, but that does an extra allocation. Skipping the bytes just moves the offset and avoids the allocation.
+                */
+                if ( data is IReadableByteBuffer readableBuffer )
+                {
+                    readableBuffer.SkipBytes( readableBuffer.ReadableBytes );
+                }
+
+                return true;
+            }
+
+            // IByteBuffer pass-through conversion
+            if ( typeof( IByteBuffer ).IsAssignableFrom( type ) )
+            {
+                result = (T)buffer;
+
+                return true;
+            }
         }
 
         result = default;

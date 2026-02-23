@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 
 namespace Faactory.Channels.Tcp;
 
-internal sealed class TcpListener : IHostedService, IDisposable
+internal sealed class TcpListener : IHostedService, IDisposable, IAsyncDisposable
 {
     private readonly ILogger logger;
     private readonly int so_backlog;
@@ -37,9 +37,13 @@ internal sealed class TcpListener : IHostedService, IDisposable
 
     public void Dispose()
     {
-        cancellationTokenSource?.Cancel();
+        DisposeAsync().AsTask().GetAwaiter().GetResult();
+    }
 
-        Socket.Dispose();
+    public async ValueTask DisposeAsync()
+    {
+        await StopAsync( CancellationToken.None )
+            .ConfigureAwait( false );
     }
 
     public Task StartAsync( CancellationToken cancellationToken )
@@ -50,9 +54,7 @@ internal sealed class TcpListener : IHostedService, IDisposable
 
         receiveTask = ExecuteAsync( cancellationTokenSource.Token );
 
-        return receiveTask.IsCompleted
-            ? receiveTask
-            : Task.CompletedTask;
+        return Task.CompletedTask;
     }
 
     public async Task StopAsync( CancellationToken cancellationToken )
@@ -111,14 +113,7 @@ internal sealed class TcpListener : IHostedService, IDisposable
                     continue;
                 }
 
-                /*
-                this gets executed in a separate thread to avoid thread issues with
-                the channel's scope, since the channel has asynchronous operations
-                */
-                await Task.Run(
-                    () => _ = CreateChannel( clientSocket ),
-                    cancellationToken
-                );
+                _ = CreateChannel( clientSocket );
             }
             catch ( OperationCanceledException )
             {

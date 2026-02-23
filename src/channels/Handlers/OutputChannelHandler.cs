@@ -6,7 +6,7 @@ internal sealed class OutputChannelHandler( ILoggerFactory loggerFactory ) : Cha
 {
     private readonly ILogger logger = loggerFactory.CreateLogger<OutputChannelHandler>();
 
-    public override async Task ExecuteAsync( IChannelContext context, byte[] data )
+    public override async Task ExecuteAsync( IChannelContext context, byte[] data, CancellationToken cancellationToken )
     {
         if ( context.Channel is Channel channel )
         {

@@ -1,5 +1,8 @@
 namespace Faactory.Channels.Buffers;
 
+/// <summary>
+/// Provides extension methods for searching within byte buffers.
+/// </summary>
 public static class ByteBufferSearchExtensions
 {
     /// <summary>
@@ -9,29 +12,28 @@ public static class ByteBufferSearchExtensions
     /// <param name="predicate">A function to test each byte for a condition.</param>
     /// <param name="offset">The offset in the buffer to start looking; if -1 it uses the buffer's current offset</param>
     /// <returns>True if any byte satisfies the condition; false otherwise.</returns>
-    public static bool Any( this IByteBuffer source, Func<byte, bool> predicate, int offset = -1 )
+    public static bool Any( this IReadableByteBuffer source, Func<byte, bool> predicate, int offset = -1 )
     {
-        NonReadableBufferException.ThrowIfNotReadable( source );
-
-        if ( offset < 0 )
-        {
-            offset = source.Offset;
-        }
+        offset = offset < 0
+            ? source.Offset
+            : offset;
 
         if ( offset >= source.Length )
         {
-            return false ;
+            return false;
         }
 
-        for ( int idx = offset; idx < source.Length; idx++ )
+        var span = source.GetSpan( offset, source.Length - offset );
+
+        foreach ( var b in span )
         {
-            if ( predicate( source.GetByte( idx ) ) )
+            if ( predicate( b ) )
             {
-                return true ;
+                return true;
             }
         }
 
-        return false ;
+        return false;
     }
 
     /// <summary>
@@ -41,30 +43,23 @@ public static class ByteBufferSearchExtensions
     /// <param name="b">The byte to find</param>
     /// <param name="offset">The offset in the buffer to start looking; if -1 it uses the buffer's current offset</param>
     /// <returns>The index of the byte; -1 if the byte wasn't found.</returns>
-    public static int IndexOf( this IByteBuffer source, byte b, int offset = -1 )
+    public static int IndexOf( this IReadableByteBuffer source, byte b, int offset = -1 )
     {
-        NonReadableBufferException.ThrowIfNotReadable( source );
-
-        if ( offset < 0 )
-        {
-            offset = source.Offset;
-        }
+        offset = offset < 0
+            ? source.Offset
+            : offset;
 
         if ( offset >= source.Length )
         {
-            return -1 ;
+            return -1;
         }
 
-        // look for a byte match
-        for ( int idx = offset; idx < source.Length; idx++ )
-        {
-            if ( source.GetByte( idx ) == b )
-            {
-                return idx ;
-            }
-        }
+        var span = source.GetSpan( offset, source.Length - offset );
+        int idx = span.IndexOf( b );
 
-        return -1 ;
+        return idx >= 0
+            ? offset + idx
+            : -1;
     }
 
     /// <summary>
@@ -74,32 +69,28 @@ public static class ByteBufferSearchExtensions
     /// <param name="sequence">The sequence of bytes to find</param>
     /// <param name="offset">The offset in the buffer to start looking; if -1 it uses the buffer's current offset</param>
     /// <returns>The index of the beginning of the sequence; -1 if the sequence wasn't found.</returns>
-    public static int IndexOf( this IByteBuffer source, byte[] sequence, int offset = -1 )
+    public static int IndexOf( this IReadableByteBuffer source, byte[] sequence, int offset = -1 )
     {
-        NonReadableBufferException.ThrowIfNotReadable( source );
-
-        if ( offset < 0 )
+        if ( sequence.Length == 0 )
         {
-            offset = source.Offset;
+            return -1;
         }
 
-        var maxOffset = source.Length - sequence.Length + 1;
+        offset = offset < 0
+            ? source.Offset
+            : offset;
 
-        if ( offset >= maxOffset )
+        if ( offset > source.Length - sequence.Length )
         {
-            return - 1 ;
+            return -1;
         }
 
-        // look for a sequence match
-        for ( int idx = offset; idx < maxOffset; idx++ )
-        {
-            if ( MatchBytes( source, sequence, idx ) )
-            {
-                return idx ;
-            }
-        }
+        var span = source.GetSpan( offset, source.Length - offset );
+        int idx = span.IndexOf( sequence );
 
-        return -1 ;
+        return idx >= 0
+            ? offset + idx
+            : -1;
     }
 
     /// <summary>
@@ -109,37 +100,22 @@ public static class ByteBufferSearchExtensions
     /// <param name="sequence">The sequence of bytes to match</param>
     /// <param name="offset">The offset in the buffer; if -1 it uses the buffer's current offset</param>
     /// <returns>True if the sequence matches; false otherwise.</returns>
-    public static bool MatchBytes( this IByteBuffer source, byte[] sequence, int offset = -1 )
+    public static bool MatchBytes( this IReadableByteBuffer source, byte[] sequence, int offset = -1 )
     {
-        NonReadableBufferException.ThrowIfNotReadable( source );
-
-        if ( offset < 0 )
-        {
-            offset = source.Offset;
-        }
-
-        // validate the offset and sequence length
-        if ( offset < 0 || sequence.Length == 0 )
+        if ( sequence.Length == 0 )
         {
             return false;
         }
 
-        // validate that the sequence fits in the buffer at the given offset
-        if ( offset + sequence.Length > source.Length )
+        offset = offset < 0 ? source.Offset : offset;
+
+        if ( offset > source.Length - sequence.Length )
         {
-            return false ;
+            return false;
         }
 
-        // compare the bytes
-        for ( int idx = 0; idx < sequence.Length; idx++ )
-        {
-            if ( source.GetByte( offset + idx ) != sequence[idx] )
-            {
-                return false ;
-            }
-        }
-
-        return true ;
+        return source.GetSpan( offset, sequence.Length )
+            .SequenceEqual( sequence );
     }
 
 }

@@ -1,5 +1,8 @@
 namespace Faactory.Channels;
 
+/// <summary>
+/// Represents the options for configuring a channel
+/// </summary>
 public class ChannelOptions
 {
     /// <summary>

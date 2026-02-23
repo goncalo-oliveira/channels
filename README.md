@@ -1,17 +1,9 @@
 # Channels
 
-A TCP communication library based on middleware components. Read the [official docs](https://channels.docs.faactory.io) to learn more.
+A middleware-based communication library for TCP, UDP, and WebSockets. Read the [official docs](https://channels.docs.faactory.io) to learn more.
 
 ![dotnet workflow](https://github.com/goncalo-oliveira/channels/actions/workflows/dotnet.yml/badge.svg)
 [![read the docs](https://img.shields.io/badge/read%20the%20docs-33466b)](https://channels.docs.faactory.io)
-
-## Related Projects
-
-The following are projects that extend the functionality of this library.
-
-- [Parcel Protocol](https://github.com/goncalo-oliveira/channels-parcel)
-- [Prometheus Metrics](https://github.com/goncalo-oliveira/channels-prometheus)
-- [Teltonika Protocol](https://www.nuget.org/packages/Faactory.Channels.Teltonika)
 
 ## Design
 
@@ -29,7 +21,7 @@ graph LR;
     a2 --> h2[/Handler/]
 ```
 
-For data going through the channel output, only *adapters* are applicable. Whatever comes out from the pipeline is delivered to an internal handler that writes the data to the channel's underlying socket.
+For data going through the channel output, only *adapters* are applicable. Whatever comes out from the pipeline is delivered to a built-in handler that writes the data to the channel's underlying transport.
 
 ```mermaid
 graph LR;
@@ -40,13 +32,16 @@ graph LR;
     a2 --> channelOutput([Output])
 ```
 
+> [!IMPORTANT]
+> If an adapter or handler throws an exception, the channel is closed. This is a safety mechanism to prevent the channel from being in an inconsistent state. If you need to handle exceptions differently, you can catch them within the adapter or handler and handle them accordingly.
+
 ## Middleware Characteristics
 
 Unless you have very specific needs, middleware components should inherit from the abstract classes provided instead of implementing the interfaces directly. The base class for all middleware components (adapters and handlers) does a few things for us that won't be available when implementing the interfaces directly. This includes
 
 - **Type Checking** - Ensures the data type is suitable for the middleware component. If it's not, the middleware is not executed. If the middleware is an adapter, the data is automatically forwarded to the next middleware in the pipeline. This behaviour can be changed by overriding the `OnDataNotSuitable` method.
 
-- **Type Mutation** - The capacity to convert the data type, when compatible with the expected middleware data type. All middleware components already deal with `IByteBuffer` <--> `Byte[]` and `T` <--> `IEnumerable<T>` mutations, but they also provide an opportunity to change/extend this behaviour by overriding the `ConvertType` method.
+- **Type Mutation** - The capacity to convert the data type, when compatible with the expected middleware data type. All middleware components already deal with `IReadableByteBuffer` <--> `byte[]` and `T` <--> `IEnumerable<T>` mutations, but they also provide an opportunity to change/extend this behaviour by overriding the `ConvertType` method.
 
 ## Adapters
 
@@ -65,12 +60,12 @@ Unless you have very specific needs, you should inherit your adapter from the `C
 
 We also need to indicate whether the adapter is meant for the input or/and the output pipelines. We do that by adding the interfaces `IInputChannelAdapter` or/and `IOutputChannelAdapter` respectively.
 
-Here's an example of how to implement an adapter that adapts from an `IByteBuffer` (or `Byte[]`). This adapter can only be added to the input pipeline, since it only implements the `IInputChannelAdapter` interface.
+Here's an example of how to implement an adapter that adapts from an `IReadableByteBuffer` (or `byte[]`). This adapter can only be added to the input pipeline, since it only implements the `IInputChannelAdapter` interface.
 
 ```csharp
-public class MyChannelAdapter : ChannelAdapter<IByteBuffer>, IInputChannelAdapter
+public class MyChannelAdapter : ChannelAdapter<IReadableByteBuffer>, IInputChannelAdapter
 {
-    public override Task ExecuteAsync( IAdapterContext context, IByteBuffer data )
+    public override Task ExecuteAsync( IAdapterContext context, IReadableByteBuffer data )
     {
         // adapt/transform data
         var adaptedData = ...
@@ -140,12 +135,12 @@ Starting from version *0.10*, the base middleware executes `IEnumerable<T>` <-->
 
 ## Writing to Channel Output
 
-At any point, within an adapter or handler, we can write data to the channel output; this will trigger the output pipeline and at the end of it, send the data to the other party. However, there are two distinct ways of doing this, both with a distinct behaviour.
+At any point, within an adapter or handler, we can write data to the channel output; this will trigger the output pipeline and at the end of it, send the data through the underlying transport. However, there are two distinct ways of doing this, both with a distinct behaviour.
 
 ### 1. Write to the Output buffer (recommended)
 
 The middleware context gives us access to an output buffer that we can write to. This **IS** the recommended method. Writing to the output buffer doesn't immediately trigger the output pipeline. Instead, it is only triggered at the end of the (input) pipeline, after all adapters and handlers have executed (fully).
-If the pipeline is interrupted, because an adapter didn't forward any data or a handler crashed, the data in the buffer will be discarded and never written to the channel.
+If the pipeline is interrupted, because an adapter didn't forward any data, the data in the buffer will be discarded and never written to the channel.
 
 ```csharp
 public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Message> data )
@@ -158,7 +153,7 @@ public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Me
 
 ### 2. Write directly to the Channel
 
-This is the most straightforward method and it will immediately trigger the output pipeline, however, it is **NOT** the recommended way, unless you need the data to reach the other party, no matter what happens next (current or next middleware component). This is an asynchronous process.
+This is the most straightforward method and it will immediately trigger the output pipeline, however, it is **NOT** the recommended way, unless you need the data to be immediately sent through the underlying transport, no matter what happens next (current or next middleware component). This is an asynchronous process.
 
 ```csharp
 public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Message> data )
@@ -178,7 +173,7 @@ Install the package from NuGet
 dotnet add package Faactory.Channels
 ```
 
-The first step is to add the library to the DI container and configure the channel pipelines. These configurations are always *named*, which means that we can have multiple channel configurations for different purposes. Nonetheless, if we only need one channel pipeline, we can do it all at once by configuring a *default` configuration.
+The first step is to add the library to the DI container and configure the channel pipelines. These configurations are always *named*, which means that we can have multiple channel configurations for different purposes. Nonetheless, if we only need one channel pipeline, we can do it all at once by setting a *default* configuration.
 
 ```csharp
 IServiceCollection services = ...;
@@ -237,9 +232,13 @@ We can use multiple listeners in the same application, each with its own configu
 
 ## Adapters and Buffers
 
-Although raw data handling in the adapters can be done with `Byte[]`, it is recommended to use a `IByteBuffer` instance instead, particularly for reading data. You can read more about it [here](README.buffers.md).
+Although raw data handling in the adapters can be done with `byte[]`, it is recommended to use a `IReadableByteBuffer` instance instead, particularly for reading data.
 
-Data received in the adapters that is not read will remain in the channel's input buffer. When more data is received, it is delivered again along with the newly received data. If an adapter uses `Byte[]` instead, the data in the input buffer is automatically marked as read and discarded.
+Data received in an adapter that is not explicitly read remains in the channel’s internal input buffer. When more data arrives, it is delivered again together with the previously unread bytes.
+
+If an adapter uses `byte[]`, however, the internal buffer is automatically marked as fully read and discarded before the adapter executes. This means that if the adapter does not process the data (or fails), those bytes are lost.
+
+When using `IReadableByteBuffer`, unread data is preserved and will be redelivered when additional data is received, making it the preferred option for framing and partial reads.
 
 ## Channel Scope
 
@@ -323,7 +322,7 @@ The service is added by using the builder's `AddChannelService` method.
 ```csharp
 IChannelBuilder channel = ...;
 
-chanel.AddChannelService<MyService>();
+channel.AddChannelService<MyService>();
 ```
 
 ## Channel Data
@@ -394,15 +393,15 @@ we could also register the default client with a named channel configuration
 // services.AddChannelsClient( "channel1", "tcp://example.host:8080" );
 
 /*
-when we need to create a client, we only need to inject the `IChannelsClientFactory` interface
+when we need to create a client, we only need to inject the `IChannelFactory` interface
 */
 public class MyClient
 {
     private readonly IChannelsClient client;
 
-    public MyClient( IChannelsClientFactory factory )
+    public MyClient( IChannelFactory factory )
     {
-        client = factory.CreateClient();
+        client = factory.CreateClientChannel();
     }
 
     public Task ExecuteAsync()

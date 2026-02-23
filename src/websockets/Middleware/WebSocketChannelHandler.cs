@@ -7,7 +7,7 @@ internal sealed class WebSocketChannelHandler( ILoggerFactory loggerFactory ) : 
 {
     private readonly ILogger logger = loggerFactory.CreateLogger<WebSocketChannelHandler>();
 
-    public override async Task ExecuteAsync( IChannelContext context, WebSocketMessage message )
+    public override async Task ExecuteAsync( IChannelContext context, WebSocketMessage message, CancellationToken cancellationToken )
     {
         if ( context.Channel is WebSocketChannel wsChannel )
         {

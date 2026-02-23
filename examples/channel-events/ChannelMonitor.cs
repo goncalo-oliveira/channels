@@ -16,7 +16,7 @@ public class ChannelMonitor( ILogger<ChannelMonitor> logger ) : IChannelMonitor
         logger.LogInformation( "Channel closed." );
     }
 
-    public void DataReceived( IChannelInfo channelInfo, byte[] data )
+    public void DataReceived( IChannelInfo channelInfo, ReadOnlySpan<byte> data )
     {
         logger.LogInformation(
             "Channel received {Length} bytes.",
@@ -24,11 +24,11 @@ public class ChannelMonitor( ILogger<ChannelMonitor> logger ) : IChannelMonitor
         );
     }
 
-    public void DataSent( IChannelInfo channelInfo, int sent )
+    public void DataSent( IChannelInfo channelInfo, ReadOnlySpan<byte> data )
     {
         logger.LogInformation(
-            "Channel sent {sent} bytes.",
-            sent
+            "Channel sent {Length} bytes.",
+            data.Length
         );
     }
 

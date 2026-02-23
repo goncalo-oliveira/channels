@@ -1,7 +1,6 @@
 using System.Text;
 using Faactory.Channels.Adapters;
 using Faactory.Channels.Buffers;
-using Faactory.Channels.Handlers;
 using Microsoft.Extensions.Logging;
 
 namespace Faactory.Channels.WebSockets.Adapters;
@@ -13,7 +12,7 @@ internal sealed class WebSocketTextMessageAdapter( ILoggerFactory loggerFactory 
 {
     private readonly ILogger logger = loggerFactory.CreateLogger<WebSocketTextMessageAdapter>();
 
-    public override Task ExecuteAsync( IAdapterContext context, string data )
+    public override Task ExecuteAsync( IAdapterContext context, string data, CancellationToken cancellationToken )
     {
         /*
         ignore null or empty strings
@@ -26,7 +25,7 @@ internal sealed class WebSocketTextMessageAdapter( ILoggerFactory loggerFactory 
         context.Forward( new WebSocketMessage
         {
             Type = System.Net.WebSockets.WebSocketMessageType.Text,
-            Data = new WrappedByteBuffer( Encoding.UTF8.GetBytes( data ) )
+            Data = new ReadableByteBuffer( Encoding.UTF8.GetBytes( data ) )
         } );
 
         logger.LogDebug( "Forwarded WebSocketMessage with text data." );

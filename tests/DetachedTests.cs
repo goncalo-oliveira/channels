@@ -1,9 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
+using Faactory.Channels;
 using Faactory.Channels.Adapters;
 using Xunit;
 
-namespace Faactory.Channels.Tests;
+namespace tests;
 
 public class DetachedChannelTests
 {
@@ -22,9 +23,9 @@ public class DetachedChannelTests
 
     private class MyAdapter : IChannelAdapter, IInputChannelAdapter
     {
-        public Task ExecuteAsync( IAdapterContext context, object data )
+        public Task ExecuteAsync( IAdapterContext context, object data, CancellationToken cancellationToken )
         {
-            var svc = context.Channel.GetRequiredService<MyChannelService>();
+            var svc = context.Channel.GetRequiredChannelService<MyChannelService>();
 
             context.Forward( svc.Id );
 

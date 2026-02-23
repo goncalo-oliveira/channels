@@ -1,3 +1,5 @@
+using Faactory.Channels.Buffers;
+
 namespace Faactory.Channels;
 
 /// <summary>

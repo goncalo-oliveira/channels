@@ -1,22 +1,17 @@
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using Faactory.Channels.Buffers;
-using Faactory.Channels.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
-internal sealed class TcpChannel : Channel, IChannel
+internal sealed class TcpChannel : Channel
 {
     private const int DefaultBufferLength = 13312;
 
     private readonly ILogger logger;
     private readonly IDisposable? loggerScope;
-
-    private readonly byte[] socketBuffer = new byte[DefaultBufferLength];
-
-    private readonly Task initializeTask;
-    private readonly CancellationTokenSource cts = new();
+    private Task receiveTask = Task.CompletedTask;
 
     internal TcpChannel( 
           IServiceScope serviceScope
@@ -44,33 +39,24 @@ internal sealed class TcpChannel : Channel, IChannel
             Services = channelServices;
         }
 
-        initializeTask = InitializeAsync( cts.Token );
-
         logger.LogDebug( "Created" );
+
+        BeginInitialize();
     }
 
     public Socket Socket { get; init; }
 
-    private bool IsShutdown { get; set; }
-
-    public override Task CloseAsync()
+    public override async Task CloseAsync()
     {
-        try
-        {
-            cts.Cancel();
-        }
-        catch { }
+        await base.CloseAsync()
+            .ConfigureAwait( false );
 
         try
         {
-            Shutdown();
+            Socket.Shutdown( SocketShutdown.Both );
         }
         catch ( Exception )
         { }
-        finally
-        {
-            OnDisconnected();
-        }
 
         try
         {
@@ -79,277 +65,142 @@ internal sealed class TcpChannel : Channel, IChannel
         catch ( Exception )
         {}
 
-        return Task.CompletedTask;
-    }
-
-    public override Task WriteAsync( object data )
-    {
-        if ( IsShutdown )
-        {
-            logger.LogWarning( "Can't write to a closed channel." );
-
-            return Task.CompletedTask;
-        }
-
-        return base.WriteAsync( data );
-    }
-
-    public override void Dispose()
-    {
         try
         {
-            cts.Cancel();
+            await receiveTask.ConfigureAwait( false );
         }
         catch { }
 
-        base.Dispose();
-
-        try
-        {
-            Socket.Dispose();
-        }
-        catch { }
-
-        initializeTask.TryDispose();
-
-        logger.LogDebug( "Disposed." );
-
-        GC.SuppressFinalize( this );
+        loggerScope?.Dispose();
     }
 
     protected override async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         await base.InitializeAsync( cancellationToken );
 
-        BeginReceive();
+        receiveTask = ReceiveAsync( LifetimeToken );
 
         logger.LogInformation( "Ready." );
     }
 
-    #region Socket
-
-    internal bool IsConnected()
+    private async Task ReceiveAsync( CancellationToken cancellationToken )
     {
-        try
-        {
-            var readStatus = Socket.Poll( 1000, SelectMode.SelectRead );
-            var dataUnavailable = Socket.Available == 0;
-
-            if ( ( !Socket.Connected ) || ( readStatus && dataUnavailable ) )
-            {
-                return false;
-            }
-
-            return true;
-        }
-        catch ( Exception )
-        {
-            return false;
-        }
-    }
-
-    private void BeginReceive()
-    {
-        try
-        {
-            Socket.BeginReceive( socketBuffer
-                , 0
-                , socketBuffer.Length
-                , 0
-                , new AsyncCallback( ReadCallback ), this );
-        }
-        catch ( ObjectDisposedException )
-        {
-            // socket is closed
-            logger.LogTrace( "Disconnected." );
-
-            OnDisconnected();
-        }
-    }
-
-    public override Task WriteRawBytesAsync( byte[] data )
-    {
-        try
-        {
-            Socket.BeginSend( data
-                , 0
-                , data.Length
-                , 0
-                , new AsyncCallback( SendCallback )
-                , this );
-        }
-        catch ( ObjectDisposedException )
-        {
-            // socket is closed
-            logger.LogTrace( "Disconnected." );
-
-            OnDisconnected();
-        }
-
-        return Task.CompletedTask;
-    }
-
-    private void OnDataReceived( byte[] data )
-    {
-        LastReceived = DateTimeOffset.UtcNow;
-
-        this.NotifyDataReceived( data );
-
-        Buffer.WriteBytes( data, 0, data.Length );
-
-        var pipelineBuffer = Buffer.MakeReadOnly();
-
-        logger.LogDebug( "Executing input pipeline..." );
-
-        Task.Run( () => Input.ExecuteAsync( this, pipelineBuffer ) )
-            .ConfigureAwait( false )
-            .GetAwaiter()
-            .GetResult();
-
-        pipelineBuffer.DiscardReadBytes();
-
-        Buffer = pipelineBuffer.MakeWritable();
-
-        if ( Buffer.Length > 0 )
-        {
-            logger.LogDebug( "Remaining buffer length: {Length} byte(s).", Buffer.Length );
-        }
-    }
-
-    private void OnDataSent( int bytesSent )
-    {
-        LastSent = DateTimeOffset.UtcNow;
-
-        this.NotifyDataSent( bytesSent );
-    }
-
-    private async void OnDisconnected()
-    {
-        if ( IsClosed )
-        {
-            return;
-        }
-
-        IsClosed = true;
-
-        logger.LogInformation( "Closed." );
-        
-        try
-        {
-            this.NotifyChannelClosed();
-        }
-        catch ( Exception )
-        { }
-
-        logger.LogDebug( "Stopping services." );
-
-        await StopServicesAsync()
-            .ConfigureAwait( false );
-
-        logger.LogDebug( "Stopped services." );
-
-        Dispose();
-    }
-
-    private void Shutdown()
-    {
-        try
-        {
-            Socket.Shutdown( SocketShutdown.Both );
-        }
-        catch ( Exception )
-        { }
-
-        IsShutdown = true;
-    }
-
-    private void ReadCallback( IAsyncResult ar )
-    {
-        // retrieve the connection object and the handler socket from the asynchronous state object
-        var connection = (TcpChannel)ar.AsyncState!;
-        var handler = connection.Socket;
-
-        if ( handler.SafeHandle.IsClosed )
-        {
-            // socket is closed
-            logger.LogTrace( "Disconnected." );
-
-            connection.OnDisconnected();
-
-            return;
-        }
-
-        // read data from the client socket
+        var receiveBuffer = new byte[DefaultBufferLength];
         int bytesReceived;
 
-        try
+        while ( !cancellationToken.IsCancellationRequested )
         {
-            bytesReceived = handler.EndReceive( ar );
+            try
+            {
+                bytesReceived = await Socket.ReceiveAsync(
+                    receiveBuffer,
+                    SocketFlags.None,
+                    cancellationToken
+                )
+                .ConfigureAwait( false );
+            }
+            catch ( OperationCanceledException )
+            {
+                break;
+            }
+            catch ( SocketException ex )
+            {
+                logger.LogError( ex, "Receive failed. {Message}", ex.Message );
+
+                _ = CloseAsync();
+
+                break;
+            }
+            catch ( ObjectDisposedException )
+            {
+                break;
+            }
+
+            if ( bytesReceived <= 0 )
+            {
+                logger.LogTrace( "Disconnected." );
+
+                _ = CloseAsync();
+
+                break;
+            }
+
+            var received = new byte[bytesReceived];
+            System.Buffer.BlockCopy( receiveBuffer, 0, received, 0, bytesReceived );
+
+            await ExecuteInputPipelineAsync( received ).ConfigureAwait( false );
         }
-        catch ( Exception ex )
-        {
-            logger.LogError(
-                ex, 
-                "Failed to receive data. {Message}",
-                ex.Message
-                );
-
-            handler.TryDisconnect();
-            handler.TryClose();
-
-            return;
-        }
-
-        if ( bytesReceived <= 0 )
-        {
-            // nothing was read
-            logger.LogTrace( "Disconnected." );
-
-            handler.TryClose();
-
-            connection.OnDisconnected();
-
-            return;
-        }
-
-        // trigger data received
-        logger.LogTrace( "received {bytesReceived} bytes", bytesReceived );
-
-        connection.OnDataReceived( 
-            connection.socketBuffer.Take( bytesReceived )
-                .ToArray() );
-
-        // read more data
-        connection.BeginReceive();
     }
 
-    private void SendCallback( IAsyncResult ar )
+    public override async Task WriteRawBytesAsync( byte[] data )
     {
-        // retrieve the connection object and the handler socket from the asynchronous state object
-        var connection = (TcpChannel)ar.AsyncState!;
-        var handler = connection.Socket;
-
-        if ( handler.SafeHandle.IsClosed )
-        {
-            // socket is closed
-            return;
-        }
-
         try
         {
-            // complete sending the data to the remote device
-            var bytesSent = handler.EndSend( ar );
+            int totalBytesSent = 0;
+            while ( totalBytesSent < data.Length )
+            {
+                var bytesSent = await Socket.SendAsync(
+                    data.AsMemory( totalBytesSent ),
+                    SocketFlags.None,
+                    LifetimeToken
+                )
+                .ConfigureAwait( false );
+
+                if ( bytesSent == 0 )
+                {
+                    throw new SocketException();
+                }
+
+                logger.LogTrace( "sent {bytesSent} bytes", bytesSent );
+
+                totalBytesSent += bytesSent;
+            }
 
             // trigger data sent
-            logger.LogTrace( "sent {bytesSent} bytes", bytesSent );
-
-            connection.OnDataSent( bytesSent );
+            NotifyDataSent( data );
         }
-        catch ( Exception ex )
+        catch ( Exception ex ) when ( ex is ObjectDisposedException || ex is SocketException )
         {
-            logger.LogError( ex, "Failed to send data. {Message}", ex.Message );
+            // socket is closed
+            logger.LogTrace( "Disconnected." );
+
+            await CloseAsync();
         }
     }
 
-    #endregion
+    private async Task ExecuteInputPipelineAsync( byte[] data )
+    {
+        try
+        {
+            NotifyDataReceived( data );
+
+            Buffer.WriteBytes( data, 0, data.Length );
+
+            var pipelineBuffer = Buffer.AsReadable();
+
+            logger.LogDebug( "Executing input pipeline..." );
+
+            await Input.ExecuteAsync( this, pipelineBuffer, LifetimeToken )
+                .ConfigureAwait( false );
+
+            pipelineBuffer.DiscardReadBytes();
+
+            Buffer = pipelineBuffer.AsWritable();
+
+            if ( Buffer.Length > 0 )
+            {
+                logger.LogDebug( "Remaining buffer length: {Length} byte(s).", Buffer.Length );
+            }
+        }
+        catch ( OperationCanceledException )
+        {
+            // Expected shutdown
+        }
+        catch ( Exception ex )
+        {
+            logger.LogError( ex, "Pipeline execution failed. {Message}", ex.Message );
+
+            await CloseAsync().ConfigureAwait( false );
+        }
+    }
 }

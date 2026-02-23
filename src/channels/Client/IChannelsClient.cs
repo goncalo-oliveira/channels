@@ -3,7 +3,7 @@ namespace Faactory.Channels.Client;
 /// <summary>
 /// A Channels client
 /// </summary>
-public interface IChannelsClient : IDisposable
+public interface IChannelsClient : IDisposable, IAsyncDisposable
 {
     /// <summary>
     /// The channel to use for communication

@@ -5,20 +5,11 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Faactory.Channels;
 
-internal class ChannelPipeline : IChannelPipeline
+internal class ChannelPipeline( ILoggerFactory loggerFactory, IEnumerable<IChannelAdapter> channelAdapters, IEnumerable<IChannelHandler>? channelHandlers = null ) : IChannelPipeline
 {
-    private readonly ILogger logger;
-    private readonly IEnumerable<IChannelAdapter> adapters;
-    private readonly IEnumerable<IChannelHandler> handlers;
-
-    public ChannelPipeline( ILoggerFactory loggerFactory
-        , IEnumerable<IChannelAdapter> channelAdapters
-        , IEnumerable<IChannelHandler>? channelHandlers = null )
-    {
-        logger = loggerFactory.CreateLogger<ChannelPipeline>();
-        adapters = channelAdapters;
-        handlers = channelHandlers ?? Enumerable.Empty<IChannelHandler>();
-    }
+    private readonly ILogger logger = loggerFactory.CreateLogger<ChannelPipeline>();
+    private readonly IEnumerable<IChannelAdapter> adapters = channelAdapters;
+    private readonly IEnumerable<IChannelHandler> handlers = channelHandlers ?? [];
 
     public void Dispose()
     {
@@ -31,13 +22,13 @@ internal class ChannelPipeline : IChannelPipeline
         }
     }
 
-    public async Task ExecuteAsync( IChannel channel, object data )
+    public async Task ExecuteAsync( IChannel channel, object data, CancellationToken cancellationToken )
     {
         var adapterContext = new AdapterContext( channel );
 
         adapterContext.Forward( data );
 
-        var interrupted = !await ExecuteAdaptersAsync( adapterContext )
+        var interrupted = !await ExecuteAdaptersAsync( adapterContext, cancellationToken )
             .ConfigureAwait( false );
 
         if ( interrupted )
@@ -47,17 +38,12 @@ internal class ChannelPipeline : IChannelPipeline
         }
 
         // execute handlers
-        interrupted = !await ExecuteHandlersAsync( adapterContext )
+        interrupted = !await ExecuteHandlersAsync( adapterContext, cancellationToken )
             .ConfigureAwait( false );
 
         if ( interrupted )
         {
             // pipeline was interrupted
-            // TODO: this could potentially be an option
-            // by default (as is now) the pipeline is interrupted if a handler crashes
-            // interrupting here means that in the output buffer doesn't get written
-            // maybe that isn't always the case and the output buffer should be written nonetheless
-            // same thing for adapters
             return;
         }
 
@@ -66,14 +52,14 @@ internal class ChannelPipeline : IChannelPipeline
             .ConfigureAwait( false );
     }
 
-    private async Task<bool> ExecuteAdaptersAsync( AdapterContext context )
+    private async Task<bool> ExecuteAdaptersAsync( AdapterContext context, CancellationToken cancellationToken )
     {
         IChannelAdapter? previousAdapter = null;
         foreach ( var adapter in adapters )
         {
             var adapterData = context.Flush();
 
-            if ( !adapterData.Any() )
+            if ( adapterData.Length == 0 )
             {
                 // no data available on the pipeline
                 // interrupt the workflow
@@ -89,8 +75,15 @@ internal class ChannelPipeline : IChannelPipeline
             {
                 try
                 {
-                    await adapter.ExecuteAsync( context, dataItem )
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    await adapter.ExecuteAsync( context, dataItem, cancellationToken )
                         .ConfigureAwait( false );
+                }
+                catch ( OperationCanceledException )
+                {
+                    // Expected shutdown
+                    throw;
                 }
                 catch ( Exception ex )
                 {
@@ -100,6 +93,13 @@ internal class ChannelPipeline : IChannelPipeline
                         adapter.GetType().Name
                     );
 
+                    /*
+                    If the middleware throws an exception, the channel is likely in an inconsistent state and should be closed.
+                    */
+                    _ = context.Channel.CloseAsync();
+
+                    Metrics.MiddlewareExceptions.Add( 1 );
+
                     return false;
                 }
             }
@@ -107,31 +107,25 @@ internal class ChannelPipeline : IChannelPipeline
             previousAdapter = adapter;
         }
 
-        return ( true );
+        return true;
     }
 
-    private async Task<bool> ExecuteHandlersAsync( AdapterContext adapterContext )
+    private async Task<bool> ExecuteHandlersAsync( AdapterContext context, CancellationToken cancellationToken )
     {
-        if ( handlers == null )
-        {
-            // this is true for output pipelines
-            return ( true );
-        }
+        var handlerData = context.Flush();
 
-        var handlerData = adapterContext.Flush();
-
-        if ( !handlerData.Any() )
+        if ( handlerData.Length == 0)
         {
             // no data forwarded from the adapters
             logger.LogDebug( "No data forwarded from the adapters." );
-            return ( true );
+            return true;
         }
 
         if ( !handlers.Any() )
         {
             // no handlers
             logger.LogWarning( "No data handlers were registered." );
-            return ( true );
+            return true;
         }
 
         foreach ( var handler in handlers )
@@ -140,15 +134,22 @@ internal class ChannelPipeline : IChannelPipeline
             {
                 try
                 {
-                    await handler.ExecuteAsync( adapterContext, dataItem )
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    await handler.ExecuteAsync( context, dataItem, cancellationToken )
                         .ConfigureAwait( false );
+                }
+                catch ( OperationCanceledException )
+                {
+                    // Expected shutdown
+                    throw;
                 }
                 catch ( ObjectDisposedException )
                 {
                     // socket was disposed
                     logger.LogError( "Channel is closed." );
 
-                    return ( false );
+                    return false;
                 }
                 catch ( Exception ex )
                 {
@@ -158,12 +159,19 @@ internal class ChannelPipeline : IChannelPipeline
                         handler.GetType().Name
                     );
 
-                    return ( false );
+                    /*
+                    If the middleware throws an exception, the channel is likely in an inconsistent state and should be closed.
+                    */
+                    _ = context.Channel.CloseAsync();
+
+                    Metrics.MiddlewareExceptions.Add( 1 );
+
+                    return false;
                 }
             }
         }
 
-        return ( true );
+        return true;
     }
 
     internal static IChannelPipeline CreateInput( IServiceProvider provider, string name )
