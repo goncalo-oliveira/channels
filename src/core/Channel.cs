@@ -395,10 +395,10 @@ public abstract class Channel : IChannel, IAsyncDisposable
                         (int)Timeout.TotalSeconds
                     );
 
+                    Metrics.IdleTimeouts.Add( 1 );
+
                     await CloseAsync()
                         .ConfigureAwait( false );
-
-                    Metrics.IdleTimeouts.Add( 1 );
 
                     break;
                 }
