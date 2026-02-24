@@ -88,14 +88,6 @@ public sealed class NullChannel : IChannel, IAsyncDisposable
         }
         catch { }
 
-        // if initialization is still running, wait for it to complete
-        try
-        {
-            await initializeTask
-                .ConfigureAwait( false );
-        }
-        catch { }
-
         try
         {
             await StopServicesAsync()
@@ -117,9 +109,7 @@ public sealed class NullChannel : IChannel, IAsyncDisposable
     /// Disposes the channel and releases all resources associated with it.
     /// </summary>
     public void Dispose()
-    {
-        DisposeAsync().AsTask().GetAwaiter().GetResult();
-    }
+    { }
 
     /// <summary>
     /// Asynchronously disposes the channel and releases all resources associated with it.
@@ -128,6 +118,14 @@ public sealed class NullChannel : IChannel, IAsyncDisposable
     {
         await CloseAsync()
             .ConfigureAwait( false );
+
+        // if initialization is still running, wait for it to complete
+        try
+        {
+            await initializeTask
+                .ConfigureAwait( false );
+        }
+        catch { }
     }
 
     /// <summary>

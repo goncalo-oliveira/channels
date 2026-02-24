@@ -1,6 +1,8 @@
+using System.Diagnostics;
 using Faactory.Channels.Buffers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Faactory.Channels;
 
@@ -12,6 +14,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
     private readonly ILogger logger;
     private readonly CancellationTokenSource cts = new();
     private readonly Lazy<IChannelMonitor[]> monitors;
+    private readonly Func<IChannelInfo, TagList> metricsTagsFactory;
     private Task initializeTask = Task.CompletedTask;
     private Task idleMonitorTask = Task.CompletedTask;
 
@@ -29,11 +32,15 @@ public abstract class Channel : IChannel, IAsyncDisposable
 
         monitors = new( () => ServiceProvider.GetServices<IChannelMonitor>().ToArray() );
 
+        metricsTagsFactory = serviceScope.ServiceProvider.GetRequiredService<IOptions<ChannelOptions>>().Value.MetricsTagsFactory;
+
         logger.LogTrace( "Created" );
     }
 
     internal IChannelInfo Info { get; }
     internal IServiceProvider ServiceProvider => ChannelScope.ServiceProvider;
+
+    internal TagList GetMetricsTags() => metricsTagsFactory( Info );
 
     private int initializeStarted;
 
@@ -319,7 +326,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
     private void NotifyChannelClosed()
     {
         Metrics.ActiveChannels.Add( -1 );
-        Metrics.ChannelDuration.Record( ( DateTimeOffset.UtcNow - Created ).TotalMilliseconds );
+        Metrics.ChannelDuration.Record( ( DateTimeOffset.UtcNow - Created ).TotalMilliseconds, GetMetricsTags() );
 
         monitors.Value.InvokeAll( x => x.ChannelClosed( Info ) );
     }
@@ -332,7 +339,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
     {
         LastReceived = DateTimeOffset.UtcNow;
 
-        Metrics.DataReceived.Add( data.Length );
+        Metrics.DataReceived.Add( data.Length, GetMetricsTags() );
 
         foreach ( var service in monitors.Value )
         {
@@ -348,7 +355,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
     {
         LastSent = DateTimeOffset.UtcNow;
 
-        Metrics.DataSent.Add( data.Length );
+        Metrics.DataSent.Add( data.Length, GetMetricsTags() );
 
         foreach ( var service in monitors.Value )
         {
@@ -430,7 +437,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
                         (int)Timeout.TotalSeconds
                     );
 
-                    Metrics.IdleTimeouts.Add( 1 );
+                    Metrics.IdleTimeouts.Add( 1, GetMetricsTags() );
 
                     await CloseAsync()
                         .ConfigureAwait( false );
