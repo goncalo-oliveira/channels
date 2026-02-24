@@ -2,11 +2,9 @@ using System.Collections.ObjectModel;
 
 namespace Faactory.Channels;
 
-internal class ChannelInfo( IChannel channelInstance ) : IChannelInfo
+internal class ChannelInfo( IChannel channel ) : IChannelInfo
 {
-    private readonly IChannel channel = channelInstance;
-
     public string Id => channel.Id;
 
-    public IReadOnlyDictionary<string, string> Data => new ReadOnlyDictionary<string, string>( channel.Data );
+    public IReadOnlyDictionary<string, string> Data { get; } = new ReadOnlyDictionary<string, string>( channel.Data );
 }
