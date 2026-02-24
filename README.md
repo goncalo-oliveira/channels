@@ -65,7 +65,7 @@ Here's an example of how to implement an adapter that adapts from an `IReadableB
 ```csharp
 public class MyChannelAdapter : ChannelAdapter<IReadableByteBuffer>, IInputChannelAdapter
 {
-    public override Task ExecuteAsync( IAdapterContext context, IReadableByteBuffer data )
+    public override Task ExecuteAsync( IAdapterContext context, IReadableByteBuffer data, CancellationToken cancellationToken )
     {
         // adapt/transform data
         var adaptedData = ...
@@ -102,7 +102,7 @@ Similarly to the adapters, unless you have very specific needs, you should inher
 ```csharp
 public class MyChannelHandler : ChannelHandler<MyData>
 {
-    public override Task ExecuteAsync( IChannelContext context, MyData data )
+    public override Task ExecuteAsync( IChannelContext context, MyData data, CancellationToken cancellationToken )
     {
         // implement your handler here
     }
@@ -127,11 +127,11 @@ graph LR;
 | Run at any point in the pipeline       | Run at the end of the pipeline            |
 | Single adapter for forwarded data type | Multiple handlers for forwarded data type |
 
-## Enumerable type mutation and sequence order
+## Enumerable Type Handling
 
-Before version *0.10*, the base middleware split the execution of `IEnumerable<T>` <--> `T` spreads into multiple tasks. The reason behind this was to improve the speed of execution, however, this also meant that the order of execution was not guaranteed.
+When middleware produces an `IEnumerable<T>` and the next middleware component consumes `T`, each item is processed sequentially, guaranteeing that the order of execution is preserved.
 
-Starting from version *0.10*, the base middleware executes `IEnumerable<T>` <--> `T` spreads sequentially, guaranteeing the order of execution. This decision was made because on most cases, the performance gain was negligible and the task spawning caused some confusion to implementors.
+This ensures predictable behavior while keeping middleware composition flexible.
 
 ## Writing to Channel Output
 
@@ -143,7 +143,7 @@ The middleware context gives us access to an output buffer that we can write to.
 If the pipeline is interrupted, because an adapter didn't forward any data, the data in the buffer will be discarded and never written to the channel.
 
 ```csharp
-public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Message> data )
+public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Message> data, CancellationToken cancellationToken )
 {
     // ...
 
@@ -156,7 +156,7 @@ public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Me
 This is the most straightforward method and it will immediately trigger the output pipeline, however, it is **NOT** the recommended way, unless you need the data to be immediately sent through the underlying transport, no matter what happens next (current or next middleware component). This is an asynchronous process.
 
 ```csharp
-public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Message> data )
+public override async Task ExecuteAsync( IAdapterContext context, IEnumerable<Message> data, CancellationToken cancellationToken )
 {
     // ...
 
@@ -332,7 +332,7 @@ It is possible to store custom data on a channel instance. The `IChannel` interf
 ```csharp
 public class SampleIdentityHandler : ChannelHandler<IdentityInformation>
 {
-    public override Task ExecuteAsync( IChannelContext context, IdentityInformation data )
+    public override Task ExecuteAsync( IChannelContext context, IdentityInformation data, CancellationToken cancellationToken )
     {
         if ( !IsAuthorized( data ) )
         {
