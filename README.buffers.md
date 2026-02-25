@@ -41,10 +41,88 @@ var b1 = buffer.GetByte(customOffset);
 var b2 = buffer.ReadByte();
 ```
 
+## Buffer Views (Zero-Copy)
+
+Buffers in v2.x support **windowed views**, allowing efficient access to subsets of data without copying.
+
+### Windowed Readable Buffers
+
+`ReadableByteBuffer` can represent:
+
+- The entire underlying `byte[]` or
+- A **windowed view** over a portion of a `byte[]`
+
+Windowed views are also created internally when using:
+
+- `GetByteBuffer( offset, length )`
+- `ReadByteBuffer( length )`
+
+These methods **do not allocate**.  
+Instead, they create a *readable view* over the same underlying array.
+
+This significantly reduces allocations in high-throughput scenarios.
+
+> [!IMPORTANT]
+> A windowed view shares the underlying array.
+> If you need to persist the data beyond the lifetime of the original buffer,
+> call `ToArray()` to create a copy.
+
+### `AsReadableView()`
+
+`IWritableByteBuffer.AsReadableView()` creates a readable view over the **currently written portion** of the writable buffer.
+
+- No allocation occurs.
+- The returned buffer shares the underlying array.
+- The readable view is valid as long as the writable buffer is not modified or compacted.
+
+Example:
+
+```csharp
+var writable = new WritableByteBuffer();
+
+writable.WriteInt32( 123 );
+
+var readable = writable.AsReadableView(); // zero-copy
+```
+
+> [!WARNING]
+> The readable view reflects the writable buffer’s current contents.
+> If the writable buffer is modified, compacted, or resized, the view may no longer represent the same logical data.
+>
+> If a stable snapshot is required, create a copy:
+>
+> ```csharp
+> var snapshot = readable.ToArray();
+> ```
+
+### `ToArray()` Behavior
+
+`ToArray()` on a readable buffer returns:
+
+- The backing array **if the readable buffer owns it entirely**
+- A **copy** if the readable buffer is a windowed view
+
+This ensures:
+- No unnecessary allocations for full buffers
+- Safe behavior for windowed or writable-backed views
+
+### Summary of Allocation Behavior
+
+| Operation | Allocates? |
+|------------|------------|
+| `GetByteBuffer` | ❌ No |
+| `ReadByteBuffer` | ❌ No |
+| `AsReadableView` | ❌ No |
+| `AsReadable` | ✅ Yes |
+| `AsWritable` | ✅ Yes |
+| `ToArray()` (full-owned buffer) | ❌ No |
+| `ToArray()` (windowed view) | ✅ Yes |
+
+These improvements significantly reduce allocations in decoding pipelines and high-throughput scenarios while maintaining safety when snapshots are required.
+
 ## Good to know...
 
 - `ReadableBytes` exposes how many bytes remain unread.
-- `DiscardReadBytes` removes already-read bytes and resets the offset.
 - `ResetOffset` resets the read offset (undoes reads).
 - `ToArray` returns the entire buffer, regardless of offset.
 - Except for reading/getting methods, the API follows a fluent design.
