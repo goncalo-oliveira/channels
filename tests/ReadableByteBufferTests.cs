@@ -9,6 +9,19 @@ namespace tests;
 public class WrappedByteBufferTests
 {
     [Fact]
+    public void GetByteBuffer_ShouldCreateWindowedView()
+    {
+        var writable = new WritableByteBuffer( 16 );
+        writable.WriteBytes( [0x00, 0x01, 0x02, 0x03, 0x04, 0x05] );
+
+        var view = writable.AsReadableView();
+        var slice = view.GetByteBuffer( 2, 3 );
+
+        Assert.Equal( 3, slice.Length );
+        Assert.Equal( new byte[] { 0x02, 0x03, 0x04 }, slice.AsSpan().ToArray() );
+    }
+
+    [Fact]
     public void TestMatches()
     {
         var buffer = new ReadableByteBuffer(
