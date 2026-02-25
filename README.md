@@ -232,13 +232,56 @@ We can use multiple listeners in the same application, each with its own configu
 
 ## Adapters and Buffers
 
-Although raw data handling in the adapters can be done with `byte[]`, it is recommended to use a `IReadableByteBuffer` instance instead, particularly for reading data.
+Although raw data handling in adapters can be done with `byte[]`, it is strongly recommended to use `IReadableByteBuffer`, particularly for reading and framing scenarios.
 
-Data received in an adapter that is not explicitly read remains in the channel’s internal input buffer. When more data arrives, it is delivered again together with the previously unread bytes.
+### Input Buffer Behavior
 
-If an adapter uses `byte[]`, however, the internal buffer is automatically marked as fully read and discarded before the adapter executes. This means that if the adapter does not process the data (or fails), those bytes are lost.
+Data delivered to the input pipeline is provided as an `IReadableByteBuffer`.
 
-When using `IReadableByteBuffer`, unread data is preserved and will be redelivered when additional data is received, making it the preferred option for framing and partial reads.
+This buffer is a **windowed view** over the channel’s internal buffer:
+
+- It does **not allocate**
+- It shares the underlying memory
+- Only the unread portion is exposed
+
+Unread bytes are preserved between pipeline executions. If the pipeline does not fully consume the buffer, those unread bytes remain and will be delivered again when more data arrives.
+
+This makes `IReadableByteBuffer` the preferred option for:
+
+- Framing protocols
+- Partial reads
+- Incremental decoding
+
+> [!IMPORTANT]
+> The buffer provided to the pipeline is a **view**, not a copy.
+>
+> If you need to retain data beyond the current pipeline execution,
+> you must create a copy:
+>
+> ```csharp
+> var snapshot = buffer.ToArray();
+> ```
+
+Failing to do so may result in unexpected behavior, as the underlying buffer may be compacted or reused after the pipeline completes.
+
+### Using `byte[]` Instead
+
+If an adapter consumes `byte[]` instead of `IReadableByteBuffer`, the internal input buffer is treated as **fully consumed** before the adapter runs. This means partial reads aren’t possible with `byte[]`, and any unprocessed data will be lost.
+
+For this reason, unless you have a specific reason to use `byte[]`, `IReadableByteBuffer` is preferred and recommended for most input scenarios.
+
+### Output Pipeline and Buffers
+
+The output pipeline is more permissive.
+
+The following types are supported:
+
+- `byte[]`
+- `IByteBuffer`
+- `IReadableByteBuffer`
+- `IWritableByteBuffer`
+
+Buffers passed through the output pipeline may be views or writable instances. At the end of the pipeline, they are written to the underlying transport.
 
 ## Channel Scope
 
