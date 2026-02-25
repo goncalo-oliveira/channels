@@ -176,16 +176,14 @@ internal sealed class TcpChannel : Channel
 
             Buffer.WriteBytes( data, 0, data.Length );
 
-            var pipelineBuffer = Buffer.AsReadable();
+            var pipelineBuffer = Buffer.AsReadableView();
 
             logger.LogDebug( "Executing input pipeline..." );
 
             await Input.ExecuteAsync( this, pipelineBuffer, LifetimeToken )
                 .ConfigureAwait( false );
 
-            pipelineBuffer.DiscardReadBytes();
-
-            Buffer = pipelineBuffer.AsWritable();
+            Buffer.Compact( pipelineBuffer.Offset );
 
             if ( Buffer.Length > 0 )
             {

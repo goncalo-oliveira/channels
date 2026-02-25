@@ -9,36 +9,6 @@ namespace tests;
 public class WrappedByteBufferTests
 {
     [Fact]
-    public void TestDiscardRead()
-    {
-        var buffer = new ReadableByteBuffer(
-        [
-            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
-        ] );
-
-        buffer.SkipBytes( 9 );
-        buffer.DiscardReadBytes();
-
-        Assert.Equal( 0, buffer.Offset );
-        Assert.Equal( 1, buffer.ReadableBytes );
-    }
-
-    [Fact]
-    public void TestDiscardAll()
-    {
-        var buffer = new ReadableByteBuffer(
-        [
-            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
-        ] );
-
-        buffer.SkipBytes( 5 );
-        buffer.DiscardAll();
-
-        Assert.Equal( 0, buffer.Offset );
-        Assert.Equal( 0, buffer.ReadableBytes );
-    }
-
-    [Fact]
     public void TestMatches()
     {
         var buffer = new ReadableByteBuffer(

@@ -6,9 +6,7 @@ namespace Faactory.Channels.Buffers;
 /// <summary>
 /// A readable ByteBuffer
 /// </summary>
-/// <param name="buffer"></param>
-/// <param name="endianness"></param>
-public sealed class ReadableByteBuffer( byte[] buffer, Endianness endianness = Endianness.BigEndian ) : IReadableByteBuffer
+public sealed class ReadableByteBuffer : IReadableByteBuffer
 {
     /// <summary>
     /// Creates a new readable buffer instance from the given base64 encoded string
@@ -44,6 +42,43 @@ public sealed class ReadableByteBuffer( byte[] buffer, Endianness endianness = E
     public static IReadableByteBuffer FromHexString( string value, Endianness endianness )
         => new ReadableByteBuffer( Convert.FromHexString( value ), endianness );
 
+    private readonly byte[] buffer;
+    private readonly int start;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ReadableByteBuffer"/> class with the specified byte array, starting offset, length, and endianness.
+    /// </summary>
+    /// <remarks>
+    /// This creates a windowed view of the provided byte array, allowing for efficient reading of a subset of the array without copying data.
+    /// </remarks>
+    /// <param name="buffer">The byte array to wrap</param>
+    /// <param name="start">The starting offset in the byte array for this buffer</param>
+    /// <param name="length">The number of bytes to include in the buffer</param>
+    /// <param name="endianness">The endianness of the buffer</param>
+    public ReadableByteBuffer( byte[] buffer, int start, int length, Endianness endianness = Endianness.BigEndian )
+    {
+        ArgumentNullException.ThrowIfNull( buffer, nameof( buffer ) );
+        ArgumentOutOfRangeException.ThrowIfNegative( start, nameof( start ) );
+        ArgumentOutOfRangeException.ThrowIfNegative( length, nameof( length ) );
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( start, buffer.Length, nameof( start ) );
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( length, buffer.Length - start, nameof( length ) );
+
+        this.buffer = buffer;
+        this.start = start;
+        this.Length = length;
+
+        Endianness = endianness;   
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ReadableByteBuffer"/> class with the specified byte array and endianness.
+    /// </summary>
+    /// <param name="buffer">The byte array to wrap</param>
+    /// <param name="endianness">The endianness of the buffer</param>
+    public ReadableByteBuffer( byte[] buffer, Endianness endianness = Endianness.BigEndian )
+        : this( buffer, 0, buffer.Length, endianness )
+    { }
+
     /// <summary>
     /// Gets the number of readable bytes in the buffer
     /// </summary>
@@ -57,49 +92,26 @@ public sealed class ReadableByteBuffer( byte[] buffer, Endianness endianness = E
     /// <summary>
     /// Gets the endianness of the buffer, which determines how multi-byte values are read from the buffer.
     /// </summary>
-    public Endianness Endianness { get; } = endianness;
+    public Endianness Endianness { get; }
 
     /// <summary>
     /// Gets the total length of the buffer in bytes
     /// </summary>
-    public int Length => buffer.Length;
+    public int Length { get; }
 
     /// <summary>
-    /// Discards all bytes in the buffer, effectively clearing it.
+    /// Calculates the actual index in the underlying byte array for a given offset, taking into account the starting offset of the buffer.
     /// </summary>
-    /// <returns>The current buffer instance</returns>
-    public IReadableByteBuffer DiscardAll()
-    {
-        Array.Resize( ref buffer, 0 );
-
-        ResetOffset();
-
-        return this;
-    }
+    /// <param name="offset">The offset within the buffer</param>
+    /// <returns>The actual index in the underlying byte array</returns>
+    private int BufferIndex( int offset ) => start + offset;
 
     /// <summary>
-    /// Discards all bytes that have been read from the buffer, keeping only the unread bytes.
+    /// Checks if the specified offset and length are within the bounds of the buffer, throwing an exception if they are out of range.
     /// </summary>
-    /// <returns>The current buffer instance</returns>
-    public IReadableByteBuffer DiscardReadBytes()
-    {
-        if ( Offset == 0 )
-        {
-            return this;
-        }
-
-        var remaining = Length - Offset;
-
-        var dest = new byte[remaining];
-        Array.Copy( buffer, Offset, dest, 0, remaining );
-
-        buffer = dest;
-
-        ResetOffset();
-
-        return this;
-    }
-
+    /// <param name="offset">The offset within the buffer</param>
+    /// <param name="length">The length of the data to read</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset or length is out of range</exception>
     private void ThrowIfOutOfRange( int offset, int length )
     {
         if ( offset < 0 || (uint)offset > (uint)Length )
@@ -121,7 +133,7 @@ public sealed class ReadableByteBuffer( byte[] buffer, Endianness endianness = E
     {
         ThrowIfOutOfRange( offset, sizeof( byte ) );
 
-        return BitConverter.ToBoolean( buffer, offset );
+        return buffer[BufferIndex( offset )] != 0;
     }
 
     /// <summary>
@@ -132,7 +144,7 @@ public sealed class ReadableByteBuffer( byte[] buffer, Endianness endianness = E
     {
         ThrowIfOutOfRange( offset, sizeof( byte ) );
 
-        return buffer[offset];
+        return buffer[BufferIndex( offset )];
     }
 
     /// <summary>
@@ -145,7 +157,7 @@ public sealed class ReadableByteBuffer( byte[] buffer, Endianness endianness = E
 
         var dest = new byte[length];
 
-        Array.Copy( buffer, offset, dest, 0, length );
+        Array.Copy( buffer, BufferIndex( offset ), dest, 0, length );
 
         return dest;
     }
@@ -158,7 +170,7 @@ public sealed class ReadableByteBuffer( byte[] buffer, Endianness endianness = E
     {
         ThrowIfOutOfRange( offset, length );
 
-        return new( buffer, offset, length );
+        return new( buffer, BufferIndex( offset ), length );
     }
 
     /// <summary>
@@ -167,9 +179,9 @@ public sealed class ReadableByteBuffer( byte[] buffer, Endianness endianness = E
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset or length is out of range or there are not enough bytes to read the specified length.</exception>
     public IReadableByteBuffer GetByteBuffer( int offset, int length )
     {
-        var dest = GetBytes( offset, length );
+        ThrowIfOutOfRange( offset, length );
 
-        return new ReadableByteBuffer( dest, Endianness );
+        return new ReadableByteBuffer( buffer, BufferIndex( offset ), length, Endianness);
     }
 
     /// <summary>
@@ -339,9 +351,11 @@ public sealed class ReadableByteBuffer( byte[] buffer, Endianness endianness = E
     /// <exception cref="ArgumentOutOfRangeException">Thrown when there are not enough bytes to read the specified length at the current offset.</exception>
     public IReadableByteBuffer ReadByteBuffer( int length )
     {
-        var bytes = ReadBytes( length );
+        var value = GetByteBuffer( Offset, length );
 
-        return new ReadableByteBuffer( bytes, Endianness );
+        Offset += length;
+
+        return value;
     }
 
     /// <summary>
@@ -427,14 +441,23 @@ public sealed class ReadableByteBuffer( byte[] buffer, Endianness endianness = E
     /// Returns the underlying buffer as a byte array.
     /// </summary>
     public byte[] ToArray()
-        => buffer;
+    {
+        // if the windowed view represents the entire underlying byte array, return it directly to avoid unnecessary copying
+        if ( start == 0 && Length == buffer.Length )
+        {
+            return buffer;
+        }
+
+        // otherwise, return a copy of the relevant portion of the underlying byte array
+        return GetBytes( 0, Length );
+    }
 
     /// <summary>
     /// Gets the underlying buffer as a <see cref="ReadOnlySpan{T}"/>
     /// </summary>
     /// <returns>A <see cref="ReadOnlySpan{T}"/> representing the used portion of the buffer</returns>
     public ReadOnlySpan<byte> AsSpan()
-        => buffer.AsSpan();
+        => buffer.AsSpan( start, Length );
 
     /// <summary>
     /// Undoes a read operation by moving the offset back by the specified length, allowing for re-reading previously read data.

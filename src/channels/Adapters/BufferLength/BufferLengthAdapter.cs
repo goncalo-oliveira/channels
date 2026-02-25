@@ -42,8 +42,6 @@ public sealed class BufferLengthAdapter : ChannelAdapter<IReadableByteBuffer>, I
 
             logger.LogWarning( "IReadableByteBuffer length has exceeded {maxSizeMB:f1} MB.", maxSizeMB );
 
-            data.DiscardAll();
-
             if ( closeChannel )
             {
                 return context.Channel.CloseAsync();

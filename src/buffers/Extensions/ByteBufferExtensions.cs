@@ -6,20 +6,20 @@ namespace Faactory.Channels.Buffers;
 public static class ByteBufferExtensions
 {
     /// <summary>
-    /// Creates a readable buffer from the given source
+    /// Creates a readable buffer from the given source by copying the currently written portion of the given writable buffer
     /// </summary>
-    /// <param name="source">The source buffer</param>
+    /// <param name="source">The source writable buffer</param>
     /// <param name="endianness">The buffer instance endianness; if null, the source buffer endianness is used.</param>
-    /// <returns>A new readable buffer instance</returns>
+    /// <returns>A new readable buffer instance with a copy of the currently written portion of the source buffer</returns>
     public static IReadableByteBuffer AsReadable( this IWritableByteBuffer source, Endianness? endianness = null )
         => new ReadableByteBuffer( source.ToArray(), endianness ?? source.Endianness );
 
     /// <summary>
-    /// Creates a writable buffer from the given source
+    /// Creates a writable buffer and copies the entire content of the given readable buffer to it
     /// </summary>
-    /// <param name="source">The source buffer</param>
+    /// <param name="source">The source readable buffer</param>
     /// <param name="endianness">The buffer instance endianness; if null, the source buffer endianness is used.</param>
-    /// <returns>A new writable buffer instance</returns>
+    /// <returns>A new writable buffer instance with a copy of the entire content of the source buffer</returns>
     public static IWritableByteBuffer AsWritable( this IReadableByteBuffer source, Endianness? endianness = null )
     {
         var capacity = Math.Max( source.Length * 2, WritableByteBuffer.InitialCapacity );

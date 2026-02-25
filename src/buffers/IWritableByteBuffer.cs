@@ -7,6 +7,25 @@ namespace Faactory.Channels.Buffers;
 public interface IWritableByteBuffer : IByteBuffer
 {
     /// <summary>
+    /// Creates a readable view of the currently written portion of the buffer.
+    /// </summary>
+    /// <remarks>
+    /// Returns a zero-copy readable view over the currently written portion of the buffer.
+    /// The returned view shares the same underlying memory.
+    /// It must not be used after the writable buffer is modified (e.g., written to or compacted),
+    /// as the view may no longer represent the same logical data.
+    /// </remarks>
+    /// <returns>A readable buffer view of the currently written portion</returns>
+    IReadableByteBuffer AsReadableView();
+
+    /// <summary>
+    /// Compacts the buffer by discarding bytes up to the specified offset.
+    /// </summary>
+    /// <param name="offset">The offset up to which bytes should be discarded</param>
+    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
+    IWritableByteBuffer Compact( int offset );
+
+    /// <summary>
     /// Discards all written bytes and reallocates the buffer to its initial capacity.
     /// </summary>
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>

@@ -68,7 +68,50 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     }
 
     /// <summary>
-    /// Gets the entire buffer as a byte[] no matter where the reading/writing offset is
+    /// Creates a readable view of the currently written portion of the buffer.
+    /// </summary>
+    /// <remarks>
+    /// Returns a zero-copy readable view over the currently written portion of the buffer.
+    /// The returned view shares the same underlying memory.
+    /// It must not be used after the writable buffer is modified (e.g., written to or compacted),
+    /// as the view may no longer represent the same logical data.
+    /// </remarks>
+    /// <returns>A readable buffer view of the currently written portion</returns>
+    public IReadableByteBuffer AsReadableView()
+    {
+        return new ReadableByteBuffer( buffer, 0, writeOffset, Endianness );
+    }
+
+    /// <summary>
+    /// Compacts the buffer by discarding bytes up to the specified offset.
+    /// </summary>
+    /// <param name="offset">The offset up to which bytes should be discarded</param>
+    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is negative or greater than the current length of the buffer</exception>
+    public IWritableByteBuffer Compact( int offset )
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
+
+        if ( offset == 0 )
+        {
+            return this;
+        }
+
+        var remaining = writeOffset - offset;
+
+        if ( remaining > 0 )
+        {
+            Array.Copy( buffer, offset, buffer, 0, remaining );
+        }
+
+        writeOffset = remaining;
+
+        return this;
+    }
+
+    /// <summary>
+    /// Gets the used portion of the buffer as a byte[]
     /// </summary>
     /// <returns>A byte[] value</returns>
     public byte[] ToArray()
