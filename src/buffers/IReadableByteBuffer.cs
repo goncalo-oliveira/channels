@@ -17,19 +17,6 @@ public interface IReadableByteBuffer : IByteBuffer
     int Offset { get; }
 
     /// <summary>
-    /// Discards all bytes in the buffer
-    /// </summary>
-    /// <returns>The same IReadableByteBuffer instance to allow fluent syntax</returns>
-    IReadableByteBuffer DiscardAll();
-
-    /// <summary>
-    /// Discards read bytes from the buffer
-    /// </summary>
-    /// <exception cref="InvalidOperationException"></exception>
-    /// <returns>The same IReadableByteBuffer instance to allow fluent syntax</returns>
-    IReadableByteBuffer DiscardReadBytes();
-
-    /// <summary>
     /// Gets a boolean value from the byte at the given offset without moving the buffer index
     /// </summary>
     /// <param name="offset">The offset to start reading the value</param>

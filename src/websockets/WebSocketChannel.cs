@@ -235,7 +235,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                         message = new WebSocketMessage
                         {
                             Type = WebSocketMessageType.Text,
-                            Data = TextBuffer.AsReadable()
+                            Data = TextBuffer.AsReadableView()
                         };
 
                         TextBuffer.ResetOffset();
@@ -255,7 +255,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                         message = new WebSocketMessage
                         {
                             Type = WebSocketMessageType.Binary,
-                            Data = Buffer.AsReadable()
+                            Data = Buffer.AsReadableView()
                         };
 
                         Buffer.ResetOffset();
