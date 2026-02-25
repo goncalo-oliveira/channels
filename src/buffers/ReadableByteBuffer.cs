@@ -42,6 +42,7 @@ public sealed class ReadableByteBuffer : IReadableByteBuffer
     public static IReadableByteBuffer FromHexString( string value, Endianness endianness )
         => new ReadableByteBuffer( Convert.FromHexString( value ), endianness );
 
+    private readonly bool ownsBuffer; // whether the underlying buffer is not a windowed view of a larger buffer
     private readonly byte[] buffer;
     private readonly int start;
 
@@ -77,7 +78,9 @@ public sealed class ReadableByteBuffer : IReadableByteBuffer
     /// <param name="endianness">The endianness of the buffer</param>
     public ReadableByteBuffer( byte[] buffer, Endianness endianness = Endianness.BigEndian )
         : this( buffer, 0, buffer.Length, endianness )
-    { }
+    {
+        ownsBuffer = true;
+    }
 
     /// <summary>
     /// Gets the number of readable bytes in the buffer
@@ -442,8 +445,8 @@ public sealed class ReadableByteBuffer : IReadableByteBuffer
     /// </summary>
     public byte[] ToArray()
     {
-        // if the windowed view represents the entire underlying byte array, return it directly to avoid unnecessary copying
-        if ( start == 0 && Length == buffer.Length )
+        // if this isn't a windowed view of a larger buffer, we can return the underlying buffer directly
+        if ( ownsBuffer )
         {
             return buffer;
         }

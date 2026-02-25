@@ -22,6 +22,42 @@ public class WrappedByteBufferTests
     }
 
     [Fact]
+    public void ToArray_ShouldReturnBackingArray_WhenBufferOwnsData()
+    {
+        var bytes = new byte[] { 0x01, 0x02, 0x03, 0x04 };
+
+        var readable = new ReadableByteBuffer( bytes );
+
+        var result = readable.ToArray();
+
+        Assert.Same( bytes, result );
+    }
+
+    [Fact]
+    public void ToArray_ShouldCopy_WhenWindowedView()
+    {
+        var bytes = new byte[] { 0x01, 0x02, 0x03, 0x04, 0x05 };
+
+        var readable = new ReadableByteBuffer( bytes, 1, 3 );
+
+        var result = readable.ToArray();
+
+        Assert.NotSame( bytes, result );
+        Assert.Equal( new byte[] { 0x02, 0x03, 0x04 }, result );
+    }
+
+    [Fact]
+    public void ToArray_ShouldReturnBackingArray_WhenOwnsBufferAndFullWindow()
+    {
+        var bytes = new byte[] { 10, 20, 30 };
+
+        var readable = new ReadableByteBuffer( bytes, Endianness.BigEndian );
+
+        Assert.Same( bytes, readable.ToArray() );
+    }
+
+
+    [Fact]
     public void TestMatches()
     {
         var buffer = new ReadableByteBuffer(

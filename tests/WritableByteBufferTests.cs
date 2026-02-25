@@ -74,4 +74,49 @@ public class WritableByteBufferTests
 
         Assert.Equal( new byte[] { 0x01, 0x02, 0x03 }, copy.AsSpan().ToArray() );
     }
+
+    [Fact]
+    public void ToArray_ShouldCopy_WhenCreatedFromWritableView_AndFullyFilled()
+    {
+        var writable = new WritableByteBuffer( 4 );
+        writable.WriteBytes( [0x01, 0x02, 0x03, 0x04] );
+
+        var readableView = writable.AsReadableView();
+
+        var result = readableView.ToArray();
+
+        Assert.NotSame( writable.ToArray(), result );
+        Assert.Equal( new byte[] { 0x01, 0x02, 0x03, 0x04 }, result );
+    }
+
+    [Fact]
+    public void ToArray_FromWritableView_ShouldBeIndependentCopy()
+    {
+        var writable = new WritableByteBuffer( 4 );
+        writable.WriteBytes( [0x01, 0x02, 0x03, 0x04] );
+
+        var readableView = writable.AsReadableView();
+        var snapshot = readableView.ToArray();
+
+        writable.ResetOffset();
+        writable.WriteBytes( [0x09, 0x09, 0x09, 0x09] );
+
+        Assert.Equal( new byte[] { 0x01, 0x02, 0x03, 0x04 }, snapshot );
+    }    
+
+    [Fact]
+    public void AsReadableView_ShouldReflectSubsequentWrites()
+    {
+        var writable = new WritableByteBuffer( 8 );
+        writable.WriteBytes( [1, 2, 3] );
+
+        var view = writable.AsReadableView();
+
+        // mutate writable without reallocating
+        writable.ResetOffset();
+        writable.WriteBytes( [0x09, 0x08, 0x07] );
+
+        Assert.Equal( [0x09, 0x08, 0x07], view.GetBytes( 0, 3 ) );
+    }
+
 }
