@@ -1,12 +1,16 @@
+using Faactory.Channels.Buffers;
+
 namespace Faactory.Channels;
 
-internal class ChannelContext( IChannel channel ) : IChannelContext
+internal class ChannelContext( IChannel channel, IByteBufferPool? bufferPool ) : IChannelContext
 {
+    public IByteBufferPool BufferPool => bufferPool ?? new ByteBufferPool();
+
     public IChannel Channel => channel;
 
-    public Buffers.Endianness BufferEndianness => Channel is Channel c
+    public Endianness BufferEndianness => Channel is Channel c
         ? c.Buffer.Endianness
-        : Buffers.Endianness.BigEndian;
+        : Endianness.BigEndian;
 
     public IWritableBuffer Output { get; } = new WritableBuffer();
 

@@ -1,4 +1,5 @@
 using Faactory.Channels.Adapters;
+using Faactory.Channels.Buffers;
 
 namespace Faactory.Channels;
 
@@ -10,6 +11,11 @@ public sealed class DetachedContext : IAdapterContext, IWritableBuffer
     private readonly List<object> forwarded = [];
     private readonly List<object> written = [];
     private readonly List<KeyValuePair<string, object?>> customEvents = [];
+
+    /// <summary>
+    /// The buffer pool, which is a new instance of ByteBufferPool by default.
+    /// </summary>
+    public IByteBufferPool BufferPool { get; } = new ByteBufferPool();
 
     /// <summary>
     /// The detached channel, which is a no-op channel.
@@ -40,6 +46,12 @@ public sealed class DetachedContext : IAdapterContext, IWritableBuffer
     /// The custom events log.
     /// </summary>
     public KeyValuePair<string, object?>[] CustomEvents => customEvents.ToArray();
+
+    /// <summary>
+    /// Disposes any resources used by the context, which is a no-op for the detached context.
+    /// </summary>
+    public void Dispose()
+    { }
 
     /// <summary>
     /// Forwards data to the detached channel, which simply logs it for testing purposes.

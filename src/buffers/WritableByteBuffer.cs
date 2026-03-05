@@ -18,6 +18,9 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// </summary>
     private int writeOffset = 0;
 
+    private readonly Func<int, byte[]> Allocate;
+    private readonly Action<byte[]>? Release;
+
     /// <summary>
     /// The current used offset in the buffer, which represents written portion of the buffer.
     /// </summary>
@@ -27,8 +30,10 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// Initializes a new instance of the <see cref="WritableByteBuffer"/> class with the default initial capacity and specified endianness.
     /// </summary>
     /// <param name="endianness">The endianness of the buffer</param>
-    public WritableByteBuffer( Endianness endianness = Endianness.BigEndian )
-        : this( InitialCapacity, endianness )
+    /// <param name="allocator">Optional custom allocator function for buffer allocation</param>
+    /// <param name="releaser">Optional custom releaser action for buffer release</param>
+    public WritableByteBuffer( Endianness endianness = Endianness.BigEndian, Func<int, byte[]>? allocator = null, Action<byte[]>? releaser = null )
+        : this( InitialCapacity, endianness, allocator, releaser )
     { }
 
     /// <summary>
@@ -36,11 +41,16 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// </summary>
     /// <param name="capacity">The initial capacity of the buffer</param>
     /// <param name="endianness">The endianness of the buffer</param>
-    public WritableByteBuffer( int capacity, Endianness endianness = Endianness.BigEndian )
+    /// <param name="allocator">Optional custom allocator function for buffer allocation</param>
+    /// <param name="releaser">Optional custom releaser action for buffer release</param>
+    public WritableByteBuffer( int capacity, Endianness endianness = Endianness.BigEndian, Func<int, byte[]>? allocator = null, Action<byte[]>? releaser = null )
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero( capacity, nameof( capacity ) );
 
-        buffer = new byte[capacity];
+        Allocate = allocator ?? ( size => new byte[size] );
+        Release = releaser;
+
+        buffer = Allocate( capacity );
         Endianness = endianness;
     }
 
@@ -60,7 +70,14 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
     public IWritableByteBuffer Clear()
     {
-        buffer = new byte[InitialCapacity];
+        ObjectDisposedException.ThrowIf( buffer is null, this );
+
+        if ( buffer.Length > InitialCapacity )
+        {
+            Release?.Invoke( buffer );
+            buffer = Allocate( InitialCapacity );
+        }
+
         writeOffset = 0;
         usedOffset = 0;
 
@@ -68,12 +85,25 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     }
 
     /// <summary>
-    /// Reserves a contiguous block of bytes for writing and moves the writing offset forward by the specified length.
+    /// Releases any resources associated with the buffer. If a custom releaser was provided, it will be invoked with the current buffer.
+    /// </summary>
+    public void Dispose()
+    {
+        if ( buffer is not null )
+        {
+            Release?.Invoke( buffer );
+            buffer = null!;
+        }
+    }
+
+    /// <summary>
+    /// Resets the writing offset to the beginning of the buffer, effectively discarding all written bytes. Current buffer capacity remains unchanged.
     /// </summary>
     /// <param name="length">The number of bytes to reserve for writing</param>
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
     public IWritableByteBuffer Reserve( int length )
     {
+        ObjectDisposedException.ThrowIf( buffer is null, this );
         ArgumentOutOfRangeException.ThrowIfNegative( length, nameof( length ) );
 
         EnsureCapacity( length );
@@ -129,6 +159,8 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>A readable buffer view of the currently written portion</returns>
     public IReadableByteBuffer AsReadableView()
     {
+        ObjectDisposedException.ThrowIf( buffer is null, this );
+
         return new ReadableByteBuffer( buffer, 0, usedOffset, Endianness );
     }
 
@@ -140,6 +172,8 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is negative or greater than the used portion of the buffer</exception>
     public IWritableByteBuffer Compact( int offset )
     {
+        ObjectDisposedException.ThrowIf(buffer is null, this);
+
         ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
         ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, usedOffset, nameof( offset ) );
 
@@ -167,6 +201,8 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>A byte[] value</returns>
     public byte[] ToArray()
     {
+        ObjectDisposedException.ThrowIf( buffer is null, this );
+
         var dest = new byte[Length];
 
         Array.Copy( buffer, 0, dest, 0, Length );
@@ -179,10 +215,15 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// </summary>
     /// <returns>A <see cref="ReadOnlySpan{T}"/> representing the used portion of the buffer</returns>
     public ReadOnlySpan<byte> AsSpan()
-        => buffer.AsSpan( 0, Length );
+    {
+        ObjectDisposedException.ThrowIf( buffer is null, this );
+
+        return buffer.AsSpan( 0, usedOffset );
+    }
 
     private void EnsureCapacity( int additionalLength )
     {
+        ObjectDisposedException.ThrowIf( buffer is null, this );
         ArgumentOutOfRangeException.ThrowIfNegative( additionalLength, nameof( additionalLength ) );
 
         int required = writeOffset + additionalLength;
@@ -199,9 +240,11 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
             newSize *= 2;
         }
 
-        var newBuffer = new byte[newSize];
+        var newBuffer = Allocate( newSize );
 
         Array.Copy( buffer, 0, newBuffer, 0, usedOffset );
+
+        Release?.Invoke( buffer );
 
         buffer = newBuffer;
     }

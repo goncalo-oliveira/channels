@@ -283,6 +283,44 @@ The following types are supported:
 
 Buffers passed through the output pipeline may be views or writable instances. At the end of the pipeline, they are written to the underlying transport.
 
+### Renting Buffers in Middleware
+
+Channels provides a buffer pool through `IChannelContext.BufferPool`.
+
+Buffers rented from this pool are automatically tracked during the pipeline execution and returned to the pool when the pipeline completes. This allows middleware to safely rent buffers without worrying about manual disposal.
+
+Using the buffer pool is **optional**. In many cases, simply using `byte[]` or a regular `WritableByteBuffer` is perfectly fine. The pool is mainly useful when optimizing allocations in encoding-heavy or high-throughput workloads.
+
+Example:
+
+```csharp
+public class ExampleHandler : ChannelHandler<MyMessage>
+{
+    public override Task ExecuteAsync( IChannelContext context, MyMessage data, CancellationToken cancellationToken )
+    {
+        var buffer = context.BufferPool.Rent();
+
+        buffer.WriteInt32( data.Id );
+        buffer.WriteByte( data.Flag );
+
+        context.Output.Write( buffer );
+
+        return Task.CompletedTask;
+    }
+}
+```
+
+Buffers rented from `context.BufferPool`:
+
+- do **not** need to be disposed manually
+- may be disposed early if they are no longer needed
+- are automatically returned to the pool when the pipeline execution completes
+
+This makes it safe to use pooled buffers throughout adapters and handlers without worrying about ownership or disposal.
+
+> [!TIP]
+> If you need a buffer outside the pipeline (for example in application code or background services), you can still create your own `ByteBufferPool` or `TrackedByteBufferPool`.
+
 ## Channel Scope
 
 Every channel instance (client or service) uses its own `IServiceScope`. This means that if you add a scoped service to the DI container and use it in an adapter or handler, you'll have an unique instance per channel.

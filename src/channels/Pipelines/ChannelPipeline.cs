@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Faactory.Channels.Adapters;
 using Faactory.Channels.Handlers;
 using Microsoft.Extensions.DependencyInjection;
+using Faactory.Channels.Buffers;
 
 namespace Faactory.Channels;
 
@@ -15,16 +16,17 @@ internal class ChannelPipeline( ILoggerFactory loggerFactory, IEnumerable<IChann
     {
         foreach ( var adapter in adapters )
         {
-            if ( typeof( IDisposable ).IsAssignableFrom( adapter.GetType() ) )
+            if ( adapter is IDisposable disposable )
             {
-                ((IDisposable)adapter).Dispose();
+                disposable.Dispose();
             }
         }
     }
 
     public async Task ExecuteAsync( IChannel channel, object data, CancellationToken cancellationToken )
     {
-        var adapterContext = new AdapterContext( channel );
+        using var bufferPool = new TrackedByteBufferPool();
+        var adapterContext = new AdapterContext( channel, bufferPool );
 
         adapterContext.Forward( data );
 
