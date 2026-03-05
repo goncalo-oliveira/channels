@@ -1,3 +1,4 @@
+using System;
 using Faactory.Channels.Buffers;
 using Xunit;
 
@@ -117,6 +118,113 @@ public class WritableByteBufferTests
         writable.WriteBytes( [0x09, 0x08, 0x07] );
 
         Assert.Equal( [0x09, 0x08, 0x07], view.GetBytes( 0, 3 ) );
+    }
+
+    [Fact]
+    public void WriteByte_ShouldIncreaseLength()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteByte( 1 );
+        buffer.WriteByte( 2 );
+
+        Assert.Equal( 2, buffer.Length );
+        Assert.Equal( new byte[] { 1, 2 }, buffer.AsSpan().ToArray() );
+    }
+
+    [Fact]
+    public void ResetOffset_ShouldClearLengthWithoutReallocating()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteByte( 1 );
+        buffer.ResetOffset();
+
+        Assert.Equal( 0, buffer.Length );
+
+        buffer.WriteByte( 5 );
+        Assert.Equal( new byte[] { 5 }, buffer.AsSpan().ToArray() );
+    }
+
+    [Fact]
+    public void Clear_ShouldResetLength()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteByte( 1 );
+        buffer.WriteByte( 2 );
+
+        buffer.Clear();
+
+        Assert.Equal( 0, buffer.Length );
+    }
+
+    [Fact]
+    public void EnsureCapacity_ShouldGrowBuffer()
+    {
+        var buffer = new WritableByteBuffer( 4 );
+
+        buffer.WriteBytes( new byte[ 10 ], 0, 10 );
+
+        Assert.Equal( 10, buffer.Length );
+    }
+
+    [Fact]
+    public void Compact_ShouldShiftRemainingBytes()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteBytes( [1, 2, 3, 4], 0, 4 );
+
+        buffer.Compact( 2 );
+
+        Assert.Equal( new byte[] { 3, 4 }, buffer.AsSpan().ToArray() );
+    }
+
+    [Fact]
+    public void Dispose_ShouldReleaseBuffer()
+    {
+        bool released = false;
+
+        var buffer = new WritableByteBuffer(
+            allocator: size => new byte[size],
+            releaser: _ => released = true
+        );
+
+        buffer.Dispose();
+
+        Assert.True( released );
+    }
+
+    [Fact]
+    public void Methods_ShouldThrowAfterDispose()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.Dispose();
+
+        Assert.Throws<ObjectDisposedException>( () => buffer.AsSpan() );
+        Assert.Throws<ObjectDisposedException>( () => buffer.AsReadableView() );
+        Assert.Throws<ObjectDisposedException>( () => buffer.Clear() );
+        Assert.Throws<ObjectDisposedException>( () => buffer.ToArray() );
+    }
+
+    [Fact]
+    public void Clear_ShouldReleaseOversizedBuffer()
+    {
+        bool released = false;
+
+        var buffer = new WritableByteBuffer(
+            allocator: size => new byte[size],
+            releaser: _ => released = true
+        );
+
+        buffer.WriteBytes( new byte[ 5000 ], 0, 5000 );
+
+        buffer.Clear();
+
+        Assert.True( released );
+        Assert.Equal( 0, buffer.Length );
     }
 
 }
