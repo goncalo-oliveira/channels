@@ -11,7 +11,17 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     internal const int InitialCapacity = 1024;
 
     private byte[] buffer;
+
+    /// <summary>
+    /// The current writing offset in the buffer, which also represents the length of the written portion.
+    /// It may be less than or equal to the actual length of the used portion of the buffer.
+    /// </summary>
     private int writeOffset = 0;
+
+    /// <summary>
+    /// The current used offset in the buffer, which represents written portion of the buffer.
+    /// </summary>
+    private int usedOffset = 0;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WritableByteBuffer"/> class with the default initial capacity and specified endianness.
@@ -42,7 +52,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <summary>
     /// Gets the length of the used portion of the buffer.
     /// </summary>
-    public int Length => writeOffset;
+    public int Length => usedOffset;
 
     /// <summary>
     /// Discards all written bytes and reallocates the buffer to its initial capacity.
@@ -52,6 +62,24 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     {
         buffer = new byte[InitialCapacity];
         writeOffset = 0;
+        usedOffset = 0;
+
+        return this;
+    }
+
+    /// <summary>
+    /// Reserves a contiguous block of bytes for writing and moves the writing offset forward by the specified length.
+    /// </summary>
+    /// <param name="length">The number of bytes to reserve for writing</param>
+    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
+    public IWritableByteBuffer Reserve( int length )
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative( length, nameof( length ) );
+
+        EnsureCapacity( length );
+
+        writeOffset += length;
+        usedOffset = Math.Max( usedOffset, writeOffset );
 
         return this;
     }
@@ -63,6 +91,22 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     public IWritableByteBuffer ResetOffset()
     {
         writeOffset = 0;
+        usedOffset = 0;
+
+        return this;
+    }
+
+    /// <summary>
+    /// Moves the writing offset to the specified position, allowing for overwriting previously written bytes. The offset must be within the bounds of the buffer's capacity.
+    /// </summary>
+    /// <param name="offset">The position to move the writing offset to</param>
+    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
+    public IWritableByteBuffer Seek( int offset )
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, usedOffset, nameof( offset ) );
+
+        writeOffset = offset;
 
         return this;
     }
@@ -79,7 +123,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>A readable buffer view of the currently written portion</returns>
     public IReadableByteBuffer AsReadableView()
     {
-        return new ReadableByteBuffer( buffer, 0, writeOffset, Endianness );
+        return new ReadableByteBuffer( buffer, 0, usedOffset, Endianness );
     }
 
     /// <summary>
@@ -91,14 +135,14 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     public IWritableByteBuffer Compact( int offset )
     {
         ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
-        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, usedOffset, nameof( offset ) );
 
         if ( offset == 0 )
         {
             return this;
         }
 
-        var remaining = writeOffset - offset;
+        var remaining = usedOffset - offset;
 
         if ( remaining > 0 )
         {
@@ -106,6 +150,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         }
 
         writeOffset = remaining;
+        usedOffset = remaining;
 
         return this;
     }
@@ -128,10 +173,12 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// </summary>
     /// <returns>A <see cref="ReadOnlySpan{T}"/> representing the used portion of the buffer</returns>
     public ReadOnlySpan<byte> AsSpan()
-        => buffer.AsSpan( 0, writeOffset );
+        => buffer.AsSpan( 0, Length );
 
     private void EnsureCapacity( int additionalLength )
     {
+        ArgumentOutOfRangeException.ThrowIfNegative( additionalLength, nameof( additionalLength ) );
+
         int required = writeOffset + additionalLength;
 
         if ( required <= buffer.Length )
@@ -148,7 +195,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
 
         var newBuffer = new byte[newSize];
 
-        Array.Copy( buffer, 0, newBuffer, 0, writeOffset );
+        Array.Copy( buffer, 0, newBuffer, 0, usedOffset );
 
         buffer = newBuffer;
     }
@@ -162,6 +209,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         writer( span, value );
 
         writeOffset += size;
+        usedOffset = Math.Max( usedOffset, writeOffset );
     }
 
     /// <summary>
@@ -182,6 +230,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         EnsureCapacity( 1 );
 
         buffer[writeOffset++] = value;
+        usedOffset = Math.Max( usedOffset, writeOffset );
 
         return this;
     }
@@ -200,6 +249,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         Array.Copy( value, startIndex, buffer, writeOffset, length );
 
         writeOffset += length;
+        usedOffset = Math.Max( usedOffset, writeOffset );
 
         return this;
     }
@@ -224,6 +274,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         value.CopyTo( buffer.AsSpan( writeOffset ) );
 
         writeOffset += value.Length;
+        usedOffset = Math.Max( usedOffset, writeOffset );
 
         return this;
     }

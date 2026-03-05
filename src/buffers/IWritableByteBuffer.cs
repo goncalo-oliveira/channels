@@ -32,11 +32,25 @@ public interface IWritableByteBuffer : IByteBuffer
     IWritableByteBuffer Clear();
 
     /// <summary>
+    /// Reserves a contiguous block of bytes for writing and moves the writing offset forward by the specified length.
+    /// </summary>
+    /// <param name="length">The number of bytes to reserve for writing</param>
+    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
+    IWritableByteBuffer Reserve( int length );
+
+    /// <summary>
     /// Resets the writing offset to the beginning of the buffer, effectively discarding all written bytes. Current buffer capacity remains unchanged.
     /// </summary>
     /// <exception cref="InvalidOperationException"></exception>
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
     IWritableByteBuffer ResetOffset();
+
+    /// <summary>
+    /// Moves the writing offset to the specified position, allowing for overwriting previously written bytes. The offset must be within the bounds of the buffer's capacity.
+    /// </summary>
+    /// <param name="offset">The position to move the writing offset to</param>
+    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
+    IWritableByteBuffer Seek( int offset );
 
     /// <summary>
     /// Writes a boolean value
