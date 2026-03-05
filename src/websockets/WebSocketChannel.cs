@@ -238,7 +238,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                             Data = TextBuffer.AsReadableView()
                         };
 
-                        TextBuffer.ResetOffset();
+                        TextBuffer.Truncate();
                     }
                 }
                 else if ( result.MessageType == WebSocketMessageType.Binary )
@@ -258,7 +258,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                             Data = Buffer.AsReadableView()
                         };
 
-                        Buffer.ResetOffset();
+                        Buffer.Truncate();
                     }
                 }
 

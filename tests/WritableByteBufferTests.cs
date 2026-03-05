@@ -1,3 +1,4 @@
+using System;
 using Faactory.Channels.Buffers;
 using Xunit;
 
@@ -98,7 +99,7 @@ public class WritableByteBufferTests
         var readableView = writable.AsReadableView();
         var snapshot = readableView.ToArray();
 
-        writable.ResetOffset();
+        writable.Truncate();
         writable.WriteBytes( [0x09, 0x09, 0x09, 0x09] );
 
         Assert.Equal( new byte[] { 0x01, 0x02, 0x03, 0x04 }, snapshot );
@@ -113,10 +114,119 @@ public class WritableByteBufferTests
         var view = writable.AsReadableView();
 
         // mutate writable without reallocating
-        writable.ResetOffset();
+        writable.Truncate();
         writable.WriteBytes( [0x09, 0x08, 0x07] );
 
         Assert.Equal( [0x09, 0x08, 0x07], view.GetBytes( 0, 3 ) );
+    }
+
+    [Fact]
+    public void Reserve_ShouldAdvanceOffset_AndIncreaseLength()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteBytes( [0x01, 0x02] );
+
+        buffer.Reserve( 4 );
+
+        Assert.Equal( 6, buffer.Length );
+    }
+
+    [Fact]
+    public void Seek_ShouldAllowOverwritingExistingBytes()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteBytes( [0x01, 0x02, 0x03, 0x04] );
+
+        buffer.Seek( 1 );
+        buffer.WriteByte( 0xFF );
+
+        Assert.Equal(
+            new byte[] { 0x01, 0xFF, 0x03, 0x04 },
+            buffer.AsSpan().ToArray()
+        );
+    }
+
+    [Fact]
+    public void Seek_Overwrite_ShouldNotReduceLength()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteBytes( [1,2,3,4,5] );
+
+        buffer.Seek( 2 );
+        buffer.WriteByte( 9 );
+
+        Assert.Equal( 5, buffer.Length );
+    }
+
+    [Fact]
+    public void Reserve_ThenSeek_ShouldAllowBackpatching()
+    {
+        var buffer = new WritableByteBuffer();
+
+        var lengthPos = buffer.Length;
+
+        buffer.Reserve( 4 ); // placeholder
+
+        var payloadStart = buffer.Length;
+
+        buffer.WriteBytes( [0xAA, 0xBB, 0xCC] );
+
+        var payloadLength = buffer.Length - payloadStart;
+
+        buffer.Seek( lengthPos );
+        buffer.WriteUInt32( (uint)payloadLength );
+
+        buffer.Seek( buffer.Length );
+
+        Assert.Equal(
+            new byte[]
+            {
+                0x00,0x00,0x00,0x03, // payload length
+                0xAA,0xBB,0xCC
+            },
+            buffer.AsSpan().ToArray()
+        );
+    }
+
+    [Fact]
+    public void Seek_ShouldThrow_WhenOffsetGreaterThanLength()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteBytes( [1,2,3] );
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            buffer.Seek( 4 ));
+    }
+
+    [Fact]
+    public void ResetOffset_WithOffset_ShouldTruncateBuffer()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteBytes( [0x01, 0x02, 0x03, 0x04, 0x05] );
+
+        buffer.Truncate(3);
+
+        Assert.Equal(3, buffer.Length);
+        Assert.Equal( new byte[] { 0x01, 0x02, 0x03 }, buffer.AsSpan().ToArray() );
+
+        buffer.WriteByte(0xFF);
+
+        Assert.Equal( new byte[] { 0x01, 0x02, 0x03, 0xFF }, buffer.AsSpan().ToArray() );
+    }
+
+    [Fact]
+    public void ResetOffset_ShouldThrow_WhenOffsetGreaterThanLength()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteBytes( [1, 2, 3] );
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => buffer.Truncate( 4 ));
     }
 
 }

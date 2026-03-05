@@ -22,6 +22,7 @@ public interface IWritableByteBuffer : IByteBuffer
     /// Compacts the buffer by discarding bytes up to the specified offset.
     /// </summary>
     /// <param name="offset">The offset up to which bytes should be discarded</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is negative or greater than the used portion of the buffer</exception>
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
     IWritableByteBuffer Compact( int offset );
 
@@ -32,11 +33,27 @@ public interface IWritableByteBuffer : IByteBuffer
     IWritableByteBuffer Clear();
 
     /// <summary>
-    /// Resets the writing offset to the beginning of the buffer, effectively discarding all written bytes. Current buffer capacity remains unchanged.
+    /// Reserves a contiguous block of bytes for writing and moves the writing offset forward by the specified length.
     /// </summary>
-    /// <exception cref="InvalidOperationException"></exception>
+    /// <param name="length">The number of bytes to reserve for writing</param>
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
-    IWritableByteBuffer ResetOffset();
+    IWritableByteBuffer Reserve( int length );
+
+    /// <summary>
+    /// Truncates the buffer to the specified position, effectively discarding all written bytes beyond that point. Underlying buffer capacity remains unchanged.
+    /// </summary>
+    /// <param name="offset">The offset to truncate to; defaults to the beginning of the buffer</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is negative or greater than the used portion of the buffer</exception>
+    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
+    IWritableByteBuffer Truncate( int offset = 0 );
+
+    /// <summary>
+    /// Moves the writing offset to the specified position, allowing for overwriting previously written bytes. The offset must be within the bounds of the buffer's capacity.
+    /// </summary>
+    /// <param name="offset">The position to move the writing offset to</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is negative or greater than the used portion of the buffer</exception>
+    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
+    IWritableByteBuffer Seek( int offset );
 
     /// <summary>
     /// Writes a boolean value
