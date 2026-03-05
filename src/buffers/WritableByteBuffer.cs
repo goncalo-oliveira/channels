@@ -6,7 +6,7 @@ namespace Faactory.Channels.Buffers;
 /// <summary>
 /// A writable byte buffer implementation that allows writing various primitive types and byte arrays with automatic resizing
 /// </summary>
-public sealed class WritableByteBuffer : IWritableByteBuffer, IDisposable
+public sealed class WritableByteBuffer : IWritableByteBuffer
 {
     internal const int InitialCapacity = 1024;
 

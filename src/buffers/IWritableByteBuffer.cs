@@ -4,7 +4,7 @@ namespace Faactory.Channels.Buffers;
 /// A buffer handling interface with write capabilities
 /// </summary>
 [Serialization.ByteBufferJsonConverter]
-public interface IWritableByteBuffer : IByteBuffer
+public interface IWritableByteBuffer : IByteBuffer, IDisposable
 {
     /// <summary>
     /// Creates a readable view of the currently written portion of the buffer.
