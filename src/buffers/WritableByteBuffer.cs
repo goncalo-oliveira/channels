@@ -85,13 +85,18 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     }
 
     /// <summary>
-    /// Resets the writing offset to the beginning of the buffer, effectively discarding all written bytes. Current buffer capacity remains unchanged.
+    /// Truncates the buffer to the specified position, effectively discarding all written bytes beyond that point. Underlying buffer capacity remains unchanged.
     /// </summary>
+    /// <param name="offset">The offset to truncate to; defaults to the beginning of the buffer</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is negative or greater than the used portion of the buffer</exception>
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
-    public IWritableByteBuffer ResetOffset()
+    public IWritableByteBuffer Truncate( int offset = 0 )
     {
-        writeOffset = 0;
-        usedOffset = 0;
+        ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, usedOffset, nameof( offset ) );
+
+        writeOffset = offset;
+        usedOffset = offset;
 
         return this;
     }
@@ -100,6 +105,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// Moves the writing offset to the specified position, allowing for overwriting previously written bytes. The offset must be within the bounds of the buffer's capacity.
     /// </summary>
     /// <param name="offset">The position to move the writing offset to</param>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is negative or greater than the used portion of the buffer</exception>
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
     public IWritableByteBuffer Seek( int offset )
     {
@@ -131,7 +137,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// </summary>
     /// <param name="offset">The offset up to which bytes should be discarded</param>
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is negative or greater than the current length of the buffer</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is negative or greater than the used portion of the buffer</exception>
     public IWritableByteBuffer Compact( int offset )
     {
         ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );

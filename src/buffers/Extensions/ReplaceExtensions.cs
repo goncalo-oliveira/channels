@@ -43,7 +43,7 @@ public static class ByteBufferReplaceExtensions
 
         result.WriteBytes( span[index..] );
 
-        source.ResetOffset();
+        source.Truncate();
         source.WriteBytes( result.AsSpan() );
 
         return source;
