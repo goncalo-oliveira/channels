@@ -75,6 +75,30 @@ When disposed:
 - the underlying byte array is returned to the pool
 - the buffer instance becomes unusable
 
+### Tracked Buffer Pool
+
+For scenarios where many buffers are rented within a defined scope, the library also provides `TrackedByteBufferPool`.
+
+This pool tracks all rented buffers and automatically disposes any that were not manually released when the pool itself is disposed.
+
+Example:
+
+```csharp
+using var pool = new TrackedByteBufferPool();
+
+var buffer1 = pool.Rent();
+var buffer2 = pool.Rent();
+
+buffer1.WriteInt32( 123 );
+
+// disposing the pool automatically disposes any remaining buffers
+```
+
+This can be useful when buffers are created throughout a workflow and manual disposal could be easily forgotten.
+
+> [!NOTE]
+> If a rented buffer is disposed manually, it is automatically removed from the tracked set.
+
 ## Buffer Views (Zero-Copy)
 
 Buffers in v2.x support **windowed views**, allowing efficient access to subsets of data without copying.
