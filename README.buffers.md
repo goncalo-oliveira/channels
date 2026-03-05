@@ -41,6 +41,40 @@ var b1 = buffer.GetByte(customOffset);
 var b2 = buffer.ReadByte();
 ```
 
+### Renting Buffers from a Pool
+
+For scenarios that create many temporary writable buffers (for example when encoding messages), the library provides `ByteBufferPool`.
+
+The pool rents buffers backed by reusable `byte[]` instances, reducing allocations and GC pressure.
+
+Example:
+
+```csharp
+var pool = new ByteBufferPool();
+
+using var buffer = pool.Rent();
+
+buffer.WriteInt32( 123 );
+buffer.WriteByte( 1 );
+
+var readable = buffer.AsReadableView();
+```
+
+> [!IMPORTANT]
+> Buffers rented from the pool **must be disposed** when no longer needed so the underlying byte array can be returned to the pool.
+
+You can also request a specific minimum capacity:
+
+```csharp
+using var buffer = pool.Rent( 4096 );
+```
+
+The returned buffer behaves exactly like a regular `WritableByteBuffer`. If additional capacity is required while writing, the buffer will automatically grow as needed, just like a regular writable buffer. When this happens, the previously rented array is returned to the pool and a larger one is rented.
+
+When disposed:
+- the underlying byte array is returned to the pool
+- the buffer instance becomes unusable
+
 ## Buffer Views (Zero-Copy)
 
 Buffers in v2.x support **windowed views**, allowing efficient access to subsets of data without copying.
