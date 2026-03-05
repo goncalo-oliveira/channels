@@ -2,7 +2,7 @@ namespace Faactory.Channels;
 
 internal class WritableBuffer : IWritableBuffer
 {
-    private readonly List<object> outputData = new();
+    private readonly List<object> outputData = [];
 
     public void Write( object data )
     {
@@ -11,7 +11,7 @@ internal class WritableBuffer : IWritableBuffer
 
     internal async Task WriteAsync( IChannel channel )
     {
-        if ( !outputData.Any() )
+        if ( outputData.Count == 0)
         {
             return;
         }

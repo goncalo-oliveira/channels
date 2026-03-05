@@ -1,6 +1,8 @@
+using Faactory.Channels.Buffers;
+
 namespace Faactory.Channels.Adapters;
 
-internal class AdapterContext( IChannel channel ) : ChannelContext( channel ), IAdapterContext
+internal class AdapterContext( IChannel channel, IByteBufferPool? bufferPool ) : ChannelContext( channel, bufferPool ), IAdapterContext
 {
     private readonly List<object> forwardedData = [];
 

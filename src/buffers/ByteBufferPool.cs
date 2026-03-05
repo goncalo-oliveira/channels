@@ -22,9 +22,19 @@ public sealed class ByteBufferPool : IByteBufferPool
     /// <returns>An <see cref="IWritableByteBuffer"/> with the specified capacity.</returns>
     public IWritableByteBuffer Rent( int capacity )
         => new WritableByteBuffer(
-            allocator: size => pool.Rent( size ),
-            releaser: buffer => pool.Return( buffer )
+            allocator: Allocate,
+            releaser: Release
         );
+
+    /// <summary>
+    /// Rents a byte array from the pool with at least the specified size.
+    /// </summary>
+    internal byte[] Allocate( int size ) => pool.Rent( size );
+
+    /// <summary>
+    /// Returns a byte array to the pool for reuse.
+    /// </summary>
+    internal void Release( byte[] buffer ) => pool.Return( buffer );
 }
 
 /// <summary>

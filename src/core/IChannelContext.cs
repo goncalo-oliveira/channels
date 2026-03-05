@@ -1,3 +1,5 @@
+using Faactory.Channels.Buffers;
+
 namespace Faactory.Channels;
 
 /// <summary>
@@ -5,6 +7,11 @@ namespace Faactory.Channels;
 /// </summary>
 public interface IChannelContext
 {
+    /// <summary>
+    /// Gets a buffer pool instance
+    /// </summary>
+    IByteBufferPool BufferPool { get; }
+
     /// <summary>
     /// Gets the channel instance
     /// </summary>
