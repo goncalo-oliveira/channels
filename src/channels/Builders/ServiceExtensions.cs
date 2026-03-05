@@ -52,12 +52,6 @@ public static class ChannelsBuilderServiceExtensions
         */
         services.TryAddTransient<IChannelFactory, ChannelFactory>();
 
-        /*
-        Byte buffer pool is used to manage reusable byte buffers,
-        which helps reduce memory allocations and improve performance.
-        */
-        services.TryAddSingleton<IByteBufferPool, ByteBufferPool>();
-
         return services;
     }
 }
