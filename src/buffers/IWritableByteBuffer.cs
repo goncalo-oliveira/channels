@@ -7,6 +7,12 @@ namespace Faactory.Channels.Buffers;
 public interface IWritableByteBuffer : IByteBuffer, IDisposable
 {
     /// <summary>
+    /// Gets the current writing offset, which indicates the position in the buffer where the next write operation will occur.
+    /// This offset is automatically updated as data is written to the buffer.
+    /// </summary>
+    int Offset { get; }
+
+    /// <summary>
     /// Creates a readable view of the currently written portion of the buffer.
     /// </summary>
     /// <remarks>
