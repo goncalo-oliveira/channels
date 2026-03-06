@@ -7,12 +7,6 @@ namespace Faactory.Channels.Buffers;
 public interface IWritableByteBuffer : IByteBuffer, IDisposable
 {
     /// <summary>
-    /// Gets the current writing offset, which indicates the position in the buffer where the next write operation will occur.
-    /// This offset is automatically updated as data is written to the buffer.
-    /// </summary>
-    int Offset { get; }
-
-    /// <summary>
     /// Creates a readable view of the currently written portion of the buffer.
     /// </summary>
     /// <remarks>
@@ -23,6 +17,17 @@ public interface IWritableByteBuffer : IByteBuffer, IDisposable
     /// </remarks>
     /// <returns>A readable buffer view of the currently written portion</returns>
     IReadableByteBuffer AsReadableView();
+
+    /// <summary>
+    /// Creates a writable view of the buffer starting at the specified offset.
+    /// The returned view shares the same underlying memory, allowing for zero-copy modifications.
+    /// The offset must be within the bounds of the buffer's capacity.
+    /// Modifying the returned view will affect the original buffer, and vice versa.
+    /// The returned view is limited to the portion of the buffer starting from the specified offset to the end of the used portion of the buffer.
+    /// </summary>
+    /// <param name="offset">The offset from which to create the writable view</param>
+    /// <returns>A writable buffer view starting at the specified offset</returns>
+    IWritableByteBuffer At( int offset );
 
     /// <summary>
     /// Compacts the buffer by discarding bytes up to the specified offset.
@@ -52,14 +57,6 @@ public interface IWritableByteBuffer : IByteBuffer, IDisposable
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is negative or greater than the used portion of the buffer</exception>
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
     IWritableByteBuffer Truncate( int offset = 0 );
-
-    /// <summary>
-    /// Moves the writing offset to the specified position, allowing for overwriting previously written bytes. The offset must be within the bounds of the buffer's capacity.
-    /// </summary>
-    /// <param name="offset">The position to move the writing offset to</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is negative or greater than the used portion of the buffer</exception>
-    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
-    IWritableByteBuffer Seek( int offset );
 
     /// <summary>
     /// Writes a boolean value

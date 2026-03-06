@@ -14,7 +14,6 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
 
     /// <summary>
     /// The current writing offset in the buffer, which also represents the length of the written portion.
-    /// It may be less than or equal to the actual length of the used portion of the buffer.
     /// </summary>
     private int writeOffset = 0;
 
@@ -22,9 +21,9 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     private readonly Action<byte[]>? Release;
 
     /// <summary>
-    /// The current used offset in the buffer, which represents written portion of the buffer.
+    /// Gets the underlying byte array buffer. This is intended for internal use and should not be exposed publicly, as it may lead to unsafe modifications of the buffer. The buffer is shared with any views created from this instance, so modifying it directly can affect the integrity of those views.
     /// </summary>
-    private int usedOffset = 0;
+    internal byte[] Buffer => buffer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WritableByteBuffer"/> class with the default initial capacity and specified endianness.
@@ -62,14 +61,25 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <summary>
     /// Gets the length of the used portion of the buffer.
     /// </summary>
-    public int Length => usedOffset;
+    public int Length => writeOffset;
 
     /// <summary>
-    /// Gets the current writing offset, which indicates the position in the buffer where the next write operation will occur.
-    /// This offset is automatically updated as data is written to the buffer.
+    /// Creates a writable view of the buffer starting at the specified offset.
+    /// The returned view shares the same underlying memory, allowing for zero-copy modifications.
+    /// The offset must be within the bounds of the buffer's capacity.
+    /// Modifying the returned view will affect the original buffer, and vice versa.
+    /// The returned view is limited to the portion of the buffer starting from the specified offset to the end of the used portion of the buffer.
     /// </summary>
-    public int Offset => writeOffset;
+    /// <param name="offset">The offset from which to create the writable view</param>
+    /// <returns>A writable buffer view starting at the specified offset</returns>
+    public IWritableByteBuffer At( int offset )
+    {
+        ObjectDisposedException.ThrowIf( buffer is null, this );
+        ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
 
+        return new WritableByteBufferView( this, offset );
+    }
 
     /// <summary>
     /// Discards all written bytes and reallocates the buffer to its initial capacity.
@@ -86,7 +96,6 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         }
 
         writeOffset = 0;
-        usedOffset = 0;
 
         return this;
     }
@@ -104,7 +113,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     }
 
     /// <summary>
-    /// Resets the writing offset to the beginning of the buffer, effectively discarding all written bytes. Current buffer capacity remains unchanged.
+    /// Reserves a contiguous block of bytes for writing and moves the writing offset forward by the specified length.
     /// </summary>
     /// <param name="length">The number of bytes to reserve for writing</param>
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
@@ -116,7 +125,6 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         EnsureCapacity( length );
 
         writeOffset += length;
-        usedOffset = Math.Max( usedOffset, writeOffset );
 
         return this;
     }
@@ -130,24 +138,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     public IWritableByteBuffer Truncate( int offset = 0 )
     {
         ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
-        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, usedOffset, nameof( offset ) );
-
-        writeOffset = offset;
-        usedOffset = offset;
-
-        return this;
-    }
-
-    /// <summary>
-    /// Moves the writing offset to the specified position, allowing for overwriting previously written bytes. The offset must be within the bounds of the buffer's capacity.
-    /// </summary>
-    /// <param name="offset">The position to move the writing offset to</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is negative or greater than the used portion of the buffer</exception>
-    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
-    public IWritableByteBuffer Seek( int offset )
-    {
-        ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
-        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, usedOffset, nameof( offset ) );
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
 
         writeOffset = offset;
 
@@ -168,7 +159,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     {
         ObjectDisposedException.ThrowIf( buffer is null, this );
 
-        return new ReadableByteBuffer( buffer, 0, usedOffset, Endianness );
+        return new ReadableByteBuffer( buffer, 0, writeOffset, Endianness );
     }
 
     /// <summary>
@@ -182,14 +173,14 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         ObjectDisposedException.ThrowIf(buffer is null, this);
 
         ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
-        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, usedOffset, nameof( offset ) );
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
 
         if ( offset == 0 )
         {
             return this;
         }
 
-        var remaining = usedOffset - offset;
+        var remaining = writeOffset - offset;
 
         if ( remaining > 0 )
         {
@@ -197,7 +188,6 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         }
 
         writeOffset = remaining;
-        usedOffset = remaining;
 
         return this;
     }
@@ -225,7 +215,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     {
         ObjectDisposedException.ThrowIf( buffer is null, this );
 
-        return buffer.AsSpan( 0, usedOffset );
+        return buffer.AsSpan( 0, writeOffset );
     }
 
     private void EnsureCapacity( int additionalLength )
@@ -249,7 +239,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
 
         var newBuffer = Allocate( newSize );
 
-        Array.Copy( buffer, 0, newBuffer, 0, usedOffset );
+        Array.Copy( buffer, 0, newBuffer, 0, writeOffset );
 
         Release?.Invoke( buffer );
 
@@ -265,7 +255,6 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         writer( span, value );
 
         writeOffset += size;
-        usedOffset = Math.Max( usedOffset, writeOffset );
     }
 
     /// <summary>
@@ -286,7 +275,6 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         EnsureCapacity( 1 );
 
         buffer[writeOffset++] = value;
-        usedOffset = Math.Max( usedOffset, writeOffset );
 
         return this;
     }
@@ -305,7 +293,6 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         Array.Copy( value, startIndex, buffer, writeOffset, length );
 
         writeOffset += length;
-        usedOffset = Math.Max( usedOffset, writeOffset );
 
         return this;
     }
@@ -330,9 +317,104 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         value.CopyTo( buffer.AsSpan( writeOffset ) );
 
         writeOffset += value.Length;
-        usedOffset = Math.Max( usedOffset, writeOffset );
 
         return this;
+    }
+
+    internal void WriteDouble( Span<byte> span, double value )
+    {
+        if ( Endianness == Endianness.BigEndian )
+        {
+            BinaryPrimitives.WriteDoubleBigEndian( span, value );
+        }
+        else
+        {
+            BinaryPrimitives.WriteDoubleLittleEndian( span, value );
+        }
+    }
+
+    internal void WriteSingle( Span<byte> span, float value )
+    {
+        if ( Endianness == Endianness.BigEndian )
+        {
+            BinaryPrimitives.WriteSingleBigEndian( span, value );
+        }
+        else
+        {
+            BinaryPrimitives.WriteSingleLittleEndian( span, value );
+        }
+    }
+
+    internal void WriteInt64( Span<byte> span, long value )
+    {
+        if ( Endianness == Endianness.BigEndian )
+        {
+            BinaryPrimitives.WriteInt64BigEndian( span, value );
+        }
+        else
+        {
+            BinaryPrimitives.WriteInt64LittleEndian( span, value );
+        }
+    }
+
+    internal void WriteInt16( Span<byte> span, short value )
+    {
+        if ( Endianness == Endianness.BigEndian )
+        {
+            BinaryPrimitives.WriteInt16BigEndian( span, value );
+        }
+        else
+        {
+            BinaryPrimitives.WriteInt16LittleEndian( span, value );
+        }
+    }
+
+    internal void WriteInt32( Span<byte> span, int value )
+    {
+        if ( Endianness == Endianness.BigEndian )
+        {
+            BinaryPrimitives.WriteInt32BigEndian( span, value );
+        }
+        else
+        {
+            BinaryPrimitives.WriteInt32LittleEndian( span, value );
+        }
+    }
+
+    internal void WriteUInt16( Span<byte> span, ushort value )
+    {
+        if ( Endianness == Endianness.BigEndian )
+        {
+            BinaryPrimitives.WriteUInt16BigEndian( span, value );
+        }
+        else
+        {
+            BinaryPrimitives.WriteUInt16LittleEndian( span, value );
+        }
+    }
+
+    internal void WriteUInt32( Span<byte> span, uint value )
+    {
+        if ( Endianness == Endianness.BigEndian )
+        {
+            BinaryPrimitives.WriteUInt32BigEndian( span, value );
+        }
+        else
+        {
+            BinaryPrimitives.WriteUInt32LittleEndian( span, value );
+        }
+    }
+
+    internal void WriteUInt64( Span<byte> span, ulong value )
+    {
+        if ( Endianness == Endianness.BigEndian )
+        {
+            BinaryPrimitives.WriteUInt64BigEndian( span, value );
+        }
+        else
+        {
+            BinaryPrimitives.WriteUInt64LittleEndian( span, value );
+        }
     }
 
     /// <summary>
@@ -342,17 +424,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>The current buffer instance</returns>
     public IWritableByteBuffer WriteDouble( double value )
     {
-        WritePrimitive( value, sizeof( double ), ( span, val ) =>
-        {
-            if ( Endianness == Endianness.BigEndian )
-            {
-                BinaryPrimitives.WriteDoubleBigEndian( span, val );
-            }
-            else
-            {
-                BinaryPrimitives.WriteDoubleLittleEndian( span, val );
-            }
-        } );
+        WritePrimitive( value, sizeof( double ), WriteDouble );
 
         return this;
     }
@@ -364,17 +436,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>The current buffer instance</returns>
     public IWritableByteBuffer WriteSingle( float value )
     {
-        WritePrimitive( value, sizeof( float ), ( span, val ) =>
-        {
-            if ( Endianness == Endianness.BigEndian )
-            {
-                BinaryPrimitives.WriteSingleBigEndian( span, val );
-            }
-            else
-            {
-                BinaryPrimitives.WriteSingleLittleEndian( span, val );
-            }
-        } );
+        WritePrimitive( value, sizeof( float ), WriteSingle );
 
         return this;
     }
@@ -386,17 +448,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>The current buffer instance</returns>
     public IWritableByteBuffer WriteInt16( short value )
     {
-        WritePrimitive( value, sizeof( short ), ( span, val ) =>
-        {
-            if ( Endianness == Endianness.BigEndian )
-            {
-                BinaryPrimitives.WriteInt16BigEndian( span, val );
-            }
-            else
-            {
-                BinaryPrimitives.WriteInt16LittleEndian( span, val );
-            }
-        } );
+        WritePrimitive( value, sizeof( short ), WriteInt16 );
 
         return this;
     }
@@ -408,17 +460,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>The current buffer instance</returns>
     public IWritableByteBuffer WriteInt32( int value )
     {
-        WritePrimitive( value, sizeof( int ), ( span, val ) =>
-        {
-            if ( Endianness == Endianness.BigEndian )
-            {
-                BinaryPrimitives.WriteInt32BigEndian( span, val );
-            }
-            else
-            {
-                BinaryPrimitives.WriteInt32LittleEndian( span, val );
-            }
-        } );
+        WritePrimitive( value, sizeof( int ), WriteInt32 );
 
         return this;
     }
@@ -430,17 +472,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>The current buffer instance</returns>
     public IWritableByteBuffer WriteInt64( long value )
     {
-        WritePrimitive( value, sizeof( long ), ( span, val ) =>
-        {
-            if ( Endianness == Endianness.BigEndian )
-            {
-                BinaryPrimitives.WriteInt64BigEndian( span, val );
-            }
-            else
-            {
-                BinaryPrimitives.WriteInt64LittleEndian( span, val );
-            }
-        } );
+        WritePrimitive( value, sizeof( long ), WriteInt64 );
 
         return this;
     }
@@ -452,17 +484,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>The current buffer instance</returns>
     public IWritableByteBuffer WriteUInt16( ushort value )
     {
-        WritePrimitive( value, sizeof( ushort ), ( span, val ) =>
-        {
-            if ( Endianness == Endianness.BigEndian )
-            {
-                BinaryPrimitives.WriteUInt16BigEndian( span, val );
-            }
-            else
-            {
-                BinaryPrimitives.WriteUInt16LittleEndian( span, val );
-            }
-        } );
+        WritePrimitive( value, sizeof( ushort ), WriteUInt16 );
 
         return this;
     }
@@ -474,17 +496,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>The current buffer instance</returns>
     public IWritableByteBuffer WriteUInt32( uint value )
     {
-        WritePrimitive( value, sizeof( uint ), ( span, val ) =>
-        {
-            if ( Endianness == Endianness.BigEndian )
-            {
-                BinaryPrimitives.WriteUInt32BigEndian( span, val );
-            }
-            else
-            {
-                BinaryPrimitives.WriteUInt32LittleEndian( span, val );
-            }
-        } );
+        WritePrimitive( value, sizeof( uint ), WriteUInt32 );
 
         return this;
     }
@@ -496,17 +508,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>The current buffer instance</returns>
     public IWritableByteBuffer WriteUInt64( ulong value )
     {
-        WritePrimitive( value, sizeof( ulong ), ( span, val ) =>
-        {
-            if ( Endianness == Endianness.BigEndian )
-            {
-                BinaryPrimitives.WriteUInt64BigEndian( span, val );
-            }
-            else
-            {
-                BinaryPrimitives.WriteUInt64LittleEndian( span, val );
-            }
-        } );
+        WritePrimitive( value, sizeof( ulong ), WriteUInt64 );
 
         return this;
     }
