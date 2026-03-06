@@ -125,7 +125,7 @@ This significantly reduces allocations in high-throughput scenarios.
 > If you need to persist the data beyond the lifetime of the original buffer,
 > call `ToArray()` to create a copy.
 
-### `AsReadableView()`
+### Readable Views over Writable Buffers
 
 `IWritableByteBuffer.AsReadableView()` creates a readable view over the **currently written portion** of the writable buffer.
 
@@ -153,6 +153,41 @@ var readable = writable.AsReadableView(); // zero-copy
 > var snapshot = readable.ToArray();
 > ```
 
+### Writable Views
+
+`WritableByteBuffer.At( offset )` creates a **windowed writable view** starting at the specified offset. They allow writing to a specific portion of the buffer without affecting the main write cursor.
+
+The returned view:
+
+- Shares the same underlying memory as the parent buffer (zero-copy)
+- Allows overwriting data within the already written portion
+- Cannot grow the parent buffer
+- Cannot write beyond the already written portion of the parent buffer at the time of view creation
+- Maintains its own write cursor independent from the parent
+
+Example:
+
+```csharp
+var buffer = new WritableByteBuffer();
+
+buffer.WriteBytes( [1, 2, 3, 4, 5] );
+
+// create a writable view starting at offset 2
+// writing to the view modifies the parent buffer at the corresponding positions
+var view = buffer.At( 2 )
+    .WriteBytes( [9, 9] );
+
+// buffer now contains: [1, 2, 9, 9, 5]
+```
+
+> [!IMPORTANT]
+> Writable views are limited to the portion of the buffer that existed when the view was created.\
+> If the parent buffer grows after the view is created, the view **cannot access or write into the new region**.\
+> Views should not be used after the parent buffer has been modified or compacted, as their behavior becomes undefined.
+
+> [!NOTE]
+> Writable views do not support operations that would alter the parent buffer’s structure (such as `Clear`, `Compact`, or creating additional views).
+
 ### `ToArray()` Behavior
 
 `ToArray()` on a readable buffer returns:
@@ -163,6 +198,8 @@ var readable = writable.AsReadableView(); // zero-copy
 This ensures:
 - No unnecessary allocations for full buffers
 - Safe behavior for windowed or writable-backed views
+
+On writable buffers, `ToArray()` always creates a copy of the currently written portion, as writable buffers do not guarantee stable underlying data.
 
 ### Summary of Allocation Behavior
 
