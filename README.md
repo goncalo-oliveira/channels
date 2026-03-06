@@ -255,8 +255,7 @@ This makes `IReadableByteBuffer` the preferred option for:
 > [!IMPORTANT]
 > The buffer provided to the pipeline is a **view**, not a copy.
 >
-> If you need to retain data beyond the current pipeline execution,
-> you must create a copy:
+> If you need to retain data beyond the current pipeline execution, you must create a copy:
 >
 > ```csharp
 > var snapshot = buffer.ToArray();
