@@ -2,6 +2,7 @@ using System.Net.WebSockets;
 using Faactory.Channels.Buffers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Faactory.Channels.WebSockets;
 
@@ -34,7 +35,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
         BeginInitialize();
     }
 
-    private WritableByteBuffer TextBuffer { get; set; } = new WritableByteBuffer();
+    private WritableByteBuffer TextBuffer { get; } = new WritableByteBuffer();
 
     public WebSocket WebSocket { get; }
 

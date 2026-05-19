@@ -11,7 +11,7 @@ Unlike TCP and UDP Channels, WebSocket channels deliver complete `WebSocketMessa
 > [!TIP]
 > The channel guarantees that the input pipeline only receives complete messages (`EndOfMessage == true`). Fragmented frames are internally buffered until completion.
 
-When writing to the output pipeline, the library provides built-in middleware for sending binary, text or fragmented messages, so either of the following types can be directly written to the output pipeline:
+When writing to the output pipeline, the library provides built-in middleware for sending binary, text or fragmented messages, so any of the following types can be directly written to the output pipeline:
 
 - `byte[]` which is sent as a (complete) binary message
 - `IByteBuffer` also sent as a (complete) binary message
