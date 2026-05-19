@@ -260,8 +260,8 @@ This makes `IReadableByteBuffer` the preferred option for:
 > ```csharp
 > var snapshot = buffer.ToArray();
 > ```
-
-Failing to do so may result in unexpected behavior, as the underlying buffer may be compacted or reused after the pipeline completes.
+> 
+> Failing to do so may result in unexpected behavior, as the underlying buffer may be compacted or reused after the pipeline completes.
 
 ### Using `byte[]` Instead
 
@@ -407,7 +407,7 @@ channel.AddChannelService<MyService>();
 
 ## Channel Data
 
-It is possible to store custom data on a channel instance. The `IChannel` interface exposes a `Data` property, which is essentially a case-insensitive string dictionary. This can be useful for storing data that is used later by other adapters and handlers.
+It is possible to store custom data on a channel instance. The `IChannel` interface exposes a `Data` property, which is essentially a case-insensitive, thread-safe dictionary. This can be useful for storing data that is used later by other adapters and handlers.
 
 ```csharp
 public class SampleIdentityHandler : ChannelHandler<IdentityInformation>

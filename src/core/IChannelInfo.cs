@@ -15,5 +15,5 @@ public interface IChannelInfo
     /// <summary>
     /// Gets the channel's metadata
     /// </summary>
-    IReadOnlyDictionary<string, string> Data { get; }
+    IReadOnlyDictionary<string, object> Data { get; }
 }
