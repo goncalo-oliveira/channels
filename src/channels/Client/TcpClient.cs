@@ -129,6 +129,7 @@ internal sealed class TcpClient : IChannelsClient
         return new TcpChannel(
             Scope,
             socket,
+            channelName,
             options.ChannelOptions,
             inputPipeline,
             outputPipeline,

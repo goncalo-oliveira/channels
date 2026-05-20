@@ -39,6 +39,12 @@ public sealed class NullChannel : IChannel, IAsyncDisposable
     public string Id { get; } = Guid.Empty.ToString( "N" );
 
     /// <summary>
+    /// Gets the name of the channel, which corresponds to the channel configuration name.
+    /// Always returns "NullChannel" for the null channel.
+    /// </summary>
+    public string Name { get; } = "NullChannel";
+
+    /// <summary>
     /// Gets a value indicating whether the channel is closed. Always returns true for the null channel.
     /// </summary>
     public bool IsClosed => true;

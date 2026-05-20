@@ -16,6 +16,7 @@ internal sealed class TcpChannel : Channel
     internal TcpChannel( 
           IServiceScope serviceScope
         , Socket socket
+        , string channelName
         , ChannelOptions options
         , IChannelPipeline inputPipeline
         , IChannelPipeline outputPipeline
@@ -31,6 +32,7 @@ internal sealed class TcpChannel : Channel
         Buffer = new WritableByteBuffer( options.BufferEndianness );
         Timeout = options.IdleTimeout;
         Socket = socket;
+        Name = channelName;
         Input = inputPipeline;
         Output = outputPipeline;
 

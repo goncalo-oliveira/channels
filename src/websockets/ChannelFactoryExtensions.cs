@@ -40,6 +40,7 @@ public static class ChannelFactoryWebSocketExtensions
         var channel = new WebSocketChannel(
             scope,
             webSocket,
+            channelName,
             options,
             inputPipeline,
             outputPipeline,
