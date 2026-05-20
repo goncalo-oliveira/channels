@@ -41,11 +41,15 @@ public interface IChannel : IDisposable, IAsyncDisposable
     DateTimeOffset? LastSent { get; }
 
     /// <summary>
-    /// Gets a channel service of the specified type, or null if not found
+    /// Gets the scoped service provider associated with the channel lifetime.
+    /// Services resolved from this provider are scoped to the current channel instance.
     /// </summary>
-    /// <param name="serviceType">The type of the channel service to retrieve</param>
-    /// <returns>>The channel service instance if found, or null if not found</returns>
-    IChannelService? GetChannelService( Type serviceType );
+    IServiceProvider Services { get; }
+
+    /// <summary>
+    /// Gets the channel services initialized for the current channel instance.
+    /// </summary>
+    public IEnumerable<IChannelService> ChannelServices { get; }
 
     /// <summary>
     /// Sends data through the Output pipeline

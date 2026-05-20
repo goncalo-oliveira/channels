@@ -19,8 +19,6 @@ public static class ChannelBuilderCorrelationExtensions
 
         builder.Services.AddKeyedScoped<IChannelResponseRegistry, ChannelResponseRegistry>( builder.Name );
 
-        builder.AddChannelService<CorrelationChannelService>();
-
         return builder;
     }
 }

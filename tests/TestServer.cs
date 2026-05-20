@@ -44,6 +44,25 @@ internal sealed class TestServer( IHost host, IServiceProvider serviceProvider, 
         return new TestServer( app, app.Services, GetBoundTcpPort( app.Services ) );
     }
 
+    public static async Task<TestServer> StartNamedAsync( Action<INamedChannelBuilder>? configureBuilder = null, Action<IServiceCollection>? configureServices = null, CancellationToken cancellationToken = default )
+    {
+        var builder = Host.CreateApplicationBuilder();
+
+        builder.Logging.ClearProviders(); // remove default logging providers to reduce test output noise
+
+        var namedBuilder = builder.Services.AddChannels();
+
+        configureBuilder?.Invoke( namedBuilder );
+        configureServices?.Invoke( builder.Services );
+
+        var app = builder.Build();
+
+        await app.StartAsync( cancellationToken ).ConfigureAwait( false );
+
+        return new TestServer( app, app.Services, GetBoundTcpPort( app.Services ) );
+    }
+
+
     private static int GetBoundTcpPort(IServiceProvider services)
     {
         // TcpListener is registered as IHostedService. Find it.

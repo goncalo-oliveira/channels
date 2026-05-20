@@ -28,21 +28,20 @@ public abstract class Channel : IChannel, IAsyncDisposable
         ChannelScope = serviceScope;
         Info = new ChannelInfo( this );
 
-        logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
+        logger = Services.GetRequiredService<ILoggerFactory>()
             .CreateLogger<Channel>();
 
-        registrar = serviceScope.ServiceProvider.GetService<IChannelRegistrar>()
+        registrar = Services.GetService<IChannelRegistrar>()
             ?? NullChannelRegistrar.Instance;
 
-        monitors = new( () => ServiceProvider.GetServices<IChannelMonitor>().ToArray() );
+        monitors = new( () => Services.GetServices<IChannelMonitor>().ToArray() );
 
-        metricsTagsFactory = serviceScope.ServiceProvider.GetRequiredService<IOptions<ChannelOptions>>().Value.MetricsTagsFactory;
+        metricsTagsFactory = Services.GetRequiredService<IOptions<ChannelOptions>>().Value.MetricsTagsFactory;
 
         logger.LogTrace( "Created" );
     }
 
     internal IChannelInfo Info { get; }
-    internal IServiceProvider ServiceProvider => ChannelScope.ServiceProvider;
 
     internal TagList GetMetricsTags() => metricsTagsFactory( Info );
 
@@ -85,6 +84,12 @@ public abstract class Channel : IChannel, IAsyncDisposable
     /// This can be used by derived classes to cancel any ongoing operations when the channel is closed.
     /// </remarks>
     protected CancellationToken LifetimeToken => cts.Token;
+
+    /// <summary>
+    /// Gets the scoped service provider associated with the channel lifetime.
+    /// Services resolved from this provider are scoped to the current channel instance.
+    /// </summary>
+    public IServiceProvider Services => ChannelScope.ServiceProvider;
 
     /// <summary>
     /// The pipeline for processing incoming data.
@@ -139,20 +144,14 @@ public abstract class Channel : IChannel, IAsyncDisposable
     public DateTimeOffset? LastSent { get; private set; }
 
     /// <summary>
-    /// The channel services associated with the channel.
+    /// The channel services initialized for the current channel instance.
     /// </summary>
-    protected IEnumerable<IChannelService> Services { get; init; } = [];
+    public IEnumerable<IChannelService> ChannelServices { get; init; } = [];
 
     /// <summary>
     /// A timeout value that determines how long the channel can be idle (i.e., without sending or receiving data) before it is automatically closed.
     /// </summary>
     public TimeSpan Timeout { get; protected set; } = TimeSpan.FromSeconds( 60 );
-
-    /// <summary>
-    /// Gets a channel service of the specified type.
-    /// </summary>
-    public IChannelService? GetChannelService( Type serviceType )
-        => Services.SingleOrDefault( s => s.GetType() == serviceType );
 
     private int isClosing;
 
@@ -383,7 +382,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
 
     private Task StartServicesAsync( CancellationToken cancellationToken = default )
     {
-        var tasks = Services.Select( async service =>
+        var tasks = ChannelServices.Select( async service =>
         {
             try
             {
@@ -405,7 +404,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
 
     private Task StopServicesAsync()
     {
-        var tasks = Services.Select( async service =>
+        var tasks = ChannelServices.Select( async service =>
         {
             try
             {

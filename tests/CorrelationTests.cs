@@ -1,8 +1,14 @@
 ﻿using System;
 using System.Linq;
+using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Faactory.Channels;
+using Faactory.Channels.Client;
 using Faactory.Channels.Correlation;
+using Faactory.Channels.Tcp;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace tests;
@@ -208,4 +214,63 @@ public class ChannelResponseRegistryTests
         registry.Push( "anything" );
     }
 
+    [Fact]
+    public async Task TestServer_Handles_Correlation()
+    {
+        await using var server = await TestServer.StartNamedAsync( builder  =>
+        {
+            builder.Add( "server", channel =>
+            {
+                // Input: whatever arrives (byte[]) => write it back (goes through output pipeline)
+                channel.AddInputHandler<byte[]>( async (ctx, data, ct) =>
+                {
+                    await ctx.Channel.WriteAsync( data );
+                } );
+            } );
+
+            builder.Add( "client", channel =>
+            {
+                channel.AddCorrelation();
+
+                channel.AddInputHandler<byte[]>( (ctx, data) =>
+                {
+                    ctx.Channel.GetChannelResponseRegistry().Push( data );
+                } );
+            } );
+        },
+        services =>
+        {
+            services.AddTcpChannelListener( "server", options =>
+            {
+                options.Port = 0; // dynamic
+                options.Backlog = 1;
+            } );
+
+        } );
+
+        var factory = server.Services.GetRequiredService<IChannelFactory>();
+
+        using var client = new TcpClient(
+            factory.ChannelServices.CreateScope(),
+            new ChannelsClientOptions
+            {
+                Host = IPAddress.Loopback.ToString(),
+                Port = server.Port
+            },
+            "client" );
+
+        await Task.Delay( 500 ); // give the server a moment to start and bind to the dynamic port
+
+        var registry = client.Channel.GetChannelResponseRegistry();
+
+        var awaiter = registry.Create<byte[]>( m => m.SequenceEqual( Encoding.ASCII.GetBytes( "TEST" ) ) );
+
+        await client.Channel.WriteAsync( Encoding.ASCII.GetBytes( "TEST" ) );
+
+        var response = await awaiter.WaitAsync();
+
+        Assert.Equal( Encoding.ASCII.GetBytes( "TEST" ), response );
+
+        await client.CloseAsync();
+    }
 }

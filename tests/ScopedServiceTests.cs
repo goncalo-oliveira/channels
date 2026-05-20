@@ -67,8 +67,8 @@ public class ScopedServiceTests
         var channel1 = new NullChannel( provider.CreateScope() );
         var channel2 = new NullChannel( provider.CreateScope() );
 
-        var adapter1 = (MyAdapter)channel1.ChannelScope!.ServiceProvider.GetAdapters<IInputChannelAdapter>( channelName ).Single();
-        var adapter2 = (MyAdapter)channel1.ChannelScope!.ServiceProvider.GetAdapters<IInputChannelAdapter>( channelName ).Single();
+        var adapter1 = (MyAdapter)channel1.Services.GetAdapters<IInputChannelAdapter>( channelName ).Single();
+        var adapter2 = (MyAdapter)channel1.Services.GetAdapters<IInputChannelAdapter>( channelName ).Single();
 
         var id1 = adapter1.Id;
         var id2 = adapter2.Id;
@@ -76,8 +76,8 @@ public class ScopedServiceTests
         // both ids have to match, since MyService is scoped
         Assert.Equal( id1, id2 );
 
-        adapter1 = (MyAdapter)channel2.ChannelScope!.ServiceProvider.GetAdapters<IInputChannelAdapter>( channelName ).Single();
-        adapter2 = (MyAdapter)channel2.ChannelScope!.ServiceProvider.GetAdapters<IInputChannelAdapter>( channelName ).Single();
+        adapter1 = (MyAdapter)channel2.Services.GetAdapters<IInputChannelAdapter>( channelName ).Single();
+        adapter2 = (MyAdapter)channel2.Services.GetAdapters<IInputChannelAdapter>( channelName ).Single();
 
         var id3 = adapter1.Id;
         var id4 = adapter2.Id;
