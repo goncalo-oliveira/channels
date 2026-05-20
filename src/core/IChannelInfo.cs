@@ -1,5 +1,3 @@
-using Faactory.Channels.Buffers;
-
 namespace Faactory.Channels;
 
 /// <summary>
@@ -13,7 +11,12 @@ public interface IChannelInfo
     string Id { get; }
 
     /// <summary>
-    /// Gets the channel's metadata
+    /// Gets the name of the channel
+    /// </summary>
+    string Name { get; }
+
+    /// <summary>
+    /// Gets the channel's ephemeral data
     /// </summary>
     IReadOnlyDictionary<string, object> Data { get; }
 }
