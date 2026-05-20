@@ -51,7 +51,7 @@ public interface IChannelHandle
     long BytesSent { get; }
 
     /// <summary>
-    /// Gets the channel's metadata
+    /// Gets the channel's ephemeral data
     /// </summary>
     IReadOnlyDictionary<string, object> Data { get; }
 

@@ -1,41 +1,53 @@
-
-using System.Collections.Concurrent;
+using Microsoft.Extensions.Options;
 
 namespace Faactory.Channels;
 
-internal sealed class ChannelLimiter( int connectionLimit ) : IChannelMonitor, IChannelLimiter
+internal sealed class ChannelLimiter( IChannelRegistry registry, IOptionsSnapshot<ChannelLimiterOptions> optionsAccessor ) : IChannelMonitor
 {
-    private int currentConnections = 0;
-    private readonly ConcurrentDictionary<string, bool> connections = new();
-
-    private bool Accept()
-    {
-        Interlocked.Increment( ref currentConnections );
-
-        if ( connectionLimit <= 0 )
-        {
-            return true;
-        }
-
-        return currentConnections <= connectionLimit;
-    }
-
-    public bool IsAdmitted( IChannel channel )
-        => connections.TryGetValue( channel.Id, out var accepted ) && accepted;
-
     public void ChannelClosed( IChannelInfo channelInfo )
-    {
-        if ( currentConnections > 0 )
-        {
-            Interlocked.Decrement( ref currentConnections );
-        }
-
-        connections.TryRemove( channelInfo.Id, out _ );
-    }
+    { }
 
     public void ChannelCreated( IChannelInfo channelInfo )
     {
-        connections.TryAdd( channelInfo.Id, Accept() );
+        var options = optionsAccessor.Get( channelInfo.Name );
+
+        if ( options.ConnectionLimit <= 0 )
+        {
+            // No limit, admit all channels.
+            return;
+        }
+
+        if ( !registry.TryGet( channelInfo.Id, out var channelHandle ) )
+        {
+            // Channel not found, cannot apply limit.
+            return;
+        }
+
+        // get a snapshot of the active channels with the same name as the new channel
+        var activeChannels = registry.Channels
+            .Where( c => c.Name == channelHandle.Name )
+            .ToArray();
+
+        if ( activeChannels.Length <= options.ConnectionLimit )
+        {
+            // Under the limit, admit the channel.
+            return;
+        }
+
+        switch ( options.ConnectionLimitPolicy )
+        {
+            case ConnectionLimitPolicy.RejectNewest:
+                _ = channelHandle.CloseAsync();
+                break;
+
+            case ConnectionLimitPolicy.EvictOldest:
+                _ = activeChannels
+                    .Where( c => c.Id != channelHandle.Id )
+                    .OrderBy( c => c.Created )
+                    .FirstOrDefault()
+                    ?.CloseAsync();
+                break;
+        }
     }
 
     public void CustomEvent( IChannelInfo channelInfo, string name, object? data )

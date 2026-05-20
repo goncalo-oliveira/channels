@@ -453,6 +453,27 @@ To disable the idle detection mechanism, set the `IdleTimeout` property to `Time
 > [!TIP]
 > The idle detection mechanism is available for all channel types: TCP, UDP and WebSockets.
 
+## Connection Limits
+
+The library also provides a connection limiter mechanism that can be used to limit the number of concurrent connections to a channel listener. The limiting applies per channel configuration.
+
+```csharp
+IServiceCollection services = ...;
+
+services.AddChannels( channel =>
+{
+    channel.AddConnectionLimiter( options =>
+    {
+        options.ConnectionLimit = 1000;
+    } );
+
+    // ...
+} );
+```
+
+> [!TIP]
+> The connection limiter mechanism is available for all channel types: TCP, UDP and WebSockets.
+
 ## Client
 
 The library also provides a TCP/UDP client that can be used to connect to a server. This client automatically connects to the server and creates a channel instance when the connection is established. Connection drops are automatically handled and the client will attempt to reconnect.

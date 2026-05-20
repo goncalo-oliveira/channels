@@ -17,22 +17,7 @@ public static class ChannelLimiterBuilderExtensions
     public static IChannelBuilder AddConnectionLimiter( this IChannelBuilder builder, Action<ChannelLimiterOptions> configureOptions )
     {
         builder.Services.Configure( builder.Name, configureOptions );
-
-        builder.Services.AddSingleton<ChannelLimiter>( sp =>
-        {
-            var options = sp.GetRequiredService<IOptionsSnapshot<ChannelLimiterOptions>>()
-                .Get( builder.Name );
-
-            return new ChannelLimiter( options.ConnectionLimit );
-        } );
-
-        builder.Services.AddSingleton<IChannelMonitor>( sp =>
-            sp.GetRequiredService<ChannelLimiter>()
-        );
-
-        builder.Services.AddSingleton<IChannelLimiter>( sp =>
-            sp.GetRequiredService<ChannelLimiter>()
-        );
+        builder.Services.AddSingleton<IChannelMonitor, ChannelLimiter>();
 
         return builder;
     }

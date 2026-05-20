@@ -16,7 +16,6 @@ public abstract class Channel : IChannel, IAsyncDisposable
     private readonly IChannelRegistrar registrar;
     private readonly Lazy<IChannelMonitor[]> monitors;
     private readonly Func<IChannelInfo, TagList> metricsTagsFactory;
-    private readonly IChannelLimiter limiter;
     private Task initializeTask = Task.CompletedTask;
     private Task idleMonitorTask = Task.CompletedTask;
 
@@ -38,9 +37,6 @@ public abstract class Channel : IChannel, IAsyncDisposable
         monitors = new( () => ServiceProvider.GetServices<IChannelMonitor>().ToArray() );
 
         metricsTagsFactory = serviceScope.ServiceProvider.GetRequiredService<IOptions<ChannelOptions>>().Value.MetricsTagsFactory;
-
-        limiter = serviceScope.ServiceProvider.GetService<IChannelLimiter>()
-            ?? NullChannelLimiter.Instance;
 
         logger.LogTrace( "Created" );
     }
@@ -316,16 +312,6 @@ public abstract class Channel : IChannel, IAsyncDisposable
     {
         // notify channel created
         NotifyChannelCreated();
-
-        if ( !limiter.IsAdmitted( this ) )
-        {
-            logger.LogWarning( "Connection limit exceeded. Closing channel." );
-
-            await CloseAsync()
-                .ConfigureAwait( false );
-
-            return;
-        }
 
         // start long-running services
         await StartServicesAsync( cancellationToken );

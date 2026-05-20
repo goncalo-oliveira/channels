@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Faactory.Channels;
@@ -9,72 +8,6 @@ namespace tests;
 
 public class ChannelLimiterTests
 {
-    [Fact]
-    public void ChannelLimiter_Should_Limit_Connections()
-    {
-        var limiter = new ChannelLimiter( 2 );
-
-        var channel1 = new DetachedChannel();
-        var channel2 = new DetachedChannel();
-        var channel3 = new DetachedChannel();
-
-        limiter.ChannelCreated( new ChannelInfo( channel1 ) );
-        limiter.ChannelCreated( new ChannelInfo( channel2 ) );
-        limiter.ChannelCreated( new ChannelInfo( channel3 ) );
-
-        Assert.True( limiter.IsAdmitted( channel1 ) );
-        Assert.True( limiter.IsAdmitted( channel2 ) );
-        Assert.False( limiter.IsAdmitted( channel3 ) );
-    }
-
-    [Fact]
-    public void ChannelLimiter_Should_Release_Connections_On_Close()
-    {
-        var limiter = new ChannelLimiter( 2 );
-
-        var channel1 = new DetachedChannel();
-        var channel2 = new DetachedChannel();
-        var channel3 = new DetachedChannel();
-
-        limiter.ChannelCreated( new ChannelInfo( channel1 ) );
-        limiter.ChannelCreated( new ChannelInfo( channel2 ) );
-
-        limiter.ChannelClosed( new ChannelInfo( channel1 ) );
-
-        limiter.ChannelCreated( new ChannelInfo( channel3 ) );
-
-        Assert.True( limiter.IsAdmitted( channel3 ) );
-    }
-
-    [Fact]
-    public void ChannelLimiter_Should_Reject_Unknown_Channel()
-    {
-        var limiter = new ChannelLimiter( 1 );
-
-        var channel = new DetachedChannel();
-
-        Assert.False( limiter.IsAdmitted( channel ) );
-    }
-
-    [Theory]
-    [InlineData( 0 )]
-    [InlineData( -1 )]
-    public void ChannelLimiter_Should_Disable_Limit_When_Less_Than_Or_Equal_To_Zero( int limit )
-    {
-        var limiter = new ChannelLimiter( limit );
-
-        var channels = Enumerable.Range( 0, 100 )
-            .Select( _ => new DetachedChannel() )
-            .ToArray();
-
-        foreach ( var channel in channels )
-        {
-            limiter.ChannelCreated( new ChannelInfo( channel ) );
-
-            Assert.True( limiter.IsAdmitted( channel ) );
-        }
-    }
-
     [Fact]
     public async Task TcpServer_Should_Reject_Connections_Beyond_Limit()
     {
