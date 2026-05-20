@@ -15,6 +15,12 @@ public sealed class DetachedChannel : IChannel
     public string Id { get; } = Guid.NewGuid().ToString( "N" );
 
     /// <summary>
+    /// Gets the name of the channel, which corresponds to the channel configuration name.
+    /// Always returns "DetachedChannel" for a detached channel.
+    /// </summary>
+    public string Name { get; } = "DetachedChannel";
+
+    /// <summary>
     /// Gets the channel data, a dictionary of string keys and object values that can be used to store any relevant information about the channel
     /// </summary>
     public ChannelData Data { get; } = [];

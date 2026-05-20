@@ -52,6 +52,15 @@ public static class ChannelsBuilderServiceExtensions
         */
         services.TryAddTransient<IChannelFactory, ChannelFactory>();
 
+        /*
+        Channel registry is used to keep track of active channels.
+        It also serves as a channel monitor to update activity information to each channel handle.
+        */
+        services.AddSingleton<ChannelRegistry>();
+        services.AddSingleton<IChannelRegistrar>( sp => sp.GetRequiredService<ChannelRegistry>() );
+        services.AddSingleton<IChannelRegistry>( sp => sp.GetRequiredService<ChannelRegistry>() );
+        services.AddSingleton<IChannelMonitor>( sp => sp.GetRequiredService<ChannelRegistry>() );
+
         return services;
     }
 }

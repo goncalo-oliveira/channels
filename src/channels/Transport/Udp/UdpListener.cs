@@ -129,6 +129,7 @@ internal sealed class UdpListener( IServiceProvider serviceProvider, string chan
         var channel = new UdpChannel(
               scope
             , remote
+            , Name
             , options
             , inputPipeline
             , outputPipeline

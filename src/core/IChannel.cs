@@ -11,6 +11,11 @@ public interface IChannel : IDisposable, IAsyncDisposable
     string Id { get; }
 
     /// <summary>
+    /// Gets the name of the channel, which corresponds to the channel configuration name.
+    /// </summary>
+    string Name { get; }
+
+    /// <summary>
     /// Gets if the channel is closed
     /// </summary>
     bool IsClosed { get; }
