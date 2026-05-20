@@ -140,6 +140,7 @@ internal sealed class TcpListener : IHostedService, IDisposable, IAsyncDisposabl
         var channel = new TcpChannel(
               scope
             , channelSocket
+            , Name
             , options
             , inputPipeline
             , outputPipeline

@@ -14,6 +14,7 @@ internal sealed class UdpChannel : Channel
     internal UdpChannel( 
           IServiceScope serviceScope
         , UdpRemote udpRemote
+        , string channelName
         , ChannelOptions options
         , IChannelPipeline inputPipeline
         , IChannelPipeline outputPipeline
@@ -26,6 +27,7 @@ internal sealed class UdpChannel : Channel
         loggerScope = logger.BeginScope( $"udp-{Id[..7]}" );
 
         Remote = udpRemote;
+        Name = channelName;
         Buffer = new WritableByteBuffer( options.BufferEndianness );
         Timeout = options.IdleTimeout;
         Input = inputPipeline;

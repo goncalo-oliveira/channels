@@ -13,6 +13,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
 {
     private readonly ILogger logger;
     private readonly CancellationTokenSource cts = new();
+    private readonly IChannelRegistrar registrar;
     private readonly Lazy<IChannelMonitor[]> monitors;
     private readonly Func<IChannelInfo, TagList> metricsTagsFactory;
     private readonly IChannelLimiter limiter;
@@ -30,6 +31,9 @@ public abstract class Channel : IChannel, IAsyncDisposable
 
         logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger<Channel>();
+
+        registrar = serviceScope.ServiceProvider.GetService<IChannelRegistrar>()
+            ?? NullChannelRegistrar.Instance;
 
         monitors = new( () => ServiceProvider.GetServices<IChannelMonitor>().ToArray() );
 
@@ -100,6 +104,11 @@ public abstract class Channel : IChannel, IAsyncDisposable
     /// The unique identifier for the channel.
     /// </summary>
     public string Id { get; } = Guid.NewGuid().ToString( "N" );
+
+    /// <summary>
+    /// The name of the channel, which corresponds to the channel configuration name.
+    /// </summary>
+    public string Name { get; protected set; } = string.Empty;
 
     private volatile bool isClosed;
 
@@ -334,6 +343,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
     {
         Metrics.ActiveChannels.Add( 1 );
 
+        registrar.Register( this );
         monitors.Value.InvokeAll( x => x.ChannelCreated( Info ) );
     }
 

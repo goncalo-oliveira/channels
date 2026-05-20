@@ -12,7 +12,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
     private Task monitorTask = Task.CompletedTask;
     private Task receiveTask = Task.CompletedTask;
 
-    internal WebSocketChannel( IServiceScope serviceScope, WebSocket socket, ChannelOptions options, IChannelPipeline inputPipeline, IChannelPipeline outputPipeline, IEnumerable<IChannelService>? channelServices = null )
+    internal WebSocketChannel( IServiceScope serviceScope, WebSocket socket, string channelName, ChannelOptions options, IChannelPipeline inputPipeline, IChannelPipeline outputPipeline, IEnumerable<IChannelService>? channelServices = null )
         : base( serviceScope )
     {
         logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
@@ -23,6 +23,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
         Buffer = new WritableByteBuffer( options.BufferEndianness );
         Timeout = options.IdleTimeout;
         WebSocket = socket;
+        Name = channelName;
         Input = inputPipeline;
         Output = outputPipeline;
 

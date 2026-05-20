@@ -96,6 +96,7 @@ internal sealed class ChannelsUdpClient : IChannelsClient
         var channel = new UdpChannel(
               scope
             , new UdpRemote( Socket, null )
+            , channelName
             , options.ChannelOptions
             , inputPipeline
             , outputPipeline
