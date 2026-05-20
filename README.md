@@ -528,6 +528,10 @@ this registers a named client (client2) with a named channel configuration (chan
 services.AddChannelsNamedClient( "client2", "channel1", "tcp://example.host:8080" );
 ```
 
+## Correlation
+
+Read more about correlation in channels [here](README.correlation.md).
+
 ## Web Sockets
 
 Support for web sockets is available through the `Faactory.Channels.WebSockets` package. It provides ASP.NET Core routing and middleware for easy integration with this library. Read more about it [here](README.websockets.md).

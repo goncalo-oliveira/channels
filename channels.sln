@@ -29,6 +29,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "client-channel", "examples\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "prometheus-exporter", "examples\prometheus-exporter\prometheus-exporter.csproj", "{AAF95AD0-AC37-4672-8C8A-1BEF9BB4EE77}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "correlation", "src\correlation\correlation.csproj", "{E8410C32-27A4-4923-AB9F-21202DA5C979}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -171,6 +173,18 @@ Global
 		{AAF95AD0-AC37-4672-8C8A-1BEF9BB4EE77}.Release|x64.Build.0 = Release|Any CPU
 		{AAF95AD0-AC37-4672-8C8A-1BEF9BB4EE77}.Release|x86.ActiveCfg = Release|Any CPU
 		{AAF95AD0-AC37-4672-8C8A-1BEF9BB4EE77}.Release|x86.Build.0 = Release|Any CPU
+		{E8410C32-27A4-4923-AB9F-21202DA5C979}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E8410C32-27A4-4923-AB9F-21202DA5C979}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E8410C32-27A4-4923-AB9F-21202DA5C979}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E8410C32-27A4-4923-AB9F-21202DA5C979}.Debug|x64.Build.0 = Debug|Any CPU
+		{E8410C32-27A4-4923-AB9F-21202DA5C979}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E8410C32-27A4-4923-AB9F-21202DA5C979}.Debug|x86.Build.0 = Debug|Any CPU
+		{E8410C32-27A4-4923-AB9F-21202DA5C979}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E8410C32-27A4-4923-AB9F-21202DA5C979}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E8410C32-27A4-4923-AB9F-21202DA5C979}.Release|x64.ActiveCfg = Release|Any CPU
+		{E8410C32-27A4-4923-AB9F-21202DA5C979}.Release|x64.Build.0 = Release|Any CPU
+		{E8410C32-27A4-4923-AB9F-21202DA5C979}.Release|x86.ActiveCfg = Release|Any CPU
+		{E8410C32-27A4-4923-AB9F-21202DA5C979}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -186,6 +200,7 @@ Global
 		{449490A7-130F-4756-88E6-A18C3C89EFB6} = {19EDD421-BE87-45A5-9D2D-17450725EA81}
 		{379BD759-753B-40AD-833E-D84D2A5E35AE} = {5BC48E10-DF9A-483F-B14A-C0E54D413530}
 		{AAF95AD0-AC37-4672-8C8A-1BEF9BB4EE77} = {5BC48E10-DF9A-483F-B14A-C0E54D413530}
+		{E8410C32-27A4-4923-AB9F-21202DA5C979} = {19EDD421-BE87-45A5-9D2D-17450725EA81}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {F3142138-D901-4324-B80A-70DD8C40863F}
