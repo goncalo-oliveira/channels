@@ -1,4 +1,5 @@
 using Faactory.Channels.Correlation;
+using Microsoft.Extensions.DependencyInjection;
 
 #pragma warning disable IDE0130
 namespace Faactory.Channels;
@@ -18,6 +19,6 @@ public static class ChannelRegistryExtensions
     {
         ArgumentNullException.ThrowIfNull( channel );
 
-        return channel.GetRequiredChannelService<CorrelationChannelService>().Registry;
+        return channel.Services.GetRequiredKeyedService<IChannelResponseRegistry>( channel.Name );
     }
 }

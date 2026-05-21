@@ -35,7 +35,7 @@ internal sealed class UdpChannel : Channel
 
         if ( channelServices != null )
         {
-            Services = channelServices;
+            ChannelServices = channelServices;
         }
 
         logger.LogDebug( "Created" );

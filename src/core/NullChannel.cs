@@ -14,16 +14,17 @@ public sealed class NullChannel : IChannel, IAsyncDisposable
 {    
     private readonly Task initializeTask;
     private readonly CancellationTokenSource cts = new();
+    private readonly IServiceScope? channelScope;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NullChannel"/> class with optional services and a service scope.
     /// </summary>
     public NullChannel( IServiceScope? serviceScope = null, IEnumerable<IChannelService>? channelServices = null )
     {
-        ChannelScope = serviceScope;
-        Services = channelServices ?? [];
+        channelScope = serviceScope;
+        ChannelServices = channelServices ?? [];
 
-        initializeTask = Services.Any()
+        initializeTask = ChannelServices.Any()
             ? StartServicesAsync( cts.Token )
             : Task.CompletedTask;
     }
@@ -69,12 +70,16 @@ public sealed class NullChannel : IChannel, IAsyncDisposable
     /// </summary>
     public DateTimeOffset? LastSent { get; }
 
-    private IEnumerable<IChannelService> Services { get; }
+    /// <summary>
+    /// Gets the scoped service provider associated with the channel lifetime.
+    /// For a detached channel, this property returns a null service provider since it is not associated with any scope or context.
+    /// </summary>
+    public IServiceProvider Services => channelScope?.ServiceProvider ?? NullServiceProvider.Instance;
 
     /// <summary>
-    /// Gets the service scope associated with the channel, if any. This can be used to resolve services that are specific to the channel's lifetime.
+    /// Gets the channel services initialized for the current channel instance.
     /// </summary>
-    public IServiceScope? ChannelScope { get; }
+    public IEnumerable<IChannelService> ChannelServices { get; }
 
     private int isClosing;
 
@@ -102,14 +107,6 @@ public sealed class NullChannel : IChannel, IAsyncDisposable
         catch ( OperationCanceledException )
         { }
     }
-
-    /// <summary>
-    /// Gets a channel service of the specified type from the channel's services. Returns null if no service of the specified type is found.
-    /// </summary>
-    /// <param name="serviceType">The type of the channel service to retrieve.</param>
-    /// <returns>The channel service of the specified type, or null if not found.</returns>
-    public IChannelService? GetChannelService( Type serviceType )
-        => Services.SingleOrDefault( s => s.GetType() == serviceType );
 
     /// <summary>
     /// Disposes the channel and releases all resources associated with it.
@@ -141,7 +138,7 @@ public sealed class NullChannel : IChannel, IAsyncDisposable
 
     private Task StartServicesAsync( CancellationToken cancellationToken = default )
     {
-        var tasks = Services.Select( async service =>
+        var tasks = ChannelServices.Select( async service =>
         {
             try
             {
@@ -156,7 +153,7 @@ public sealed class NullChannel : IChannel, IAsyncDisposable
 
     private Task StopServicesAsync()
     {
-        var tasks = Services.Select( async service =>
+        var tasks = ChannelServices.Select( async service =>
         {
             try
             {

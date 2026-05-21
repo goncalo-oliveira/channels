@@ -38,7 +38,7 @@ internal sealed class TcpChannel : Channel
 
         if ( channelServices != null )
         {
-            Services = channelServices;
+            ChannelServices = channelServices;
         }
 
         logger.LogDebug( "Created" );

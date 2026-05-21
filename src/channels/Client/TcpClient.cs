@@ -93,20 +93,22 @@ internal sealed class TcpClient : IChannelsClient
             }
             catch ( OperationCanceledException )
             {
+                socket?.Dispose();
+                socket = null;
+
                 break;
             }
             catch
             {
+                socket?.Dispose();
+                socket = null;
+
                 await Task.Delay( reconnectDelay, cancellationToken );
 
                 // apply exponential backoff
                 reconnectDelay = TimeSpan.FromMilliseconds( Math.Min( options.MaxReconnectDelay.TotalMilliseconds, reconnectDelay.TotalMilliseconds * 2 ) );
 
                 continue;
-            }
-            finally
-            {
-                socket?.Dispose();
             }
         }
 

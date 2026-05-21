@@ -29,7 +29,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
 
         if ( channelServices != null )
         {
-            Services = channelServices;
+            ChannelServices = channelServices;
         }
 
         BeginInitialize();

@@ -46,6 +46,17 @@ public sealed class DetachedChannel : IChannel
     public bool IsClosed { get; private set; }
 
     /// <summary>
+    /// Gets the scoped service provider associated with the channel lifetime.
+    /// For a detached channel, this property returns a null service provider since it is not associated with any scope or context.
+    /// </summary>
+    public IServiceProvider Services { get; } = NullServiceProvider.Instance;
+
+    /// <summary>
+    /// Gets the channel services initialized for the current channel instance.
+    /// </summary>
+    public IEnumerable<IChannelService> ChannelServices => services;
+
+    /// <summary>
     /// Closes the channel. For a detached channel, this method simply sets the IsClosed property to true and does not perform any other actions since it is not connected to any transport or context.
     /// </summary>
     public Task CloseAsync()
@@ -81,10 +92,4 @@ public sealed class DetachedChannel : IChannel
     {
         services.Add( service );
     }
-
-    /// <summary>
-    /// Gets a channel service of the specified type.
-    /// </summary>
-    public IChannelService? GetChannelService( Type serviceType )
-        => services.SingleOrDefault( s => s.GetType() == serviceType );
 }
