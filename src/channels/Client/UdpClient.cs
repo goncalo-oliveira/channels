@@ -126,7 +126,7 @@ internal sealed class ChannelsUdpClient : IChannelsClient
             }
             catch ( Exception ex )
             {
-                logger.LogError( "Failed to received data. {Error}.", ex.Message );
+                logger.LogError( "Failed to receive data. {Error}.", ex.Message );
                 break;
             }
         }
