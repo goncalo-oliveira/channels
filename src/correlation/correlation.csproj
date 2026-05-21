@@ -7,7 +7,7 @@
 
     <RootNamespace>Faactory.Channels.Correlation</RootNamespace>
     <PackageId>Faactory.Channels.Correlation</PackageId>
-    <Version>2.5.0</Version>
+    <Version>2.5.1</Version>
     <Authors>Goncalo Oliveira</Authors>
     <Description>Channels - Correlation</Description>
     <RepositoryUrl>https://github.com/goncalo-oliveira/channels</RepositoryUrl>
