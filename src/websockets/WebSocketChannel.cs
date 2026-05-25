@@ -8,7 +8,6 @@ namespace Faactory.Channels.WebSockets;
 internal sealed class WebSocketChannel : Channel, IWebSocketChannel
 {
     private readonly ILogger logger;
-    private readonly IDisposable? loggerScope;
     private Task monitorTask = Task.CompletedTask;
     private Task receiveTask = Task.CompletedTask;
 
@@ -17,8 +16,6 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
     {
         logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger<WebSocketChannel>();
-
-        loggerScope = logger.BeginScope( $"ws-{Id[..7]}" );
 
         Buffer = new WritableByteBuffer( options.BufferEndianness );
         Timeout = options.IdleTimeout;
@@ -56,8 +53,6 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
 
         await base.CloseAsync()
             .ConfigureAwait( false );
-
-        loggerScope?.Dispose();
     }
 
     private async Task CloseWebSocket()

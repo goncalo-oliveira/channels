@@ -38,7 +38,9 @@ public abstract class Channel : IChannel, IAsyncDisposable
 
         metricsTagsFactory = Services.GetRequiredService<IOptions<ChannelOptions>>().Value.MetricsTagsFactory;
 
-        logger.LogTrace( "Created" );
+        ScopeLogger(
+            logger => logger.LogDebug( "Created" )
+        );
     }
 
     internal IChannelInfo Info { get; }
@@ -61,7 +63,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
         initializeTask = InitializeAsync( cts.Token );
             
         _ = initializeTask.ContinueWith(
-            t => logger.LogError( t.Exception?.GetBaseException(), "Init failed" ),
+            t => ScopeLogger( logger => logger.LogError( t.Exception?.GetBaseException(), "Init failed. {Message}", t.Exception?.GetBaseException().Message ) ),
             CancellationToken.None,
             TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
             TaskScheduler.Default
@@ -173,7 +175,9 @@ public abstract class Channel : IChannel, IAsyncDisposable
         }
         catch { }
 
-        logger.LogInformation( "Closed." );
+        ScopeLogger(
+            logger => logger.LogInformation( "Closed." )
+        );
 
         // notify channel closed
         try
@@ -182,7 +186,10 @@ public abstract class Channel : IChannel, IAsyncDisposable
         }
         catch { }
 
-        logger.LogDebug( "Stopping services." );
+
+        ScopeLogger(
+            logger => logger.LogDebug( "Stopping services." )
+        );
 
         // stop channel services
         try
@@ -192,7 +199,9 @@ public abstract class Channel : IChannel, IAsyncDisposable
         }
         catch { }
 
-        logger.LogDebug( "Stopped services." );
+        ScopeLogger(
+            logger => logger.LogDebug( "Stopped services." )
+        );
     }
 
     /// <summary>
@@ -279,12 +288,16 @@ public abstract class Channel : IChannel, IAsyncDisposable
     {
         if ( IsClosed )
         {
-            logger.LogWarning( "Can't write to a closed channel." );
+            ScopeLogger(
+                logger => logger.LogWarning( "Can't write to a closed channel." )
+            );
 
             return;
         }
 
-        logger.LogDebug( "Executing output pipeline..." );
+        ScopeLogger(
+            logger => logger.LogDebug( "Executing output pipeline..." )
+        );
 
         try
         {
@@ -321,7 +334,9 @@ public abstract class Channel : IChannel, IAsyncDisposable
             idleMonitorTask = MonitorIdleStateAsync( cts.Token );
         }
 
-        logger.LogDebug( "Initialized" );
+        ScopeLogger(
+            logger => logger.LogDebug( "Initialized" )
+        );
     }
 
     private void NotifyChannelCreated()
@@ -390,11 +405,13 @@ public abstract class Channel : IChannel, IAsyncDisposable
             }
             catch ( Exception ex )
             {
-                logger.LogError(
-                    ex,
-                    "Failed to start '{TypeName}' channel service. {Message}",
-                    service.GetType().Name,
-                    ex.Message
+                ScopeLogger(
+                    logger => logger.LogError(
+                        ex,
+                        "Failed to start '{TypeName}' channel service. {Message}",
+                        service.GetType().Name,
+                        ex.Message
+                    )
                 );
             }
         } );
@@ -412,11 +429,13 @@ public abstract class Channel : IChannel, IAsyncDisposable
             }
             catch ( Exception ex )
             {
-                logger.LogError(
-                    ex,
-                    "Failed to stop '{TypeName}' channel service. {Message}",
-                    service.GetType().Name,
-                    ex.Message
+                ScopeLogger(
+                    logger => logger.LogError(
+                        ex,
+                        "Failed to stop '{TypeName}' channel service. {Message}",
+                        service.GetType().Name,
+                        ex.Message
+                    )
                 );
             }
         } );
@@ -429,7 +448,9 @@ public abstract class Channel : IChannel, IAsyncDisposable
         LastReceived = DateTimeOffset.UtcNow;
         LastSent = DateTimeOffset.UtcNow;
 
-        logger.LogDebug( "Idle state monitoring started." );
+        ScopeLogger(
+            logger => logger.LogDebug( "Idle state monitoring started." )
+        );
 
         while ( !cancellationToken.IsCancellationRequested )
         {
@@ -441,9 +462,11 @@ public abstract class Channel : IChannel, IAsyncDisposable
 
                 if ( ts?.Add( Timeout ) < DateTimeOffset.UtcNow )
                 {
-                    logger.LogWarning(
-                        "Channel has been idle for more than {seconds} seconds.",
-                        (int)Timeout.TotalSeconds
+                    ScopeLogger(
+                        logger => logger.LogWarning(
+                            "Channel has been idle for more than {seconds} seconds.",
+                            (int)Timeout.TotalSeconds
+                        )
                     );
 
                     Metrics.IdleTimeouts.Add( 1, GetMetricsTags() );
@@ -460,6 +483,20 @@ public abstract class Channel : IChannel, IAsyncDisposable
             }
         }
 
-        logger.LogDebug( "Idle state monitoring stopped." );
+        ScopeLogger(
+            logger => logger.LogDebug( "Idle state monitoring stopped." )
+        );
+    }
+
+    /// <summary>
+    /// Logs a message using the channel's logger with a scope that includes the channel ID.
+    /// This method can be used by derived classes to log messages with the channel ID included in the log context.
+    /// </summary>
+    /// <param name="logAction">The action that performs the logging.</param>
+    protected void ScopeLogger( Action<ILogger> logAction )
+    {
+        using var _ = logger.BeginScope( $"tcp-{Id[..7]}" );
+
+        logAction( logger );
     }
 }

@@ -10,7 +10,6 @@ internal sealed class TcpChannel : Channel
     private const int DefaultBufferLength = 13312;
 
     private readonly ILogger logger;
-    private readonly IDisposable? loggerScope;
     private Task receiveTask = Task.CompletedTask;
 
     internal TcpChannel( 
@@ -27,8 +26,6 @@ internal sealed class TcpChannel : Channel
         logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger<TcpChannel>();
 
-        loggerScope = logger.BeginScope( $"tcp-{Id[..7]}" );
-
         Buffer = new WritableByteBuffer( options.BufferEndianness );
         Timeout = options.IdleTimeout;
         Socket = socket;
@@ -41,7 +38,9 @@ internal sealed class TcpChannel : Channel
             ChannelServices = channelServices;
         }
 
-        logger.LogDebug( "Created" );
+        ScopeLogger(
+            logger => logger.LogDebug( "Created" )
+        );
 
         BeginInitialize();
     }
@@ -72,8 +71,6 @@ internal sealed class TcpChannel : Channel
             await receiveTask.ConfigureAwait( false );
         }
         catch { }
-
-        loggerScope?.Dispose();
     }
 
     protected override async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -82,7 +79,9 @@ internal sealed class TcpChannel : Channel
 
         receiveTask = ReceiveAsync( LifetimeToken );
 
-        logger.LogInformation( "Ready." );
+        ScopeLogger(
+            logger => logger.LogInformation( "Ready." )
+        );
     }
 
     private async Task ReceiveAsync( CancellationToken cancellationToken )
@@ -107,7 +106,9 @@ internal sealed class TcpChannel : Channel
             }
             catch ( SocketException ex )
             {
-                logger.LogError( ex, "Receive failed. {Message}", ex.Message );
+                ScopeLogger(
+                    logger => logger.LogError( ex, "Receive failed. {Message}", ex.Message )
+                );
 
                 _ = CloseAsync();
 
@@ -120,7 +121,9 @@ internal sealed class TcpChannel : Channel
 
             if ( bytesReceived <= 0 )
             {
-                logger.LogTrace( "Disconnected." );
+                ScopeLogger(
+                    logger => logger.LogTrace( "Disconnected." )
+                );
 
                 _ = CloseAsync();
 
@@ -153,7 +156,9 @@ internal sealed class TcpChannel : Channel
                     throw new SocketException();
                 }
 
-                logger.LogTrace( "sent {bytesSent} bytes", bytesSent );
+                ScopeLogger(
+                    logger => logger.LogTrace( "Sent {bytesSent} bytes", bytesSent )
+                );
 
                 totalBytesSent += bytesSent;
             }
@@ -164,7 +169,9 @@ internal sealed class TcpChannel : Channel
         catch ( Exception ex ) when ( ex is ObjectDisposedException || ex is SocketException )
         {
             // socket is closed
-            logger.LogTrace( "Disconnected." );
+            ScopeLogger(
+                logger => logger.LogTrace( "Disconnected." )
+            );
 
             await CloseAsync();
         }
@@ -180,7 +187,9 @@ internal sealed class TcpChannel : Channel
 
             var pipelineBuffer = Buffer.AsReadableView();
 
-            logger.LogDebug( "Executing input pipeline..." );
+            ScopeLogger(
+                logger => logger.LogDebug( "Executing input pipeline..." )
+            );
 
             await Input.ExecuteAsync( this, pipelineBuffer, LifetimeToken )
                 .ConfigureAwait( false );
@@ -189,7 +198,9 @@ internal sealed class TcpChannel : Channel
 
             if ( Buffer.Length > 0 )
             {
-                logger.LogDebug( "Remaining buffer length: {Length} byte(s).", Buffer.Length );
+                ScopeLogger(
+                    logger => logger.LogDebug( "Remaining buffer length: {Length} byte(s).", Buffer.Length )
+                );
             }
         }
         catch ( OperationCanceledException )
@@ -198,9 +209,11 @@ internal sealed class TcpChannel : Channel
         }
         catch ( Exception ex )
         {
-            logger.LogError( ex, "Pipeline execution failed. {Message}", ex.Message );
+            ScopeLogger(
+                logger => logger.LogError( ex, "Pipeline execution failed. {Message}", ex.Message )
+            );
 
-            await CloseAsync().ConfigureAwait( false );
+            _ = CloseAsync();
         }
     }
 }

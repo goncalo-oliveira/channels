@@ -9,7 +9,6 @@ internal sealed class UdpChannel : Channel
 {
     private readonly SemaphoreSlim pipelineLock = new( 1, 1 );
     private readonly ILogger logger;
-    private readonly IDisposable? loggerScope;
 
     internal UdpChannel( 
           IServiceScope serviceScope
@@ -24,8 +23,6 @@ internal sealed class UdpChannel : Channel
         logger = serviceScope.ServiceProvider.GetRequiredService<ILoggerFactory>()
             .CreateLogger<UdpChannel>();
 
-        loggerScope = logger.BeginScope( $"udp-{Id[..7]}" );
-
         Remote = udpRemote;
         Name = channelName;
         Buffer = new WritableByteBuffer( options.BufferEndianness );
@@ -38,7 +35,9 @@ internal sealed class UdpChannel : Channel
             ChannelServices = channelServices;
         }
 
-        logger.LogDebug( "Created" );
+        ScopeLogger(
+            logger => logger.LogDebug( "Created" )
+        );
 
         BeginInitialize();
     }
@@ -58,10 +57,10 @@ internal sealed class UdpChannel : Channel
         }
         catch ( Exception ex )
         {
-            logger.LogError( ex, "Closed handler failed. {Message}", ex.Message );
+            ScopeLogger(
+                logger => logger.LogError( ex, "Closed handler failed. {Message}", ex.Message )
+            );
         }
-
-        loggerScope?.Dispose();
     }
 
     public override async Task WriteRawBytesAsync( byte[] data )
@@ -72,14 +71,18 @@ internal sealed class UdpChannel : Channel
                 .ConfigureAwait( false );
 
             // trigger data sent
-            logger.LogTrace( "sent {bytesSent} bytes", data.Length );
+            ScopeLogger(
+                logger => logger.LogTrace( "sent {bytesSent} bytes", data.Length )
+            );
 
             NotifyDataSent( data );
         }
         catch ( Exception ex ) when ( ex is ObjectDisposedException || ex is SocketException )
         {
             // socket is closed
-            logger.LogTrace( "Disconnected." );
+            ScopeLogger(
+                logger => logger.LogTrace( "Disconnected." )
+            );
 
             _ = CloseAsync();
         }
@@ -105,7 +108,9 @@ internal sealed class UdpChannel : Channel
 
             var pipelineBuffer = Buffer.AsReadableView();
 
-            logger.LogDebug( "Executing input pipeline..." );
+            ScopeLogger(
+                logger => logger.LogDebug( "Executing input pipeline..." )
+            );
 
             await Input.ExecuteAsync( this, pipelineBuffer, LifetimeToken )
                 .ConfigureAwait( false );
@@ -114,7 +119,9 @@ internal sealed class UdpChannel : Channel
 
             if ( Buffer.Length > 0 )
             {
-                logger.LogDebug( "Remaining buffer length: {Length} byte(s).", Buffer.Length );
+                ScopeLogger(
+                    logger => logger.LogDebug( "Remaining buffer length: {Length} byte(s).", Buffer.Length )
+                );
             }
         }
         catch ( OperationCanceledException )
@@ -123,7 +130,9 @@ internal sealed class UdpChannel : Channel
         }
         catch ( Exception ex )
         {
-            logger.LogError( ex, "Pipeline execution failed. {Message}", ex.Message );
+            ScopeLogger(
+                logger => logger.LogError( ex, "Pipeline execution failed. {Message}", ex.Message )
+            );
 
             await CloseAsync().ConfigureAwait( false );
         }
