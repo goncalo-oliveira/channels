@@ -9,6 +9,11 @@ namespace Faactory.Channels.Buffers;
 public sealed class ReadableByteBuffer : IReadableByteBuffer
 {
     /// <summary>
+    /// Gets an empty <see cref="IReadableByteBuffer"/> singleton instance
+    /// </summary>
+    public static IReadableByteBuffer Empty { get; } = new ReadableByteBuffer( [] );
+
+    /// <summary>
     /// Creates a new readable buffer instance from the given base64 encoded string
     /// </summary>
     /// <param name="value">The base64 encoded string</param>
@@ -184,7 +189,7 @@ public sealed class ReadableByteBuffer : IReadableByteBuffer
     {
         ThrowIfOutOfRange( offset, length );
 
-        return new ReadableByteBuffer( buffer, BufferIndex( offset ), length, Endianness);
+        return new ReadableByteBuffer( buffer, BufferIndex( offset ), length, Endianness );
     }
 
     /// <summary>
@@ -423,6 +428,23 @@ public sealed class ReadableByteBuffer : IReadableByteBuffer
     public IReadableByteBuffer ResetOffset()
     {
         Offset = 0;
+
+        return this;
+    }
+
+    /// <summary>
+    /// Moves the reading offset to the given position
+    /// </summary>
+    /// <param name="offset">The new offset position to set</param>
+    /// <returns>The same IReadableByteBuffer instance to allow fluent syntax</returns>
+    public IReadableByteBuffer Seek( int offset )
+    {
+        if ( offset < 0 || (uint)offset > (uint)Length )
+        {
+            throw new ArgumentOutOfRangeException( nameof( offset ) );
+        }
+
+        Offset = offset;
 
         return this;
     }
