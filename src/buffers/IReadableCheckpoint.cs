@@ -17,18 +17,3 @@ public interface IReadableCheckpoint : IDisposable
     /// </summary>
     void Commit();
 }
-
-/// <summary>
-/// Extension methods for IReadableByteBuffer to create checkpoints for speculative reads.
-/// </summary>
-public static class ReadableByteBufferCheckpointExtensions
-{
-    /// <summary>
-    /// Creates a checkpoint for the current buffer position for speculative reads.
-    /// The buffer returned is a view of the original buffer, sharing the same underlying data but with an independent offset.
-    /// </summary>
-    /// <returns>A readable checkpoint instance</returns>
-    public static IReadableCheckpoint Checkpoint( this IReadableByteBuffer source )
-        => new ReadableCheckpoint( source );
-
-}
