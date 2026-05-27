@@ -9,6 +9,11 @@ namespace Faactory.Channels.Buffers;
 public sealed class ReadableByteBuffer : IReadableByteBuffer
 {
     /// <summary>
+    /// Gets an empty <see cref="IReadableByteBuffer"/> singleton instance
+    /// </summary>
+    public static IReadableByteBuffer Empty { get; } = new ReadableByteBuffer( [] );
+
+    /// <summary>
     /// Creates a new readable buffer instance from the given base64 encoded string
     /// </summary>
     /// <param name="value">The base64 encoded string</param>
@@ -184,7 +189,7 @@ public sealed class ReadableByteBuffer : IReadableByteBuffer
     {
         ThrowIfOutOfRange( offset, length );
 
-        return new ReadableByteBuffer( buffer, BufferIndex( offset ), length, Endianness);
+        return new ReadableByteBuffer( buffer, BufferIndex( offset ), length, Endianness );
     }
 
     /// <summary>

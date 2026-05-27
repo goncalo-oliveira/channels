@@ -56,6 +56,48 @@ public class WrappedByteBufferTests
         Assert.Same( bytes, readable.ToArray() );
     }
 
+    [Fact]
+    public void Test_Seek()
+    {
+        var buffer = new ReadableByteBuffer( [0x00, 0x01, 0x02, 0x03] );
+
+        Assert.Equal( 0x00, buffer.ReadByte() );
+        Assert.Equal( 0x01, buffer.ReadByte() );
+
+        buffer.Seek( 0 );
+
+        Assert.Equal( 0x00, buffer.ReadByte() );
+        Assert.Equal( 0x01, buffer.ReadByte() );
+        Assert.Equal( 0x02, buffer.ReadByte() );
+        Assert.Equal( 0x03, buffer.ReadByte() );
+
+        Assert.Throws<ArgumentOutOfRangeException>( () => buffer.Seek( -1 ) );
+        Assert.Throws<ArgumentOutOfRangeException>( () => buffer.Seek( 5 ) );
+    }
+
+    [Fact]
+    public void Checkpoint_ShouldAllowSpeculativeReads()
+    {
+        var buffer = new ReadableByteBuffer( [0x00, 0x01, 0x02, 0x03] );
+
+        var offset = buffer.Offset;
+
+        using var checkpoint = buffer.Checkpoint();
+
+        Assert.Equal( 0x00, checkpoint.Buffer.ReadByte() );
+        Assert.Equal( 0x01, checkpoint.Buffer.ReadByte() );
+
+        // Original buffer should not be affected by reads on the checkpoint
+        Assert.Equal( offset, buffer.Offset );
+
+        // Commit the checkpoint to update the original buffer's offset
+        checkpoint.Commit();
+
+        Assert.NotEqual( offset, buffer.Offset );
+
+        Assert.Equal( 0x02, buffer.ReadByte() );
+        Assert.Equal( 0x03, buffer.ReadByte() );
+    }
 
     [Fact]
     public void TestMatches()
