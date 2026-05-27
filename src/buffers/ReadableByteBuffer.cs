@@ -428,6 +428,23 @@ public sealed class ReadableByteBuffer : IReadableByteBuffer
     }
 
     /// <summary>
+    /// Moves the reading offset to the given position
+    /// </summary>
+    /// <param name="offset">The new offset position to set</param>
+    /// <returns>The same IReadableByteBuffer instance to allow fluent syntax</returns>
+    public IReadableByteBuffer Seek( int offset )
+    {
+        if ( offset < 0 || (uint)offset > (uint)Length )
+        {
+            throw new ArgumentOutOfRangeException( nameof( offset ) );
+        }
+
+        Offset = offset;
+
+        return this;
+    }
+
+    /// <summary>
     /// Skips a specified number of bytes in the buffer by advancing the offset, allowing for skipping over unwanted data.
     /// </summary>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when there are not enough bytes to skip the specified length at the current offset.</exception>

@@ -199,6 +199,13 @@ public interface IReadableByteBuffer : IByteBuffer
     IReadableByteBuffer ResetOffset();
 
     /// <summary>
+    /// Moves the reading offset to the given position
+    /// </summary>
+    /// <param name="offset">The new offset position to set</param>
+    /// <returns>The same IReadableByteBuffer instance to allow fluent syntax</returns>
+    IReadableByteBuffer Seek( int offset );
+
+    /// <summary>
     /// Reads and skips a range of bytes
     /// </summary>
     /// <param name="length">The number of bytes to skip</param>

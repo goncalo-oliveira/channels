@@ -163,6 +163,25 @@ public class ByteBufferTests
     }
 
     [Fact]
+    public void Test_Seek()
+    {
+        var buffer = new ReadableByteBuffer( [0x00, 0x01, 0x02, 0x03] );
+
+        Assert.Equal( 0x00, buffer.ReadByte() );
+        Assert.Equal( 0x01, buffer.ReadByte() );
+
+        buffer.Seek( 0 );
+
+        Assert.Equal( 0x00, buffer.ReadByte() );
+        Assert.Equal( 0x01, buffer.ReadByte() );
+        Assert.Equal( 0x02, buffer.ReadByte() );
+        Assert.Equal( 0x03, buffer.ReadByte() );
+
+        Assert.Throws<ArgumentOutOfRangeException>( () => buffer.Seek( -1 ) );
+        Assert.Throws<ArgumentOutOfRangeException>( () => buffer.Seek( 5 ) );
+    }
+
+    [Fact]
     public void Writable_GrowsCorrectly()
     {
         var buffer = new WritableByteBuffer();
