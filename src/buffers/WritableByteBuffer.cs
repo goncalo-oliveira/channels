@@ -8,6 +8,7 @@ namespace Faactory.Channels.Buffers;
 /// </summary>
 public sealed class WritableByteBuffer : IWritableByteBuffer
 {
+    private bool disposed = false;
     private byte[] buffer;
 
     /// <summary>
@@ -112,7 +113,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>A writable buffer view starting at the specified offset</returns>
     public IWritableByteBuffer At( int offset )
     {
-        ObjectDisposedException.ThrowIf( buffer is null, this );
+        ObjectDisposedException.ThrowIf( disposed, this );
         ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
         ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
 
@@ -125,7 +126,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
     public IWritableByteBuffer Clear()
     {
-        ObjectDisposedException.ThrowIf( buffer is null, this );
+        ObjectDisposedException.ThrowIf( disposed, this );
 
         if ( buffer.Length > options.InitialCapacity )
         {
@@ -143,12 +144,15 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// </summary>
     public void Dispose()
     {
-        if ( buffer is not null )
+        if ( disposed )
         {
-            bufferAllocator.Release( buffer );
-            buffer = null!;
-            writeOffset = 0;
+            return;
         }
+
+        bufferAllocator.Release( buffer );
+        buffer = null!;
+        writeOffset = 0;
+        disposed = true;
     }
 
     /// <summary>
@@ -158,7 +162,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
     public IWritableByteBuffer Reserve( int length )
     {
-        ObjectDisposedException.ThrowIf( buffer is null, this );
+        ObjectDisposedException.ThrowIf( disposed, this );
         ArgumentOutOfRangeException.ThrowIfNegative( length, nameof( length ) );
 
         EnsureCapacity( length );
@@ -176,6 +180,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
     public IWritableByteBuffer Truncate( int offset = 0 )
     {
+        ObjectDisposedException.ThrowIf( disposed, this );
         ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
         ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
 
@@ -196,7 +201,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>A readable buffer view of the currently written portion</returns>
     public IReadableByteBuffer AsReadableView()
     {
-        ObjectDisposedException.ThrowIf( buffer is null, this );
+        ObjectDisposedException.ThrowIf( disposed, this );
 
         return new ReadableByteBuffer( buffer, 0, writeOffset, Endianness );
     }
@@ -209,7 +214,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is negative or greater than the used portion of the buffer</exception>
     public IWritableByteBuffer Compact( int offset )
     {
-        ObjectDisposedException.ThrowIf( buffer is null, this );
+        ObjectDisposedException.ThrowIf( disposed, this );
 
         ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
         ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
@@ -252,7 +257,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>A byte[] value</returns>
     public byte[] ToArray()
     {
-        ObjectDisposedException.ThrowIf( buffer is null, this );
+        ObjectDisposedException.ThrowIf( disposed, this );
 
         var dest = new byte[Length];
 
@@ -267,14 +272,14 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>A <see cref="ReadOnlySpan{T}"/> representing the used portion of the buffer</returns>
     public ReadOnlySpan<byte> AsSpan()
     {
-        ObjectDisposedException.ThrowIf( buffer is null, this );
+        ObjectDisposedException.ThrowIf( disposed, this );
 
         return buffer.AsSpan( 0, writeOffset );
     }
 
     private void EnsureCapacity( int additionalLength )
     {
-        ObjectDisposedException.ThrowIf( buffer is null, this );
+        ObjectDisposedException.ThrowIf( disposed, this );
         ArgumentOutOfRangeException.ThrowIfNegative( additionalLength, nameof( additionalLength ) );
 
         int required = writeOffset + additionalLength;
