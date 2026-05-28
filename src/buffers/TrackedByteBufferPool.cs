@@ -27,13 +27,14 @@ public sealed class TrackedByteBufferPool : IByteBufferPool, IDisposable
         IWritableByteBuffer? buffer = null;
 
         buffer = new WritableByteBuffer(
-            capacity,
-            allocator: pool.Allocate,
-            releaser: bytes =>
-            {
-                pool.Release( bytes );
-                rented.Remove( buffer! );
-            }
+            initialCapacity: capacity,
+            bufferAllocator: pool.BufferAllocator
+            // allocator: pool.BufferAllocator.Allocate,
+            // releaser: bytes =>
+            // {
+            //     pool.BufferAllocator.Release( bytes );
+            //     rented.Remove( buffer! );
+            // }
         );
 
         rented.Add( buffer );

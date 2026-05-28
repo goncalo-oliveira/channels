@@ -1,5 +1,6 @@
 using System;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using Faactory.Channels.Buffers;
 using Xunit;
 
@@ -185,16 +186,17 @@ public class WritableByteBufferTests
     [Fact]
     public void Dispose_ShouldReleaseBuffer()
     {
-        bool released = false;
+        var bufferAllocator = new TestBufferAllocator();
 
         var buffer = new WritableByteBuffer(
-            allocator: size => new byte[size],
-            releaser: _ => released = true
+            bufferAllocator
         );
+
+        Assert.Equal( 1, bufferAllocator.References );
 
         buffer.Dispose();
 
-        Assert.True(released);
+        Assert.Equal( 0, bufferAllocator.References );
     }
 
     [Fact]
@@ -213,19 +215,21 @@ public class WritableByteBufferTests
     [Fact]
     public void Clear_ShouldReleaseOversizedBuffer()
     {
-        bool released = false;
+        var bufferAllocator = new TestBufferAllocator();
 
         var buffer = new WritableByteBuffer(
-            allocator: size => new byte[size],
-            releaser: _ => released = true
+            bufferAllocator
         );
 
-        buffer.WriteBytes(new byte[5000], 0, 5000);
+        buffer.WriteBytes( new byte[5000], 0, 5000 );
+
+        var originalBuffer = buffer.Buffer;
 
         buffer.Clear();
 
-        Assert.True(released);
-        Assert.Equal(0, buffer.Length);
+        Assert.Equal( 1, bufferAllocator.References ); // still 1, but the oversized buffer should have been released
+        Assert.NotSame( originalBuffer, buffer.Buffer ); // should have allocated a new buffer
+        Assert.Equal( 0, buffer.Length );
     }
 
     [Fact]
@@ -312,7 +316,7 @@ public class WritableByteBufferTests
     [Fact]
     public void Writable_Compact_ShouldShrinkBuffer_WhenCapacityExceedsMaxRetainedCapacity()
     {
-        byte[]? releasedBuffer = null;
+        var bufferAllocator = new TestBufferAllocator();
 
         var buffer = new WritableByteBuffer(
             new WritableByteBufferOptions
@@ -320,7 +324,7 @@ public class WritableByteBufferTests
                 InitialCapacity = 16,
                 MaxRetainedCapacity = 16
             },
-            releaser: b => releasedBuffer = b
+            bufferAllocator
         );
 
         // force growth
@@ -330,6 +334,8 @@ public class WritableByteBufferTests
 
         Assert.True( grownCapacity > 16 );
 
+        var originalBuffer = buffer.Buffer;
+
         // compact most data away
         buffer.Compact( 120 );
 
@@ -337,7 +343,8 @@ public class WritableByteBufferTests
         Assert.Equal( 8, buffer.Length );
 
         // old oversized buffer should have been released
-        Assert.NotNull( releasedBuffer );
+        Assert.Equal( 1, bufferAllocator.References );
+        Assert.NotSame( originalBuffer, buffer.Buffer );
 
         // buffer should shrink back to retained capacity
         Assert.Equal( 16, buffer.Buffer.Length );
@@ -367,5 +374,22 @@ public class WritableByteBufferTests
 
         Assert.Equal( 0, buffer.Length );
         Assert.Equal( 32, buffer.Buffer.Length );
+    }
+
+    private class TestBufferAllocator : IByteBufferAllocator
+    {
+        public int References { get; private set; }
+
+        public byte[] Allocate( int size )
+        {
+            References++;
+
+            return new byte[size];
+        }
+
+        public void Release( byte[] buffer )
+        {
+            References--;
+        }
     }
 }
