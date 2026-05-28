@@ -22,6 +22,7 @@ public sealed class ByteBufferPool : IByteBufferPool
     /// <returns>An <see cref="IWritableByteBuffer"/> with the specified capacity.</returns>
     public IWritableByteBuffer Rent( int capacity )
         => new WritableByteBuffer(
+            initialCapacity: capacity,
             allocator: Allocate,
             releaser: Release
         );
@@ -57,6 +58,6 @@ public static class ByteBufferPoolExtensions
     {
         ArgumentNullException.ThrowIfNull( pool );
 
-        return pool.Rent( WritableByteBuffer.InitialCapacity );
+        return pool.Rent( WritableByteBufferOptions.Default.InitialCapacity );
     }
 }

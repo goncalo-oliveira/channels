@@ -13,7 +13,7 @@ public class ByteBufferPoolTests
 
         pool.Rent();
 
-        Assert.Equal( WritableByteBuffer.InitialCapacity, pool.LastCapacity );
+        Assert.Equal( WritableByteBufferOptions.Default.InitialCapacity, pool.LastCapacity );
     }
 
     [Fact]
