@@ -15,6 +15,8 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
     /// </summary>
     private int writeOffset = 0;
 
+    public int Capacity => buffer.Capacity;
+
     public Endianness Endianness => buffer.Endianness;
 
     /// <summary>
@@ -31,6 +33,7 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
     public IReadableByteBuffer AsReadableView()
         => throw new NotSupportedException( "Cannot create a readable view from a writable view." );
 
+    [Obsolete( "Use CreateView(int offset) instead." )]
     public IWritableByteBuffer At( int offset )
         => throw new NotSupportedException( "Cannot create a writable view from a writable view." );
 
@@ -39,6 +42,9 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
 
     public IWritableByteBuffer Compact( int offset)
         => throw new NotSupportedException( "Cannot compact a writable view." );
+
+    public IWritableByteBuffer CreateView( int offset )
+        => throw new NotSupportedException( "Cannot create a writable view from a writable view." );
 
     public void Dispose()
     {

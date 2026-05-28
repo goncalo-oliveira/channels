@@ -7,6 +7,11 @@ namespace Faactory.Channels.Buffers;
 public interface IWritableByteBuffer : IByteBuffer, IDisposable
 {
     /// <summary>
+    /// Gets the total capacity of the buffer, which may be greater than or equal to the length of the currently written portion.
+    /// </summary>
+    int Capacity { get; }
+
+    /// <summary>
     /// Creates a readable view of the currently written portion of the buffer.
     /// </summary>
     /// <remarks>
@@ -27,7 +32,14 @@ public interface IWritableByteBuffer : IByteBuffer, IDisposable
     /// </summary>
     /// <param name="offset">The offset from which to create the writable view</param>
     /// <returns>A writable buffer view starting at the specified offset</returns>
+    [Obsolete( "Use CreateView(int offset) instead." )]
     IWritableByteBuffer At( int offset );
+
+    /// <summary>
+    /// Discards all written bytes and reallocates the buffer to its initial capacity.
+    /// </summary>
+    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
+    IWritableByteBuffer Clear();
 
     /// <summary>
     /// Compacts the buffer by discarding bytes up to the specified offset.
@@ -38,10 +50,15 @@ public interface IWritableByteBuffer : IByteBuffer, IDisposable
     IWritableByteBuffer Compact( int offset );
 
     /// <summary>
-    /// Discards all written bytes and reallocates the buffer to its initial capacity.
+    /// Creates a writable view of the buffer starting at the specified offset.
+    /// The returned view shares the same underlying memory, allowing for zero-copy modifications.
+    /// The offset must be within the bounds of the buffer's capacity.
+    /// Modifying the returned view will affect the original buffer, and vice versa.
+    /// The returned view is limited to the portion of the buffer starting from the specified offset to the end of the used portion of the buffer.
     /// </summary>
-    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
-    IWritableByteBuffer Clear();
+    /// <param name="offset">The offset from which to create the writable view</param>
+    /// <returns>A writable buffer view starting at the specified offset</returns>
+    IWritableByteBuffer CreateView( int offset );
 
     /// <summary>
     /// Reserves a contiguous block of bytes for writing and moves the writing offset forward by the specified length.

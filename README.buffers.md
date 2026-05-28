@@ -155,7 +155,7 @@ var readable = writable.AsReadableView(); // zero-copy
 
 ### Writable Views
 
-`WritableByteBuffer.At( offset )` creates a **windowed writable view** starting at the specified offset. They allow writing to a specific portion of the buffer without affecting the main write cursor.
+`WritableByteBuffer.CreateView( offset )` creates a **windowed writable view** starting at the specified offset. They allow writing to a specific portion of the buffer without affecting the main write cursor.
 
 The returned view:
 
@@ -174,7 +174,7 @@ buffer.WriteBytes( [1, 2, 3, 4, 5] );
 
 // create a writable view starting at offset 2
 // writing to the view modifies the parent buffer at the corresponding positions
-var view = buffer.At( 2 )
+var view = buffer.CreateView( 2 )
     .WriteBytes( [9, 9] );
 
 // buffer now contains: [1, 2, 9, 9, 5]

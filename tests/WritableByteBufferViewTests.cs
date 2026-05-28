@@ -13,7 +13,7 @@ public class WritableByteBufferViewTests
 
         buffer.WriteBytes( [1,2,3,4] );
 
-        var view = buffer.At( 1 );
+        var view = buffer.CreateView( 1 );
 
         view.WriteByte( 9 );
 
@@ -27,7 +27,7 @@ public class WritableByteBufferViewTests
 
         buffer.WriteBytes( [1,2,3] );
 
-        var view = buffer.At( 2 );
+        var view = buffer.CreateView( 2 );
 
         Assert.Throws<InvalidOperationException>(
             () => view.WriteBytes( [9,9] )
@@ -41,7 +41,7 @@ public class WritableByteBufferViewTests
 
         buffer.WriteBytes( [1,2,3,4] );
 
-        var view = buffer.At( 1 );
+        var view = buffer.CreateView( 1 );
 
         view.Reserve( 2 );
         view.WriteByte( 9 );
@@ -56,7 +56,7 @@ public class WritableByteBufferViewTests
 
         buffer.WriteBytes( [1,2,3,4] );
 
-        var view = buffer.At( 1 );
+        var view = buffer.CreateView( 1 );
 
         view.WriteByte( 9 );
         view.Truncate();
@@ -72,7 +72,7 @@ public class WritableByteBufferViewTests
 
         buffer.WriteBytes( [1,2,3,4] );
 
-        var view = buffer.At( 2 );
+        var view = buffer.CreateView( 2 );
 
         Assert.Equal( new byte[] { 3,4 }, view.AsSpan().ToArray() );
     }
@@ -84,7 +84,7 @@ public class WritableByteBufferViewTests
 
         buffer.WriteBytes( [1,2,3,4] );
 
-        var view = buffer.At( 1 );
+        var view = buffer.CreateView( 1 );
 
         var result = view.ToArray();
 
@@ -98,9 +98,9 @@ public class WritableByteBufferViewTests
 
         buffer.WriteBytes( [1,2,3] );
 
-        var view = buffer.At( 1 );
+        var view = buffer.CreateView( 1 );
 
-        Assert.Throws<NotSupportedException>( () => view.At( 0 ) );
+        Assert.Throws<NotSupportedException>( () => view.CreateView( 0 ) );
     }
 
     [Fact]
@@ -110,7 +110,7 @@ public class WritableByteBufferViewTests
 
         buffer.WriteBytes( [0,0,0,0,0,0] );
 
-        var view = buffer.At( 1 );
+        var view = buffer.CreateView( 1 );
 
         view.WriteInt32( 0x01020304 );
 
@@ -127,7 +127,7 @@ public class WritableByteBufferViewTests
 
         buffer.WriteBytes( [1,2,3,4,5] );
 
-        var view = buffer.At( 2 );
+        var view = buffer.CreateView( 2 );
 
         // grow parent after view creation
         buffer.WriteBytes( [6,7,8] );
@@ -143,7 +143,7 @@ public class WritableByteBufferViewTests
 
         buffer.WriteBytes( [1,2,3,4,5] );
 
-        var view = buffer.At( 3 );
+        var view = buffer.CreateView( 3 );
 
         // parent grows
         buffer.WriteBytes( [6,7] );
@@ -161,7 +161,7 @@ public class WritableByteBufferViewTests
 
         buffer.WriteBytes( [1,2,3,4,5] );
 
-        var view = buffer.At( 1 );
+        var view = buffer.CreateView( 1 );
 
         buffer.WriteBytes( [6,7,8] );
 
@@ -175,7 +175,7 @@ public class WritableByteBufferViewTests
 
         buffer.WriteBytes( [1,2,3,4] );
 
-        var view = buffer.At( 1 );
+        var view = buffer.CreateView( 1 );
 
         buffer.WriteBytes( [5,6] );
 

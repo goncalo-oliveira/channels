@@ -93,6 +93,19 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     }
 
     /// <summary>
+    /// Gets the total capacity of the buffer, which may be greater than or equal to the length of the currently written portion.
+    /// </summary>
+    public int Capacity
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf( disposed, this );
+
+            return buffer.Length;
+        }
+    }
+
+    /// <summary>
     /// Gets the endianness of the buffer, which determines how multi-byte values are written.
     /// </summary>
     public Endianness Endianness => options.Endianness;
@@ -111,14 +124,9 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// </summary>
     /// <param name="offset">The offset from which to create the writable view</param>
     /// <returns>A writable buffer view starting at the specified offset</returns>
+    [Obsolete( "Use CreateView(int offset) instead." )]
     public IWritableByteBuffer At( int offset )
-    {
-        ObjectDisposedException.ThrowIf( disposed, this );
-        ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
-        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
-
-        return new WritableByteBufferView( this, offset );
-    }
+        => CreateView( offset );
 
     /// <summary>
     /// Discards all written bytes and reallocates the buffer to its initial capacity.
@@ -137,6 +145,24 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         writeOffset = 0;
 
         return this;
+    }
+
+    /// <summary>
+    /// Creates a writable view of the buffer starting at the specified offset.
+    /// The returned view shares the same underlying memory, allowing for zero-copy modifications.
+    /// The offset must be within the bounds of the buffer's capacity.
+    /// Modifying the returned view will affect the original buffer, and vice versa.
+    /// The returned view is limited to the portion of the buffer starting from the specified offset to the end of the used portion of the buffer.
+    /// </summary>
+    /// <param name="offset">The offset from which to create the writable view</param>
+    /// <returns>A writable buffer view starting at the specified offset</returns>
+    public IWritableByteBuffer CreateView( int offset )
+    {
+        ObjectDisposedException.ThrowIf( disposed, this );
+        ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
+
+        return new WritableByteBufferView( this, offset );
     }
 
     /// <summary>

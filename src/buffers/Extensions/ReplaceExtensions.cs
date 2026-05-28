@@ -19,14 +19,38 @@ public static class ByteBufferReplaceExtensions
             return source;
         }
 
-        var span = source.AsSpan();
-        var result = new WritableByteBuffer( span.Length, source.Endianness );
-
         int index = 0;
+
+        if ( sequence.Length == replacement.Length )
+        {
+            var span = source.AsSpan();
+
+            while ( true )
+            {
+                int match = span[index..].IndexOf( sequence );
+
+                if ( match < 0 )
+                {
+                    break;
+                }
+
+                match += index;
+
+                source.CreateView( match ).WriteBytes( replacement );
+
+                index = match + sequence.Length;
+            }
+
+            return source;
+        }
+
+        var original = source.ToArray();
+
+        source.Truncate();
 
         while ( true )
         {
-            int match = span[index..].IndexOf( sequence );
+            int match = original.AsSpan( index ).IndexOf( sequence );
 
             if ( match < 0 )
             {
@@ -35,16 +59,13 @@ public static class ByteBufferReplaceExtensions
 
             match += index;
 
-            result.WriteBytes( span[index..match] );
-            result.WriteBytes( replacement );
+            source.WriteBytes( original, index, match - index );
+            source.WriteBytes( replacement );
 
             index = match + sequence.Length;
         }
 
-        result.WriteBytes( span[index..] );
-
-        source.Truncate();
-        source.WriteBytes( result.AsSpan() );
+        source.WriteBytes( original, index, original.Length - index );
 
         return source;
     }

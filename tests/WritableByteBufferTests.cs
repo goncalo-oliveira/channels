@@ -28,7 +28,7 @@ public class WritableByteBufferTests
 
         Assert.Same( buffer, instance );
 
-        Assert.True( buffer.AsReadable().MatchBytes(
+        Assert.True( buffer.AsReadableView().MatchBytes(
         [
             0x00, 0x01, 0x11, 0x02, 0x22, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
         ] ) );
@@ -63,19 +63,6 @@ public class WritableByteBufferTests
 
         Assert.Equal( 4, newView.Length );
         Assert.Equal( new byte[] { 0x03, 0x04, 0x05, 0x06 }, newView.AsSpan().ToArray() );
-    }
-
-    [Fact]
-    public void AsReadable_ShouldCreateIndependentCopy()
-    {
-        var writable = new WritableByteBuffer( 16 );
-        writable.WriteBytes( [0x01, 0x02, 0x03] );
-
-        var copy = writable.AsReadable();
-
-        writable.WriteBytes( [0x04] );
-
-        Assert.Equal( new byte[] { 0x01, 0x02, 0x03 }, copy.AsSpan().ToArray() );
     }
 
     [Fact]
