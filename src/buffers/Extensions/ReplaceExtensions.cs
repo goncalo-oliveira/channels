@@ -3,7 +3,7 @@ namespace Faactory.Channels.Buffers;
 /// <summary>
 /// Provides extension methods for replacing byte sequences in an <see cref="IWritableByteBuffer"/>.
 /// </summary>
-public static class ByteBufferReplaceExtensions
+public static class WritableByteBufferReplaceExtensions
 {
     /// <summary>
     /// Replaces all occurrences of a sequence of bytes with another

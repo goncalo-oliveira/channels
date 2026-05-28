@@ -6,14 +6,6 @@ namespace Faactory.Channels.Buffers;
 public static class ByteBufferExtensions
 {
     /// <summary>
-    /// Writes a range of bytes
-    /// </summary>
-    /// <param name="source">The source buffer</param>
-    /// <param name="value">The byte[] value</param>
-    public static IWritableByteBuffer WriteBytes( this IWritableByteBuffer source, byte[] value )
-        => source.WriteBytes( value, 0, value.Length );
-
-    /// <summary>
     /// Converts the buffer to a base64 encoded string
     /// </summary>
     /// <param name="source">The source buffer</param>

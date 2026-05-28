@@ -1,9 +1,9 @@
 namespace Faactory.Channels.Buffers;
 
 /// <summary>
-/// Provides extension methods for searching within byte buffers.
+/// Provides extension methods for searching within readable byte buffers.
 /// </summary>
-public static class ByteBufferSearchExtensions
+public static class ReadableByteBufferSearchExtensions
 {
     /// <summary>
     /// Determines whether any byte in the buffer satisfies the condition.
