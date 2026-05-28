@@ -6,7 +6,7 @@ namespace Faactory.Channels.Buffers;
 public sealed class TrackedByteBufferPool : IByteBufferPool, IDisposable
 {
     private readonly ByteBufferPool pool = new();
-    private readonly List<IWritableByteBuffer> rented = [];
+    private readonly List<IDisposable> rented = [];
     private bool disposed;
 
     /// <summary>
@@ -24,17 +24,9 @@ public sealed class TrackedByteBufferPool : IByteBufferPool, IDisposable
     {
         ObjectDisposedException.ThrowIf( disposed, this );
 
-        IWritableByteBuffer? buffer = null;
-
-        buffer = new WritableByteBuffer(
+        var buffer = new WritableByteBuffer(
             initialCapacity: capacity,
             bufferAllocator: pool.BufferAllocator
-            // allocator: pool.BufferAllocator.Allocate,
-            // releaser: bytes =>
-            // {
-            //     pool.BufferAllocator.Release( bytes );
-            //     rented.Remove( buffer! );
-            // }
         );
 
         rented.Add( buffer );
