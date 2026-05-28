@@ -8,8 +8,6 @@ namespace Faactory.Channels.Buffers;
 /// </summary>
 public sealed class WritableByteBuffer : IWritableByteBuffer
 {
-    //internal const int InitialCapacity = 1024;
-
     private byte[] buffer;
 
     /// <summary>
