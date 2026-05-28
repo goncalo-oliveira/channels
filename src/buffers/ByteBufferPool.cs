@@ -7,7 +7,7 @@ namespace Faactory.Channels.Buffers;
 /// </summary>
 public sealed class ByteBufferPool : IByteBufferPool
 {
-    private readonly ArrayPool<byte> pool = ArrayPool<byte>.Shared;
+    //private readonly ArrayPool<byte> pool = ArrayPool<byte>.Shared;
 
     /// <summary>
     /// Rents a byte buffer from the pool with at least the specified capacity.
@@ -22,19 +22,17 @@ public sealed class ByteBufferPool : IByteBufferPool
     /// <returns>An <see cref="IWritableByteBuffer"/> with the specified capacity.</returns>
     public IWritableByteBuffer Rent( int capacity )
         => new WritableByteBuffer(
-            allocator: Allocate,
-            releaser: Release
+            initialCapacity: capacity,
+            bufferAllocator: BufferAllocator
         );
 
-    /// <summary>
-    /// Rents a byte array from the pool with at least the specified size.
-    /// </summary>
-    internal byte[] Allocate( int size ) => pool.Rent( size );
+    internal IByteBufferAllocator BufferAllocator { get; } = new PooledBufferAllocator( ArrayPool<byte>.Shared );
 
-    /// <summary>
-    /// Returns a byte array to the pool for reuse.
-    /// </summary>
-    internal void Release( byte[] buffer ) => pool.Return( buffer );
+    private class PooledBufferAllocator( ArrayPool<byte> pool ) : IByteBufferAllocator
+    {
+        public byte[] Allocate( int size ) => pool.Rent( size );
+        public void Release( byte[] buffer ) => pool.Return( buffer );
+    }
 }
 
 /// <summary>
@@ -57,6 +55,6 @@ public static class ByteBufferPoolExtensions
     {
         ArgumentNullException.ThrowIfNull( pool );
 
-        return pool.Rent( WritableByteBuffer.InitialCapacity );
+        return pool.Rent( WritableByteBufferOptions.Default.InitialCapacity );
     }
 }

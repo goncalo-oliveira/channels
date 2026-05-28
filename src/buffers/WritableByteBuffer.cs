@@ -8,8 +8,7 @@ namespace Faactory.Channels.Buffers;
 /// </summary>
 public sealed class WritableByteBuffer : IWritableByteBuffer
 {
-    internal const int InitialCapacity = 1024;
-
+    private bool disposed = false;
     private byte[] buffer;
 
     /// <summary>
@@ -17,8 +16,8 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// </summary>
     private int writeOffset = 0;
 
-    private readonly Func<int, byte[]> Allocate;
-    private readonly Action<byte[]>? Release;
+    private readonly WritableByteBufferOptions options = WritableByteBufferOptions.Default;
+    private readonly IByteBufferAllocator bufferAllocator;
 
     /// <summary>
     /// Gets the underlying byte array buffer. This is intended for internal use and should not be exposed publicly, as it may lead to unsafe modifications of the buffer. The buffer is shared with any views created from this instance, so modifying it directly can affect the integrity of those views.
@@ -26,37 +25,77 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     internal byte[] Buffer => buffer;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="WritableByteBuffer"/> class with the default initial capacity and endianness.
+    /// </summary>
+    /// <param name="bufferAllocator">Optional custom buffer allocator for buffer allocation and release</param>
+    public WritableByteBuffer( IByteBufferAllocator? bufferAllocator = null )
+        : this( WritableByteBufferOptions.Default, bufferAllocator )
+    { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WritableByteBuffer"/> class with the specified initial capacity and default endianness.
+    /// </summary>
+    /// <param name="initialCapacity">The initial capacity of the buffer</param>
+    /// <param name="bufferAllocator">Optional custom buffer allocator for buffer allocation and release</param>
+    public WritableByteBuffer( int initialCapacity, IByteBufferAllocator? bufferAllocator = null )
+        : this(
+            new WritableByteBufferOptions
+            {
+                InitialCapacity = initialCapacity,
+                MaxRetainedCapacity = initialCapacity
+            },
+            bufferAllocator
+        )
+    { }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="WritableByteBuffer"/> class with the default initial capacity and specified endianness.
     /// </summary>
     /// <param name="endianness">The endianness of the buffer</param>
-    /// <param name="allocator">Optional custom allocator function for buffer allocation</param>
-    /// <param name="releaser">Optional custom releaser action for buffer release</param>
-    public WritableByteBuffer( Endianness endianness = Endianness.BigEndian, Func<int, byte[]>? allocator = null, Action<byte[]>? releaser = null )
-        : this( InitialCapacity, endianness, allocator, releaser )
+    /// <param name="bufferAllocator">Optional custom buffer allocator for buffer allocation and release</param>
+    public WritableByteBuffer( Endianness endianness, IByteBufferAllocator? bufferAllocator = null )
+        : this( new WritableByteBufferOptions { Endianness = endianness }, bufferAllocator )
     { }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WritableByteBuffer"/> class with the specified initial capacity and endianness.
     /// </summary>
-    /// <param name="capacity">The initial capacity of the buffer</param>
+    /// <param name="initialCapacity">The initial capacity of the buffer</param>
     /// <param name="endianness">The endianness of the buffer</param>
-    /// <param name="allocator">Optional custom allocator function for buffer allocation</param>
-    /// <param name="releaser">Optional custom releaser action for buffer release</param>
-    public WritableByteBuffer( int capacity, Endianness endianness = Endianness.BigEndian, Func<int, byte[]>? allocator = null, Action<byte[]>? releaser = null )
+    /// <param name="bufferAllocator">Optional custom buffer allocator for buffer allocation and release</param>
+    public WritableByteBuffer( int initialCapacity, Endianness endianness, IByteBufferAllocator? bufferAllocator = null )
+        : this(
+            new WritableByteBufferOptions
+            {
+                Endianness = endianness,
+                InitialCapacity = initialCapacity,
+                MaxRetainedCapacity = initialCapacity
+            },
+            bufferAllocator
+        )
+    { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WritableByteBuffer"/> class with the specified options for configuring the buffer's behavior.
+    /// </summary>
+    /// <param name="options">The options for configuring the buffer's behavior</param>
+    /// <param name="bufferAllocator">Optional custom buffer allocator for buffer allocation and release</param>
+    public WritableByteBuffer( WritableByteBufferOptions options, IByteBufferAllocator? bufferAllocator = null )
     {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero( capacity, nameof( capacity ) );
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero( options.InitialCapacity, nameof( options.InitialCapacity ) );
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero( options.MaxRetainedCapacity, nameof( options.MaxRetainedCapacity ) );
+        ArgumentOutOfRangeException.ThrowIfLessThan( options.MaxRetainedCapacity, options.InitialCapacity, nameof( options.MaxRetainedCapacity ) );
 
-        Allocate = allocator ?? ( size => new byte[size] );
-        Release = releaser;
+        this.options = options;
+        this.bufferAllocator = bufferAllocator ?? UnpooledByteBufferAllocator.Instance;
 
-        buffer = Allocate( capacity );
-        Endianness = endianness;
+        buffer = this.bufferAllocator.Allocate( options.InitialCapacity );
     }
 
     /// <summary>
     /// Gets the endianness of the buffer, which determines how multi-byte values are written.
     /// </summary>
-    public Endianness Endianness { get; }
+    public Endianness Endianness => options.Endianness;
 
     /// <summary>
     /// Gets the length of the used portion of the buffer.
@@ -74,7 +113,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>A writable buffer view starting at the specified offset</returns>
     public IWritableByteBuffer At( int offset )
     {
-        ObjectDisposedException.ThrowIf( buffer is null, this );
+        ObjectDisposedException.ThrowIf( disposed, this );
         ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
         ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
 
@@ -87,12 +126,12 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
     public IWritableByteBuffer Clear()
     {
-        ObjectDisposedException.ThrowIf( buffer is null, this );
+        ObjectDisposedException.ThrowIf( disposed, this );
 
-        if ( buffer.Length > InitialCapacity )
+        if ( buffer.Length > options.InitialCapacity )
         {
-            Release?.Invoke( buffer );
-            buffer = Allocate( InitialCapacity );
+            bufferAllocator.Release( buffer );
+            buffer = bufferAllocator.Allocate( options.InitialCapacity );
         }
 
         writeOffset = 0;
@@ -105,11 +144,15 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// </summary>
     public void Dispose()
     {
-        if ( buffer is not null )
+        if ( disposed )
         {
-            Release?.Invoke( buffer );
-            buffer = null!;
+            return;
         }
+
+        bufferAllocator.Release( buffer );
+        buffer = null!;
+        writeOffset = 0;
+        disposed = true;
     }
 
     /// <summary>
@@ -119,7 +162,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
     public IWritableByteBuffer Reserve( int length )
     {
-        ObjectDisposedException.ThrowIf( buffer is null, this );
+        ObjectDisposedException.ThrowIf( disposed, this );
         ArgumentOutOfRangeException.ThrowIfNegative( length, nameof( length ) );
 
         EnsureCapacity( length );
@@ -137,6 +180,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
     public IWritableByteBuffer Truncate( int offset = 0 )
     {
+        ObjectDisposedException.ThrowIf( disposed, this );
         ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
         ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
 
@@ -157,7 +201,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>A readable buffer view of the currently written portion</returns>
     public IReadableByteBuffer AsReadableView()
     {
-        ObjectDisposedException.ThrowIf( buffer is null, this );
+        ObjectDisposedException.ThrowIf( disposed, this );
 
         return new ReadableByteBuffer( buffer, 0, writeOffset, Endianness );
     }
@@ -170,21 +214,36 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is negative or greater than the used portion of the buffer</exception>
     public IWritableByteBuffer Compact( int offset )
     {
-        ObjectDisposedException.ThrowIf(buffer is null, this);
+        ObjectDisposedException.ThrowIf( disposed, this );
 
         ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
         ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
 
-        if ( offset == 0 )
-        {
-            return this;
-        }
-
         var remaining = writeOffset - offset;
+        var shouldShrink
+            = buffer.Length > options.MaxRetainedCapacity && remaining <= ( options.MaxRetainedCapacity / 2 );
+
+        /*
+        Reallocate the buffer to the maximum retained capacity
+        if the current capacity is significantly larger
+        than the remaining data after compaction.
+        */
+        var targetBuffer = shouldShrink
+            ? bufferAllocator.Allocate( options.MaxRetainedCapacity )
+            : buffer;
+
 
         if ( remaining > 0 )
         {
-            Array.Copy( buffer, offset, buffer, 0, remaining );
+            Array.Copy( buffer, offset, targetBuffer, 0, remaining );
+        }
+
+        // release old buffer if we allocated a new one for compaction
+        if ( targetBuffer != buffer )
+        {
+            bufferAllocator.Release( buffer );
+
+            buffer = targetBuffer;
         }
 
         writeOffset = remaining;
@@ -198,7 +257,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>A byte[] value</returns>
     public byte[] ToArray()
     {
-        ObjectDisposedException.ThrowIf( buffer is null, this );
+        ObjectDisposedException.ThrowIf( disposed, this );
 
         var dest = new byte[Length];
 
@@ -213,14 +272,14 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// <returns>A <see cref="ReadOnlySpan{T}"/> representing the used portion of the buffer</returns>
     public ReadOnlySpan<byte> AsSpan()
     {
-        ObjectDisposedException.ThrowIf( buffer is null, this );
+        ObjectDisposedException.ThrowIf( disposed, this );
 
         return buffer.AsSpan( 0, writeOffset );
     }
 
     private void EnsureCapacity( int additionalLength )
     {
-        ObjectDisposedException.ThrowIf( buffer is null, this );
+        ObjectDisposedException.ThrowIf( disposed, this );
         ArgumentOutOfRangeException.ThrowIfNegative( additionalLength, nameof( additionalLength ) );
 
         int required = writeOffset + additionalLength;
@@ -237,11 +296,11 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
             newSize *= 2;
         }
 
-        var newBuffer = Allocate( newSize );
+        var newBuffer = bufferAllocator.Allocate( newSize );
 
         Array.Copy( buffer, 0, newBuffer, 0, writeOffset );
 
-        Release?.Invoke( buffer );
+        bufferAllocator.Release( buffer );
 
         buffer = newBuffer;
     }

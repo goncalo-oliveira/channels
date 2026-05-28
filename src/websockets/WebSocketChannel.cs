@@ -216,6 +216,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                 */
 
                 WebSocketMessage? message = null;
+                Action compactBuffer = () => {};
 
                 if ( result.MessageType == WebSocketMessageType.Text )
                 {
@@ -234,7 +235,11 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                             Data = TextBuffer.AsReadableView()
                         };
 
-                        TextBuffer.Truncate();
+                        compactBuffer = () =>
+                        {
+                            TextBuffer.Truncate();   // move write offset to 0
+                            TextBuffer.Compact( 0 ); // trigger buffer compaction if necessary
+                        };
                     }
                 }
                 else if ( result.MessageType == WebSocketMessageType.Binary )
@@ -254,7 +259,11 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                             Data = Buffer.AsReadableView()
                         };
 
-                        Buffer.Truncate();
+                        compactBuffer = () =>
+                        {
+                            Buffer.Truncate();   // move write offset to 0
+                            Buffer.Compact( 0 ); // trigger buffer compaction if necessary
+                        };
                     }
                 }
 
@@ -273,6 +282,8 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
 
                 await Input.ExecuteAsync( this, message, cancellationToken )
                     .ConfigureAwait( false );
+
+                compactBuffer();
             }
             catch ( OperationCanceledException )
             {

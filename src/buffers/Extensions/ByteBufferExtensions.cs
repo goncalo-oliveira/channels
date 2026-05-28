@@ -22,7 +22,7 @@ public static class ByteBufferExtensions
     /// <returns>A new writable buffer instance with a copy of the entire content of the source buffer</returns>
     public static IWritableByteBuffer AsWritable( this IReadableByteBuffer source, Endianness? endianness = null )
     {
-        var capacity = Math.Max( source.Length * 2, WritableByteBuffer.InitialCapacity );
+        var capacity = Math.Max( source.Length * 2, WritableByteBufferOptions.Default.InitialCapacity );
 
         var buffer = new WritableByteBuffer( capacity, endianness ?? source.Endianness );
 
