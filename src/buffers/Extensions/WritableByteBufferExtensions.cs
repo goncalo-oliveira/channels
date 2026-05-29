@@ -19,6 +19,14 @@ public static class WritableByteBufferExtensions
         => source.CreateView( offset, source.Length - offset );
 
     /// <summary>
+    /// Creates a copy of the buffer's contents as a readable buffer.
+    /// </summary>
+    /// <param name="source">The source buffer</param>
+    /// <returns>A readable buffer containing a copy of the source buffer's contents</returns>
+    public static IReadableByteBuffer ToReadable( this IWritableByteBuffer source )
+        => new ReadableByteBuffer( source.ToArray(), source.Endianness );
+
+    /// <summary>
     /// Writes a range of bytes
     /// </summary>
     /// <param name="source">The source buffer</param>
