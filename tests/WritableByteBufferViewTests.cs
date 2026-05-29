@@ -257,4 +257,21 @@ public class WritableByteBufferViewTests
             () => view.WriteByte( 9 )
         );
     }
+
+    [Fact]
+    public void ReplaceBytes_ShouldThrow_ForVariableLengthReplacementOnWritableView()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteBytes( [1,2,3,4] );
+
+        var view = buffer.CreateView( 1 );
+
+        Assert.Throws<NotSupportedException>(
+            () => view.ReplaceBytes(
+                [2],
+                [9,9]
+            )
+        );
+    }
 }
