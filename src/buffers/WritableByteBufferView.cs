@@ -115,9 +115,6 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
         return this;
     }
 
-    // public IWritableByteBuffer WriteBytes( IByteBuffer value )
-    //     => WriteBytes( value.AsSpan() );
-
     public IWritableByteBuffer WriteBytes( ReadOnlySpan<byte> value )
     {
         EnsureSpace( value.Length );

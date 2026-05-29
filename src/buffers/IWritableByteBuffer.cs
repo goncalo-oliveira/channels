@@ -42,7 +42,7 @@ public interface IWritableByteBuffer : IByteBuffer, IDisposable
     IWritableByteBuffer Compact();
 
     /// <summary>
-    /// Creates a writable view of the buffer starting at the specified offset.
+    /// Creates a writable view over the specified region of the buffer.
     /// The returned view shares the same underlying memory, allowing for zero-copy modifications.
     /// The offset must be within the bounds of the buffer's capacity.
     /// Modifying the returned view will affect the original buffer, and vice versa.
