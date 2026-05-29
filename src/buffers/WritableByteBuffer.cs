@@ -187,12 +187,9 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
         ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
         ArgumentOutOfRangeException.ThrowIfNegative( length, nameof( length ) );
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( length, writeOffset - offset, nameof( length ) );
 
-        var bufferLimit = offset + length;
-
-        ArgumentOutOfRangeException.ThrowIfGreaterThan( bufferLimit, writeOffset, nameof( length ) );
-
-        return new WritableByteBufferView( this, offset, bufferLimit );
+        return new WritableByteBufferView( this, offset, offset + length );
     }
 
     /// <summary>

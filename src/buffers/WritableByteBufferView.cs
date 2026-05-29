@@ -43,15 +43,12 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
 
         ArgumentOutOfRangeException.ThrowIfNegative( viewOffset, nameof( viewOffset ) );
         ArgumentOutOfRangeException.ThrowIfNegative( length, nameof( length ) );
-
-        var bufferLimit = viewOffset + length;
-
-        ArgumentOutOfRangeException.ThrowIfGreaterThan( bufferLimit, Length, nameof( length ) );
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( length, Length - viewOffset, nameof( length ) );
 
         return new WritableByteBufferView(
             buffer,
             offset + viewOffset,
-            offset + bufferLimit
+            offset + viewOffset + length
         );
     }
 
