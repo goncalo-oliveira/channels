@@ -233,4 +233,28 @@ public class WritableByteBufferViewTests
             readable.AsSpan().ToArray()
         );
     }
+
+    [Fact]
+    public void WritableView_ShouldThrow_WhenParentBufferDisposed()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteBytes( [1,2,3,4] );
+
+        var view = buffer.CreateView( 1 );
+
+        buffer.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(
+            () => view.Truncate()
+        );
+
+        Assert.Throws<ObjectDisposedException>(
+            () => view.Reserve( 1 )
+        );
+
+        Assert.Throws<ObjectDisposedException>(
+            () => view.WriteByte( 9 )
+        );
+    }
 }

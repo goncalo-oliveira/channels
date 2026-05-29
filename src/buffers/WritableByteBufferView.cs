@@ -39,6 +39,8 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
 
     public IWritableByteBufferView CreateView( int viewOffset, int length )
     {
+        ThrowIfParentDisposed();
+
         ArgumentOutOfRangeException.ThrowIfNegative( viewOffset, nameof( viewOffset ) );
         ArgumentOutOfRangeException.ThrowIfNegative( length, nameof( length ) );
 
@@ -63,6 +65,8 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
 
     public IWritableByteBuffer Reserve( int length )
     {
+        ThrowIfParentDisposed();
+
         EnsureSpace( length );
 
         writeOffset += length;
@@ -77,6 +81,8 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
 
     public IWritableByteBuffer Truncate( int offset = 0 )
     {
+        ThrowIfParentDisposed();
+
         ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
         ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
 
@@ -198,4 +204,7 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
             throw new InvalidOperationException( "Writable view cannot write beyond its bounds." );
         }
     }
+
+    private void ThrowIfParentDisposed()
+        => _ = buffer.Capacity;
 }

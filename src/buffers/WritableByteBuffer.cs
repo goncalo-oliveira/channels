@@ -20,9 +20,18 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     private readonly IByteBufferAllocator bufferAllocator;
 
     /// <summary>
-    /// Gets the underlying byte array buffer. This is intended for internal use and should not be exposed publicly, as it may lead to unsafe modifications of the buffer. The buffer is shared with any views created from this instance, so modifying it directly can affect the integrity of those views.
+    /// Gets the underlying byte array buffer.
+    /// This is intended for internal use and should not be exposed publicly, as it may lead to unsafe modifications of the buffer. The buffer is shared with any views created from this instance, so modifying it directly can affect the integrity of those views.
     /// </summary>
-    internal byte[] Buffer => buffer;
+    internal byte[] Buffer
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf( disposed, this );
+
+            return buffer;
+        }
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WritableByteBuffer"/> class with the default initial capacity and endianness.
