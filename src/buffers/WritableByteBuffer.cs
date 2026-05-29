@@ -171,7 +171,7 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// </summary>
     /// <param name="offset">The offset from which to create the writable view</param>
     /// <returns>A writable buffer view starting at the specified offset</returns>
-    public IWritableByteBuffer CreateView( int offset )
+    public IWritableByteBufferView CreateView( int offset )
     {
         ObjectDisposedException.ThrowIf( disposed, this );
         ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );

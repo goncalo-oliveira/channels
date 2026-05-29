@@ -2,7 +2,7 @@ using System.Buffers;
 
 namespace Faactory.Channels.Buffers;
 
-internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int offset ) : IWritableByteBuffer
+internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int offset ) : IWritableByteBufferView
 {
     /// <summary>
     /// The limit of the view, which is the end of the used portion of the parent buffer. The view cannot write beyond this limit.
@@ -25,6 +25,8 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
     /// </summary>
     public int Length => limit - offset;
 
+    public int WritableBytes => Length - writeOffset;
+
     public ReadOnlySpan<byte> AsSpan()
     {
         return buffer.AsSpan()[offset..limit];
@@ -39,7 +41,7 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
     public IWritableByteBuffer Compact()
         => throw new NotSupportedException( "Cannot compact a writable view." );
 
-    public IWritableByteBuffer CreateView( int offset )
+    public IWritableByteBufferView CreateView( int offset )
         => throw new NotSupportedException( "Cannot create a writable view from a writable view." );
 
     public void Dispose()

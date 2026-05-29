@@ -44,7 +44,7 @@ public interface IWritableByteBuffer : IByteBuffer, IDisposable
     /// </summary>
     /// <param name="offset">The offset from which to create the writable view</param>
     /// <returns>A writable buffer view starting at the specified offset</returns>
-    IWritableByteBuffer CreateView( int offset );
+    IWritableByteBufferView CreateView( int offset );
 
     /// <summary>
     /// Rebases the buffer so that the specified offset becomes the new beginning of the buffer.
