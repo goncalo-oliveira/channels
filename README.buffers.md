@@ -117,7 +117,7 @@ buffer1.WriteInt32( 123 );
 This can be useful when buffers are created throughout a workflow and manual disposal could be easily forgotten.
 
 > [!NOTE]
-> If a rented buffer is disposed manually, it is automatically removed from the tracked set.
+> Rented buffers can be disposed manually. The tracked pool still keeps the reference until the scope ends, but disposal is idempotent.
 
 ## Buffer Views (Zero-Copy)
 

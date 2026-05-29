@@ -288,4 +288,18 @@ public class WritableByteBufferViewTests
             () => view.CreateView( 1, 2 )
         );
     }
+
+    [Fact]
+    public void WritableView_Reserve_ShouldThrow_WhenLengthIsNegative()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteBytes( [1,2,3] );
+
+        var view = buffer.CreateView( 1 );
+
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => view.Reserve( -1 )
+        );
+    }
 }

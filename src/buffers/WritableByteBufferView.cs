@@ -196,6 +196,8 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
 
     private void EnsureSpace( int size )
     {
+        ArgumentOutOfRangeException.ThrowIfNegative( size, nameof( size ) );
+
         if ( offset + writeOffset + size > bufferLimit )
         {
             throw new InvalidOperationException( "Writable view cannot write beyond its bounds." );
