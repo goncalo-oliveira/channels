@@ -183,4 +183,31 @@ public class WritableByteBufferViewTests
 
         Assert.Equal( new byte[] { 2,3,4 }, snapshot );
     }
+
+    [Fact]
+    public void WritableView_WithLength_ShouldBeBoundedToSpecifiedRange()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteBytes( [1,2,3,4,5] );
+
+        var view = buffer.CreateView( 1, 2 );
+
+        Assert.Equal( 2, view.Length );
+        Assert.Equal( new byte[] { 2,3 }, view.AsSpan().ToArray() );
+    }
+
+    [Fact]
+    public void WritableView_WithLength_ShouldNotWriteBeyondSpecifiedRange()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteBytes( [1,2,3,4,5] );
+
+        var view = buffer.CreateView( 1, 2 );
+
+        Assert.Throws<InvalidOperationException>(
+            () => view.WriteBytes( [9,9,9] )
+        );
+    }
 }

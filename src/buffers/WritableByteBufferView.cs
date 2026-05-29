@@ -2,14 +2,8 @@ using System.Buffers;
 
 namespace Faactory.Channels.Buffers;
 
-internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int offset ) : IWritableByteBufferView
+internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int offset, int bufferLimit ) : IWritableByteBufferView
 {
-    /// <summary>
-    /// The limit of the view, which is the end of the used portion of the parent buffer. The view cannot write beyond this limit.
-    /// This is calculated at the time of view creation and does not change even if the parent buffer is modified after the view is created.
-    /// </summary>
-    private readonly int limit = buffer.Length;
-
     /// <summary>
     /// The current writing offset in the view.
     /// </summary>
@@ -23,13 +17,13 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
     /// The length of the writable portion of the view, which is the distance from the current offset to the limit.
     /// The view can write up to this length before it would extend beyond the limit.
     /// </summary>
-    public int Length => limit - offset;
+    public int Length => bufferLimit - offset;
 
     public int WritableBytes => Length - writeOffset;
 
     public ReadOnlySpan<byte> AsSpan()
     {
-        return buffer.AsSpan()[offset..limit];
+        return buffer.AsSpan()[offset..bufferLimit];
     }
 
     public IReadableByteBuffer AsReadableView()
@@ -41,7 +35,7 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
     public IWritableByteBuffer Compact()
         => throw new NotSupportedException( "Cannot compact a writable view." );
 
-    public IWritableByteBufferView CreateView( int offset )
+    public IWritableByteBufferView CreateView( int offset, int length )
         => throw new NotSupportedException( "Cannot create a writable view from a writable view." );
 
     public void Dispose()
@@ -184,7 +178,7 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
 
     private void EnsureSpace( int size )
     {
-        if ( offset + writeOffset + size > limit )
+        if ( offset + writeOffset + size > bufferLimit )
         {
             throw new InvalidOperationException( "Writable view cannot extend buffer." );
         }

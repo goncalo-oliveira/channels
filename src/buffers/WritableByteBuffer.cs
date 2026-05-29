@@ -170,14 +170,20 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// The returned view is limited to the portion of the buffer starting from the specified offset to the end of the used portion of the buffer.
     /// </summary>
     /// <param name="offset">The offset from which to create the writable view</param>
+    /// <param name="length">The length of the writable view</param>
     /// <returns>A writable buffer view starting at the specified offset</returns>
-    public IWritableByteBufferView CreateView( int offset )
+    public IWritableByteBufferView CreateView( int offset, int length )
     {
         ObjectDisposedException.ThrowIf( disposed, this );
         ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
         ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
+        ArgumentOutOfRangeException.ThrowIfNegative( length, nameof( length ) );
 
-        return new WritableByteBufferView( this, offset );
+        var bufferLimit = offset + length;
+
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( bufferLimit, writeOffset, nameof( length ) );
+
+        return new WritableByteBufferView( this, offset, bufferLimit );
     }
 
     /// <summary>

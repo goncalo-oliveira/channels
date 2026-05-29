@@ -40,11 +40,13 @@ public interface IWritableByteBuffer : IByteBuffer, IDisposable
     /// The returned view shares the same underlying memory, allowing for zero-copy modifications.
     /// The offset must be within the bounds of the buffer's capacity.
     /// Modifying the returned view will affect the original buffer, and vice versa.
-    /// The returned view is limited to the portion of the buffer starting from the specified offset to the end of the used portion of the buffer.
+    /// The returned view is limited to the portion of the buffer starting from the specified offset to the length of the used portion of the buffer.
     /// </summary>
     /// <param name="offset">The offset from which to create the writable view</param>
+    /// <param name="length">The length of the writable view</param>
     /// <returns>A writable buffer view starting at the specified offset</returns>
-    IWritableByteBufferView CreateView( int offset );
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is negative or greater than the used portion of the buffer, or when the length is negative or extends beyond the used portion of the buffer</exception>
+    IWritableByteBufferView CreateView( int offset, int length );
 
     /// <summary>
     /// Rebases the buffer so that the specified offset becomes the new beginning of the buffer.
