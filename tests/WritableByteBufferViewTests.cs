@@ -274,4 +274,18 @@ public class WritableByteBufferViewTests
             )
         );
     }
+
+    [Fact]
+    public void WritableView_CreateView_ShouldThrow_WhenChildExceedsBounds()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteBytes( [1,2,3,4] );
+
+        var view = buffer.CreateView( 1, 2 );
+
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => view.CreateView( 1, 2 )
+        );
+    }
 }
