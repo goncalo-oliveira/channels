@@ -116,19 +116,6 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     public int Length => writeOffset;
 
     /// <summary>
-    /// Creates a writable view of the buffer starting at the specified offset.
-    /// The returned view shares the same underlying memory, allowing for zero-copy modifications.
-    /// The offset must be within the bounds of the buffer's capacity.
-    /// Modifying the returned view will affect the original buffer, and vice versa.
-    /// The returned view is limited to the portion of the buffer starting from the specified offset to the end of the used portion of the buffer.
-    /// </summary>
-    /// <param name="offset">The offset from which to create the writable view</param>
-    /// <returns>A writable buffer view starting at the specified offset</returns>
-    [Obsolete( "Use CreateView(int offset) instead." )]
-    public IWritableByteBuffer At( int offset )
-        => CreateView( offset );
-
-    /// <summary>
     /// Discards all written bytes and reallocates the buffer to its initial capacity.
     /// </summary>
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>

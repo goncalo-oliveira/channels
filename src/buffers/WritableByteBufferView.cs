@@ -33,10 +33,6 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
     public IReadableByteBuffer AsReadableView()
         => throw new NotSupportedException( "Cannot create a readable view from a writable view." );
 
-    [Obsolete( "Use CreateView(int offset) instead." )]
-    public IWritableByteBuffer At( int offset )
-        => throw new NotSupportedException( "Cannot create a writable view from a writable view." );
-
     public IWritableByteBuffer Clear()
         => throw new NotSupportedException( "Cannot clear a writable view." );
 
