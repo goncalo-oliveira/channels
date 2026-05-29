@@ -24,6 +24,12 @@ public interface IWritableByteBuffer : IByteBuffer, IDisposable
     IReadableByteBuffer AsReadableView();
 
     /// <summary>
+    /// Gets the used portion of the buffer as a <see cref="Span{T}"/>
+    /// </summary>
+    /// <returns>A <see cref="Span{T}"/> representing the used portion of the buffer</returns>
+    new Span<byte> AsSpan();
+
+    /// <summary>
     /// Discards all written bytes and reallocates the buffer to its initial capacity.
     /// </summary>
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
@@ -92,13 +98,6 @@ public interface IWritableByteBuffer : IByteBuffer, IDisposable
     /// <param name="length">The number of bytes to write</param>
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
     IWritableByteBuffer WriteBytes( byte[] value, int startIndex, int length );
-
-    /// <summary>
-    /// Writes the contents of an IByteBuffer instance
-    /// </summary>
-    /// <param name="value">The value to write</param>
-    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
-    IWritableByteBuffer WriteBytes( IByteBuffer value );
 
     /// <summary>
     /// Writes a range of bytes from a <see cref="ReadOnlySpan{T}"/>

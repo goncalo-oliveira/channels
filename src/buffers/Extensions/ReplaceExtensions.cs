@@ -1,3 +1,5 @@
+using System;
+
 namespace Faactory.Channels.Buffers;
 
 /// <summary>
@@ -12,7 +14,7 @@ public static class WritableByteBufferReplaceExtensions
     /// <param name="sequence">The sequence of bytes to replace</param>
     /// <param name="replacement">The sequence of bytes to replace with</param>
     /// <returns>The same writable buffer.</returns>
-    public static IWritableByteBuffer ReplaceBytes( this IWritableByteBuffer source, byte[] sequence, byte[] replacement )
+    public static IWritableByteBuffer ReplaceBytes( this IWritableByteBuffer source, ReadOnlySpan<byte> sequence, ReadOnlySpan<byte> replacement )
     {
         if ( sequence.Length == 0 )
         {
@@ -36,7 +38,9 @@ public static class WritableByteBufferReplaceExtensions
 
                 match += index;
 
-                source.CreateView( match ).WriteBytes( replacement );
+                replacement.CopyTo(
+                    source.AsSpan().Slice( match, replacement.Length )
+                );
 
                 index = match + sequence.Length;
             }

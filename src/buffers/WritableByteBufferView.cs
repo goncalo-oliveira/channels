@@ -21,10 +21,13 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
 
     public int WritableBytes => Length - writeOffset;
 
-    public ReadOnlySpan<byte> AsSpan()
+    public Span<byte> AsSpan()
     {
         return buffer.AsSpan()[offset..bufferLimit];
     }
+
+    // explicit implementation
+    ReadOnlySpan<byte> IByteBuffer.AsSpan() => AsSpan();
 
     public IReadableByteBuffer AsReadableView()
     {
@@ -112,8 +115,8 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
         return this;
     }
 
-    public IWritableByteBuffer WriteBytes( IByteBuffer value )
-        => WriteBytes( value.AsSpan() );
+    // public IWritableByteBuffer WriteBytes( IByteBuffer value )
+    //     => WriteBytes( value.AsSpan() );
 
     public IWritableByteBuffer WriteBytes( ReadOnlySpan<byte> value )
     {

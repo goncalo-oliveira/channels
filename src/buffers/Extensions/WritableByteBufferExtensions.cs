@@ -25,4 +25,13 @@ public static class WritableByteBufferExtensions
     /// <param name="value">The byte[] value</param>
     public static IWritableByteBuffer WriteBytes( this IWritableByteBuffer source, byte[] value )
         => source.WriteBytes( value, 0, value.Length );
+
+    /// <summary>
+    /// Writes the contents of an <see cref="IByteBuffer"/> to this buffer.
+    /// </summary>
+    /// <param name="source">The source buffer</param>
+    /// <param name="value">The <see cref="IByteBuffer"/> value</param>
+    /// <returns>The updated buffer</returns>
+    public static IWritableByteBuffer WriteBytes( this IWritableByteBuffer source, IByteBuffer value )
+        => source.WriteBytes( value.AsSpan() );
 }

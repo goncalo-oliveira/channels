@@ -300,15 +300,18 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     }
 
     /// <summary>
-    /// Gets the used portion of the buffer as a <see cref="ReadOnlySpan{T}"/>
+    /// Gets the used portion of the buffer as a <see cref="Span{T}"/>
     /// </summary>
-    /// <returns>A <see cref="ReadOnlySpan{T}"/> representing the used portion of the buffer</returns>
-    public ReadOnlySpan<byte> AsSpan()
+    /// <returns>A <see cref="Span{T}"/> representing the used portion of the buffer</returns>
+    public Span<byte> AsSpan()
     {
         ObjectDisposedException.ThrowIf( disposed, this );
 
         return buffer.AsSpan( 0, writeOffset );
     }
+
+    // explicit implementation
+    ReadOnlySpan<byte> IByteBuffer.AsSpan() => AsSpan();
 
     private void EnsureCapacity( int additionalLength )
     {
@@ -388,14 +391,6 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
 
         return this;
     }
-
-    /// <summary>
-    /// Writes the contents of another <see cref="IByteBuffer"/> to this buffer.
-    /// </summary>
-    /// <param name="value">The buffer whose contents are to be written</param>
-    /// <returns>The current buffer instance</returns>
-    public IWritableByteBuffer WriteBytes( IByteBuffer value )
-        => WriteBytes( value.AsSpan() );
 
     /// <summary>
     /// Writes the contents of a <see cref="ReadOnlySpan{T}"/> to the buffer.

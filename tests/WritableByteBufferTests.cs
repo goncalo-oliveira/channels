@@ -35,6 +35,32 @@ public class WritableByteBufferTests
     }
 
     [Fact]
+    public void TestReplace_WithSameLengthReplacement()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteBytes(
+        [
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
+        ] );
+
+        var instance = buffer.ReplaceBytes(
+        [
+            0x01, 0x02
+        ],
+        [
+            0x11, 0x22
+        ] );
+
+        Assert.Same( buffer, instance );
+
+        Assert.True( buffer.AsReadableView().MatchBytes(
+        [
+            0x00, 0x11, 0x22, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
+        ] ) );
+    }
+
+    [Fact]
     public void AsReadableView_ShouldExposeWrittenPortion_WithoutCopy()
     {
         var writable = new WritableByteBuffer( 16 );
