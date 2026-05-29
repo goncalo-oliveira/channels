@@ -12,9 +12,6 @@ Buffer instances are always specialized for either reading or writing, never bot
 
 This separation allows each implementation to be optimized for its specific purpose.
 
-> [!TIP]
-> You can convert between buffer types using the `AsReadable` and `AsWritable` extension methods.
-
 ## Using Buffers
 
 When using *Channels*, you usually don’t need to manually create buffer instances. The pipeline can automatically convert between `byte[]` and `IReadableByteBuffer`.
@@ -25,11 +22,12 @@ Outside of Channels, or when needed explicitly:
 
 ### Reading Data
 
-There are two ways to retrieve data:
+There are four ways to retrieve data:
 
-**Get vs Read**
-- **Get** does not change the current offset
-- **Read** advances the offset
+- **Get** performs a passive read at a specified offset (does not change buffer offset)
+- **Read** performs an active read at the current offset and advances it
+- **TryRead** performs tentative reads that only advance the offset if successful
+- **Checkpoints** allow speculative multi-step reads with rollback support
 
 ```csharp
 IReadableByteBuffer buffer = ...;
@@ -39,6 +37,28 @@ var b1 = buffer.GetByte(customOffset);
 
 // Reads at current offset and advances it by 1
 var b2 = buffer.ReadByte();
+
+// Attempts to read without throwing if insufficient data exists
+if ( buffer.TryReadInt32( out var value ) )
+{
+    // value successfully read
+}
+
+// Speculative read with rollback support
+using var checkpoint = buffer.Checkpoint();
+
+try
+{
+    var b3 = buffer.ReadByte();
+    var i1 = buffer.ReadInt32();
+
+    // Commit the checkpoint to make the offset changes permanent
+    checkpoint.Commit();
+}
+catch ( ArgumentOutOfRangeException )
+{
+    // Rollback to the checkpointed offset if not committed
+}
 ```
 
 ### Renting Buffers from a Pool
@@ -186,7 +206,7 @@ var view = buffer.CreateView( 2 )
 > Views should not be used after the parent buffer has been modified or compacted, as their behavior becomes undefined.
 
 > [!NOTE]
-> Writable views do not support operations that would alter the parent buffer’s structure (such as `Clear`, `Compact`, or creating additional views).
+> Writable views do not support operations that would alter the parent buffer’s structure (such as `Clear`, `Compact` or `Rebase`).
 
 ### `ToArray()` Behavior
 
@@ -208,8 +228,6 @@ On writable buffers, `ToArray()` always creates a copy of the currently written 
 | `GetByteBuffer` | ❌ No |
 | `ReadByteBuffer` | ❌ No |
 | `AsReadableView` | ❌ No |
-| `AsReadable` | ✅ Yes |
-| `AsWritable` | ✅ Yes |
 | `ToArray()` (full-owned buffer) | ❌ No |
 | `ToArray()` (windowed view) | ✅ Yes |
 
