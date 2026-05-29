@@ -9,7 +9,7 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
     /// </summary>
     private int writeOffset = 0;
 
-    public int Capacity => buffer.Capacity;
+    public int Capacity => Length; // The capacity of the view is its length, as it cannot grow beyond its bounds.
 
     public Endianness Endianness => buffer.Endianness;
 
