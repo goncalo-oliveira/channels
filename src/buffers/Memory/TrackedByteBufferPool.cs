@@ -1,4 +1,4 @@
-namespace Faactory.Channels.Buffers;
+namespace Faactory.Channels.Buffers.Memory;
 
 /// <summary>
 /// Implements a tracked byte buffer pool that wraps the <see cref="ByteBufferPool"/> and keeps track of rented buffers, allowing for automatic disposal of all rented buffers when the pool is disposed.

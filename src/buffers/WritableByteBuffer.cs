@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Buffers.Binary;
+using Faactory.Channels.Buffers.Memory;
 
 namespace Faactory.Channels.Buffers;
 

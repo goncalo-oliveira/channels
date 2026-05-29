@@ -1,4 +1,4 @@
-namespace Faactory.Channels.Buffers;
+namespace Faactory.Channels.Buffers.Memory;
 
 /// <summary>
 /// Defines an interface for allocating and releasing byte buffers.

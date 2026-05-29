@@ -2,6 +2,7 @@ using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using Faactory.Channels.Buffers;
+using Faactory.Channels.Buffers.Memory;
 using Xunit;
 
 namespace tests;

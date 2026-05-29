@@ -1,5 +1,5 @@
 using System;
-using Faactory.Channels.Buffers;
+using Faactory.Channels.Buffers.Memory;
 using Xunit;
 
 namespace tests;

@@ -3,18 +3,10 @@ using System.Diagnostics.CodeAnalysis;
 namespace Faactory.Channels.Buffers;
 
 /// <summary>
-/// Extension methods for <see cref="IReadableByteBuffer"/> to provide safe read operations that return a boolean indicating success or failure instead of throwing exceptions when there are not enough readable bytes available to perform the read operation.
+/// Extension methods for <see cref="IReadableByteBuffer"/> to provide tentative read operations.
 /// </summary>
-public static class ReadableByteBufferExtensions
+public static class ReadableByteBufferTentativeReadExtensions
 {
-    /// <summary>
-    /// Creates a checkpoint for the current buffer position for speculative reads.
-    /// The buffer returned is a view of the original buffer, sharing the same underlying data but with an independent offset.
-    /// </summary>
-    /// <returns>A readable checkpoint instance</returns>
-    public static IReadableCheckpoint Checkpoint( this IReadableByteBuffer source )
-        => new ReadableCheckpoint( source );
-
     /// <summary>
     /// Tries to read a boolean value from the buffer, returning false if there are not enough readable bytes to perform the read operation.
     /// </summary>
