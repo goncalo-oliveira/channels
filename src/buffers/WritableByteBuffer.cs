@@ -135,6 +135,34 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     }
 
     /// <summary>
+    /// Reduces the underlying buffer capacity when it significantly exceeds the configured maximum retained capacity.
+    /// </summary>
+    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
+    public IWritableByteBuffer Compact()
+    {
+        ObjectDisposedException.ThrowIf( disposed, this );
+
+        var shouldShrink
+            = buffer.Length > options.MaxRetainedCapacity && writeOffset <= ( options.MaxRetainedCapacity / 2 );
+
+        if ( !shouldShrink )
+        {
+            return this;
+        }
+
+        // Reallocate the buffer to the maximum retained capacity
+        var targetBuffer = bufferAllocator.Allocate( options.MaxRetainedCapacity );
+
+        Array.Copy( buffer, 0, targetBuffer, 0, writeOffset );
+
+        bufferAllocator.Release( buffer );
+
+        buffer = targetBuffer;
+
+        return this;
+    }
+
+    /// <summary>
     /// Creates a writable view of the buffer starting at the specified offset.
     /// The returned view shares the same underlying memory, allowing for zero-copy modifications.
     /// The offset must be within the bounds of the buffer's capacity.
@@ -166,6 +194,31 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         buffer = null!;
         writeOffset = 0;
         disposed = true;
+    }
+
+    /// <summary>
+    /// Rebases the buffer so that the specified offset becomes the new beginning of the buffer.
+    /// </summary>
+    /// <param name="offset">The offset to rebase the buffer to</param>
+    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
+    public IWritableByteBuffer Rebase( int offset )
+    {
+        ObjectDisposedException.ThrowIf( disposed, this );
+
+        ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
+
+        var remaining = writeOffset - offset;
+
+        if ( remaining > 0 )
+        {
+            Array.Copy( buffer, offset, buffer, 0, remaining );
+        }
+
+        writeOffset = remaining;
+
+        return this;
+
     }
 
     /// <summary>
@@ -217,51 +270,6 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         ObjectDisposedException.ThrowIf( disposed, this );
 
         return new ReadableByteBuffer( buffer, 0, writeOffset, Endianness );
-    }
-
-    /// <summary>
-    /// Compacts the buffer by discarding bytes up to the specified offset.
-    /// </summary>
-    /// <param name="offset">The offset up to which bytes should be discarded</param>
-    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is negative or greater than the used portion of the buffer</exception>
-    public IWritableByteBuffer Compact( int offset )
-    {
-        ObjectDisposedException.ThrowIf( disposed, this );
-
-        ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
-        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
-
-        var remaining = writeOffset - offset;
-        var shouldShrink
-            = buffer.Length > options.MaxRetainedCapacity && remaining <= ( options.MaxRetainedCapacity / 2 );
-
-        /*
-        Reallocate the buffer to the maximum retained capacity
-        if the current capacity is significantly larger
-        than the remaining data after compaction.
-        */
-        var targetBuffer = shouldShrink
-            ? bufferAllocator.Allocate( options.MaxRetainedCapacity )
-            : buffer;
-
-
-        if ( remaining > 0 )
-        {
-            Array.Copy( buffer, offset, targetBuffer, 0, remaining );
-        }
-
-        // release old buffer if we allocated a new one for compaction
-        if ( targetBuffer != buffer )
-        {
-            bufferAllocator.Release( buffer );
-
-            buffer = targetBuffer;
-        }
-
-        writeOffset = remaining;
-
-        return this;
     }
 
     /// <summary>

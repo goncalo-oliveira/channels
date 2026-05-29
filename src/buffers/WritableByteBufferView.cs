@@ -36,7 +36,7 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
     public IWritableByteBuffer Clear()
         => throw new NotSupportedException( "Cannot clear a writable view." );
 
-    public IWritableByteBuffer Compact( int offset)
+    public IWritableByteBuffer Compact()
         => throw new NotSupportedException( "Cannot compact a writable view." );
 
     public IWritableByteBuffer CreateView( int offset )
@@ -46,6 +46,9 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
     {
         // No resources to dispose in the view
     }
+
+    public IWritableByteBuffer Rebase( int offset )
+        => throw new NotSupportedException( "Cannot rebase a writable view." );
 
     public IWritableByteBuffer Reserve( int length )
     {

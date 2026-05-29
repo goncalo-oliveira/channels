@@ -30,12 +30,10 @@ public interface IWritableByteBuffer : IByteBuffer, IDisposable
     IWritableByteBuffer Clear();
 
     /// <summary>
-    /// Compacts the buffer by discarding bytes up to the specified offset.
+    /// Reduces the underlying buffer capacity when it significantly exceeds the configured maximum retained capacity.
     /// </summary>
-    /// <param name="offset">The offset up to which bytes should be discarded</param>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is negative or greater than the used portion of the buffer</exception>
     /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
-    IWritableByteBuffer Compact( int offset );
+    IWritableByteBuffer Compact();
 
     /// <summary>
     /// Creates a writable view of the buffer starting at the specified offset.
@@ -47,6 +45,13 @@ public interface IWritableByteBuffer : IByteBuffer, IDisposable
     /// <param name="offset">The offset from which to create the writable view</param>
     /// <returns>A writable buffer view starting at the specified offset</returns>
     IWritableByteBuffer CreateView( int offset );
+
+    /// <summary>
+    /// Rebases the buffer so that the specified offset becomes the new beginning of the buffer.
+    /// </summary>
+    /// <param name="offset">The offset to rebase the buffer to</param>
+    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
+    IWritableByteBuffer Rebase( int offset );
 
     /// <summary>
     /// Reserves a contiguous block of bytes for writing and moves the writing offset forward by the specified length.
