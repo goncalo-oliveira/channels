@@ -92,15 +92,21 @@ public class WritableByteBufferViewTests
     }
 
     [Fact]
-    public void WritableView_ShouldNotAllowNestedViews()
+    public void WritableView_NestedView_ShouldModifyParentBuffer()
     {
         var buffer = new WritableByteBuffer();
 
-        buffer.WriteBytes( [1,2,3] );
+        buffer.WriteBytes( [1,2,3,4,5] );
 
-        var view = buffer.CreateView( 1 );
+        var view = buffer.CreateView( 1, 3 );      // [2,3,4]
+        var nested = view.CreateView( 1, 1 );      // [3]
 
-        Assert.Throws<NotSupportedException>( () => view.CreateView( 0 ) );
+        nested.WriteByte( 9 );
+
+        Assert.Equal(
+            new byte[] { 1,2,9,4,5 },
+            buffer.AsSpan().ToArray()
+        );
     }
 
     [Fact]
@@ -208,6 +214,23 @@ public class WritableByteBufferViewTests
 
         Assert.Throws<InvalidOperationException>(
             () => view.WriteBytes( [9,9,9] )
+        );
+    }
+
+    [Fact]
+    public void WritableView_AsReadableView_ShouldReturnReadableViewOfSameRegion()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteBytes( [1,2,3,4,5] );
+
+        var view = buffer.CreateView( 1, 3 );
+
+        var readable = view.AsReadableView();
+
+        Assert.Equal(
+            new byte[] { 2,3,4 },
+            readable.AsSpan().ToArray()
         );
     }
 }

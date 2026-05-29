@@ -14,8 +14,8 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
     public Endianness Endianness => buffer.Endianness;
 
     /// <summary>
-    /// The length of the writable portion of the view, which is the distance from the current offset to the limit.
-    /// The view can write up to this length before it would extend beyond the limit.
+    /// Gets the length of the view.
+    /// This is the distance between the view start offset and its limit.
     /// </summary>
     public int Length => bufferLimit - offset;
 
@@ -27,7 +27,9 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
     }
 
     public IReadableByteBuffer AsReadableView()
-        => throw new NotSupportedException( "Cannot create a readable view from a writable view." );
+    {
+        return new ReadableByteBuffer( buffer.Buffer, offset, Length, buffer.Endianness );
+    }
 
     public IWritableByteBuffer Clear()
         => throw new NotSupportedException( "Cannot clear a writable view." );
@@ -35,8 +37,21 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
     public IWritableByteBuffer Compact()
         => throw new NotSupportedException( "Cannot compact a writable view." );
 
-    public IWritableByteBufferView CreateView( int offset, int length )
-        => throw new NotSupportedException( "Cannot create a writable view from a writable view." );
+    public IWritableByteBufferView CreateView( int viewOffset, int length )
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative( viewOffset, nameof( viewOffset ) );
+        ArgumentOutOfRangeException.ThrowIfNegative( length, nameof( length ) );
+
+        var bufferLimit = viewOffset + length;
+
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( bufferLimit, Length, nameof( length ) );
+
+        return new WritableByteBufferView(
+            buffer,
+            offset + viewOffset,
+            offset + bufferLimit
+        );
+    }
 
     public void Dispose()
     {
@@ -180,7 +195,7 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
     {
         if ( offset + writeOffset + size > bufferLimit )
         {
-            throw new InvalidOperationException( "Writable view cannot extend buffer." );
+            throw new InvalidOperationException( "Writable view cannot write beyond its bounds." );
         }
     }
 }
