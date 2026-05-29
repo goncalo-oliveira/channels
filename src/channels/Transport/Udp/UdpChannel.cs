@@ -115,7 +115,8 @@ internal sealed class UdpChannel : Channel
             await Input.ExecuteAsync( this, pipelineBuffer, LifetimeToken )
                 .ConfigureAwait( false );
 
-            Buffer.Compact( pipelineBuffer.Offset );
+            Buffer.Rebase( pipelineBuffer.Offset );
+            Buffer.Compact();
 
             if ( Buffer.Length > 0 )
             {

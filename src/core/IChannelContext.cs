@@ -1,4 +1,4 @@
-using Faactory.Channels.Buffers;
+using Faactory.Channels.Buffers.Memory;
 
 namespace Faactory.Channels;
 

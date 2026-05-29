@@ -1,6 +1,6 @@
 using System.Buffers;
 
-namespace Faactory.Channels.Buffers;
+namespace Faactory.Channels.Buffers.Memory;
 
 /// <summary>
 /// Implements a byte buffer pool using the shared ArrayPool{byte} to rent and return byte arrays, optimizing memory usage and reducing allocations.

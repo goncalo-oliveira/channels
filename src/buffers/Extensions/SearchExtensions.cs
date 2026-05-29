@@ -1,9 +1,9 @@
 namespace Faactory.Channels.Buffers;
 
 /// <summary>
-/// Provides extension methods for searching within byte buffers.
+/// Provides extension methods for searching within readable byte buffers.
 /// </summary>
-public static class ByteBufferSearchExtensions
+public static class ReadableByteBufferSearchExtensions
 {
     /// <summary>
     /// Determines whether any byte in the buffer satisfies the condition.
@@ -69,7 +69,7 @@ public static class ByteBufferSearchExtensions
     /// <param name="sequence">The sequence of bytes to find</param>
     /// <param name="offset">The offset in the buffer to start looking; if -1 it uses the buffer's current offset</param>
     /// <returns>The index of the beginning of the sequence; -1 if the sequence wasn't found.</returns>
-    public static int IndexOf( this IReadableByteBuffer source, byte[] sequence, int offset = -1 )
+    public static int IndexOf( this IReadableByteBuffer source, ReadOnlySpan<byte> sequence, int offset = -1 )
     {
         if ( sequence.Length == 0 )
         {
@@ -100,7 +100,7 @@ public static class ByteBufferSearchExtensions
     /// <param name="sequence">The sequence of bytes to match</param>
     /// <param name="offset">The offset in the buffer; if -1 it uses the buffer's current offset</param>
     /// <returns>True if the sequence matches; false otherwise.</returns>
-    public static bool MatchBytes( this IReadableByteBuffer source, byte[] sequence, int offset = -1 )
+    public static bool MatchBytes( this IReadableByteBuffer source, ReadOnlySpan<byte> sequence, int offset = -1 )
     {
         if ( sequence.Length == 0 )
         {
@@ -117,5 +117,4 @@ public static class ByteBufferSearchExtensions
         return source.GetSpan( offset, sequence.Length )
             .SequenceEqual( sequence );
     }
-
 }

@@ -1,4 +1,4 @@
-namespace Faactory.Channels.Buffers;
+namespace Faactory.Channels.Buffers.Memory;
 
 /// <summary>
 /// Implements a default byte buffer allocator that creates new byte arrays for each allocation.

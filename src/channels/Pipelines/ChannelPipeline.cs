@@ -3,6 +3,7 @@ using Faactory.Channels.Adapters;
 using Faactory.Channels.Handlers;
 using Microsoft.Extensions.DependencyInjection;
 using Faactory.Channels.Buffers;
+using Faactory.Channels.Buffers.Memory;
 
 namespace Faactory.Channels;
 

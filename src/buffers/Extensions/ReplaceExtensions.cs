@@ -1,9 +1,11 @@
+using System;
+
 namespace Faactory.Channels.Buffers;
 
 /// <summary>
 /// Provides extension methods for replacing byte sequences in an <see cref="IWritableByteBuffer"/>.
 /// </summary>
-public static class ByteBufferReplaceExtensions
+public static class WritableByteBufferReplaceExtensions
 {
     /// <summary>
     /// Replaces all occurrences of a sequence of bytes with another
@@ -12,21 +14,52 @@ public static class ByteBufferReplaceExtensions
     /// <param name="sequence">The sequence of bytes to replace</param>
     /// <param name="replacement">The sequence of bytes to replace with</param>
     /// <returns>The same writable buffer.</returns>
-    public static IWritableByteBuffer ReplaceBytes( this IWritableByteBuffer source, byte[] sequence, byte[] replacement )
+    public static IWritableByteBuffer ReplaceBytes( this IWritableByteBuffer source, ReadOnlySpan<byte> sequence, ReadOnlySpan<byte> replacement )
     {
         if ( sequence.Length == 0 )
         {
             return source;
         }
 
-        var span = source.AsSpan();
-        var result = new WritableByteBuffer( span.Length, source.Endianness );
-
         int index = 0;
+
+        if ( sequence.Length == replacement.Length )
+        {
+            var span = source.AsSpan();
+
+            while ( true )
+            {
+                int match = span[index..].IndexOf( sequence );
+
+                if ( match < 0 )
+                {
+                    break;
+                }
+
+                match += index;
+
+                replacement.CopyTo(
+                    source.AsSpan().Slice( match, replacement.Length )
+                );
+
+                index = match + sequence.Length;
+            }
+
+            return source;
+        }
+
+        if ( source is IWritableByteBufferView )
+        {
+            throw new NotSupportedException( "Variable-length replacement is not supported on writable views." );
+        }
+
+        var original = source.ToArray();
+
+        source.Truncate();
 
         while ( true )
         {
-            int match = span[index..].IndexOf( sequence );
+            int match = original.AsSpan( index ).IndexOf( sequence );
 
             if ( match < 0 )
             {
@@ -35,16 +68,13 @@ public static class ByteBufferReplaceExtensions
 
             match += index;
 
-            result.WriteBytes( span[index..match] );
-            result.WriteBytes( replacement );
+            source.WriteBytes( original, index, match - index );
+            source.WriteBytes( replacement );
 
             index = match + sequence.Length;
         }
 
-        result.WriteBytes( span[index..] );
-
-        source.Truncate();
-        source.WriteBytes( result.AsSpan() );
+        source.WriteBytes( original, index, original.Length - index );
 
         return source;
     }

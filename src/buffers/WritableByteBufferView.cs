@@ -2,51 +2,71 @@ using System.Buffers;
 
 namespace Faactory.Channels.Buffers;
 
-internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int offset ) : IWritableByteBuffer
+internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int offset, int bufferLimit ) : IWritableByteBufferView
 {
-    /// <summary>
-    /// The limit of the view, which is the end of the used portion of the parent buffer. The view cannot write beyond this limit.
-    /// This is calculated at the time of view creation and does not change even if the parent buffer is modified after the view is created.
-    /// </summary>
-    private readonly int limit = buffer.Length;
-
     /// <summary>
     /// The current writing offset in the view.
     /// </summary>
     private int writeOffset = 0;
 
+    public int Capacity => Length; // The capacity of the view is its length, as it cannot grow beyond its bounds.
+
     public Endianness Endianness => buffer.Endianness;
 
     /// <summary>
-    /// The length of the writable portion of the view, which is the distance from the current offset to the limit.
-    /// The view can write up to this length before it would extend beyond the limit.
+    /// Gets the length of the view.
+    /// This is the distance between the view start offset and its limit.
     /// </summary>
-    public int Length => limit - offset;
+    public int Length => bufferLimit - offset;
 
-    public ReadOnlySpan<byte> AsSpan()
+    public int WritableBytes => Length - writeOffset;
+
+    public Span<byte> AsSpan()
     {
-        return buffer.AsSpan()[offset..limit];
+        return buffer.AsSpan()[offset..bufferLimit];
     }
 
-    public IReadableByteBuffer AsReadableView()
-        => throw new NotSupportedException( "Cannot create a readable view from a writable view." );
+    // explicit implementation
+    ReadOnlySpan<byte> IByteBuffer.AsSpan() => AsSpan();
 
-    public IWritableByteBuffer At( int offset )
-        => throw new NotSupportedException( "Cannot create a writable view from a writable view." );
+    public IReadableByteBuffer AsReadableView()
+    {
+        return new ReadableByteBuffer( buffer.Buffer, offset, Length, buffer.Endianness );
+    }
 
     public IWritableByteBuffer Clear()
         => throw new NotSupportedException( "Cannot clear a writable view." );
 
-    public IWritableByteBuffer Compact( int offset)
+    public IWritableByteBuffer Compact()
         => throw new NotSupportedException( "Cannot compact a writable view." );
+
+    public IWritableByteBufferView CreateView( int viewOffset, int length )
+    {
+        ThrowIfParentDisposed();
+
+        ArgumentOutOfRangeException.ThrowIfNegative( viewOffset, nameof( viewOffset ) );
+        ArgumentOutOfRangeException.ThrowIfNegative( length, nameof( length ) );
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( length, Length - viewOffset, nameof( length ) );
+
+        return new WritableByteBufferView(
+            buffer,
+            offset + viewOffset,
+            offset + viewOffset + length
+        );
+    }
 
     public void Dispose()
     {
         // No resources to dispose in the view
     }
 
+    public IWritableByteBuffer Rebase( int offset )
+        => throw new NotSupportedException( "Cannot rebase a writable view." );
+
     public IWritableByteBuffer Reserve( int length )
     {
+        ThrowIfParentDisposed();
+
         EnsureSpace( length );
 
         writeOffset += length;
@@ -61,6 +81,8 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
 
     public IWritableByteBuffer Truncate( int offset = 0 )
     {
+        ThrowIfParentDisposed();
+
         ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
         ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
 
@@ -92,9 +114,6 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
 
         return this;
     }
-
-    public IWritableByteBuffer WriteBytes( IByteBuffer value )
-        => WriteBytes( value.AsSpan() );
 
     public IWritableByteBuffer WriteBytes( ReadOnlySpan<byte> value )
     {
@@ -177,9 +196,14 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
 
     private void EnsureSpace( int size )
     {
-        if ( offset + writeOffset + size > limit )
+        ArgumentOutOfRangeException.ThrowIfNegative( size, nameof( size ) );
+
+        if ( offset + writeOffset + size > bufferLimit )
         {
-            throw new InvalidOperationException( "Writable view cannot extend buffer." );
+            throw new InvalidOperationException( "Writable view cannot write beyond its bounds." );
         }
     }
+
+    private void ThrowIfParentDisposed()
+        => _ = buffer.Capacity;
 }

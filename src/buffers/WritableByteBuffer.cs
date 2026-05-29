@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Buffers.Binary;
+using Faactory.Channels.Buffers.Memory;
 
 namespace Faactory.Channels.Buffers;
 
@@ -20,9 +21,18 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     private readonly IByteBufferAllocator bufferAllocator;
 
     /// <summary>
-    /// Gets the underlying byte array buffer. This is intended for internal use and should not be exposed publicly, as it may lead to unsafe modifications of the buffer. The buffer is shared with any views created from this instance, so modifying it directly can affect the integrity of those views.
+    /// Gets the underlying byte array buffer.
+    /// This is intended for internal use and should not be exposed publicly, as it may lead to unsafe modifications of the buffer. The buffer is shared with any views created from this instance, so modifying it directly can affect the integrity of those views.
     /// </summary>
-    internal byte[] Buffer => buffer;
+    internal byte[] Buffer
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf( disposed, this );
+
+            return buffer;
+        }
+    }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WritableByteBuffer"/> class with the default initial capacity and endianness.
@@ -93,6 +103,19 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     }
 
     /// <summary>
+    /// Gets the total capacity of the buffer, which may be greater than or equal to the length of the currently written portion.
+    /// </summary>
+    public int Capacity
+    {
+        get
+        {
+            ObjectDisposedException.ThrowIf( disposed, this );
+
+            return buffer.Length;
+        }
+    }
+
+    /// <summary>
     /// Gets the endianness of the buffer, which determines how multi-byte values are written.
     /// </summary>
     public Endianness Endianness => options.Endianness;
@@ -101,24 +124,6 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     /// Gets the length of the used portion of the buffer.
     /// </summary>
     public int Length => writeOffset;
-
-    /// <summary>
-    /// Creates a writable view of the buffer starting at the specified offset.
-    /// The returned view shares the same underlying memory, allowing for zero-copy modifications.
-    /// The offset must be within the bounds of the buffer's capacity.
-    /// Modifying the returned view will affect the original buffer, and vice versa.
-    /// The returned view is limited to the portion of the buffer starting from the specified offset to the end of the used portion of the buffer.
-    /// </summary>
-    /// <param name="offset">The offset from which to create the writable view</param>
-    /// <returns>A writable buffer view starting at the specified offset</returns>
-    public IWritableByteBuffer At( int offset )
-    {
-        ObjectDisposedException.ThrowIf( disposed, this );
-        ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
-        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
-
-        return new WritableByteBufferView( this, offset );
-    }
 
     /// <summary>
     /// Discards all written bytes and reallocates the buffer to its initial capacity.
@@ -140,6 +145,55 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     }
 
     /// <summary>
+    /// Reduces the underlying buffer capacity when it significantly exceeds the configured maximum retained capacity.
+    /// </summary>
+    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
+    public IWritableByteBuffer Compact()
+    {
+        ObjectDisposedException.ThrowIf( disposed, this );
+
+        var shouldShrink
+            = buffer.Length > options.MaxRetainedCapacity && writeOffset <= ( options.MaxRetainedCapacity / 2 );
+
+        if ( !shouldShrink )
+        {
+            return this;
+        }
+
+        // Reallocate the buffer to the maximum retained capacity
+        var targetBuffer = bufferAllocator.Allocate( options.MaxRetainedCapacity );
+
+        Array.Copy( buffer, 0, targetBuffer, 0, writeOffset );
+
+        bufferAllocator.Release( buffer );
+
+        buffer = targetBuffer;
+
+        return this;
+    }
+
+    /// <summary>
+    /// Creates a writable view over the specified region of the buffer.
+    /// The returned view shares the same underlying memory, allowing for zero-copy modifications.
+    /// The offset must be within the bounds of the buffer's capacity.
+    /// Modifying the returned view will affect the original buffer, and vice versa.
+    /// The returned view is limited to the portion of the buffer starting from the specified offset to the end of the used portion of the buffer.
+    /// </summary>
+    /// <param name="offset">The offset from which to create the writable view</param>
+    /// <param name="length">The length of the writable view</param>
+    /// <returns>A writable buffer view starting at the specified offset</returns>
+    public IWritableByteBufferView CreateView( int offset, int length )
+    {
+        ObjectDisposedException.ThrowIf( disposed, this );
+        ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
+        ArgumentOutOfRangeException.ThrowIfNegative( length, nameof( length ) );
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( length, writeOffset - offset, nameof( length ) );
+
+        return new WritableByteBufferView( this, offset, offset + length );
+    }
+
+    /// <summary>
     /// Releases any resources associated with the buffer. If a custom releaser was provided, it will be invoked with the current buffer.
     /// </summary>
     public void Dispose()
@@ -153,6 +207,31 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         buffer = null!;
         writeOffset = 0;
         disposed = true;
+    }
+
+    /// <summary>
+    /// Rebases the buffer so that the specified offset becomes the new beginning of the buffer.
+    /// </summary>
+    /// <param name="offset">The offset to rebase the buffer to</param>
+    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
+    public IWritableByteBuffer Rebase( int offset )
+    {
+        ObjectDisposedException.ThrowIf( disposed, this );
+
+        ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
+        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
+
+        var remaining = writeOffset - offset;
+
+        if ( remaining > 0 )
+        {
+            Array.Copy( buffer, offset, buffer, 0, remaining );
+        }
+
+        writeOffset = remaining;
+
+        return this;
+
     }
 
     /// <summary>
@@ -207,51 +286,6 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     }
 
     /// <summary>
-    /// Compacts the buffer by discarding bytes up to the specified offset.
-    /// </summary>
-    /// <param name="offset">The offset up to which bytes should be discarded</param>
-    /// <returns>The same IWritableByteBuffer instance to allow fluent syntax</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Thrown when the offset is negative or greater than the used portion of the buffer</exception>
-    public IWritableByteBuffer Compact( int offset )
-    {
-        ObjectDisposedException.ThrowIf( disposed, this );
-
-        ArgumentOutOfRangeException.ThrowIfNegative( offset, nameof( offset ) );
-        ArgumentOutOfRangeException.ThrowIfGreaterThan( offset, writeOffset, nameof( offset ) );
-
-        var remaining = writeOffset - offset;
-        var shouldShrink
-            = buffer.Length > options.MaxRetainedCapacity && remaining <= ( options.MaxRetainedCapacity / 2 );
-
-        /*
-        Reallocate the buffer to the maximum retained capacity
-        if the current capacity is significantly larger
-        than the remaining data after compaction.
-        */
-        var targetBuffer = shouldShrink
-            ? bufferAllocator.Allocate( options.MaxRetainedCapacity )
-            : buffer;
-
-
-        if ( remaining > 0 )
-        {
-            Array.Copy( buffer, offset, targetBuffer, 0, remaining );
-        }
-
-        // release old buffer if we allocated a new one for compaction
-        if ( targetBuffer != buffer )
-        {
-            bufferAllocator.Release( buffer );
-
-            buffer = targetBuffer;
-        }
-
-        writeOffset = remaining;
-
-        return this;
-    }
-
-    /// <summary>
     /// Gets the used portion of the buffer as a byte[]
     /// </summary>
     /// <returns>A byte[] value</returns>
@@ -267,15 +301,18 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
     }
 
     /// <summary>
-    /// Gets the used portion of the buffer as a <see cref="ReadOnlySpan{T}"/>
+    /// Gets the used portion of the buffer as a <see cref="Span{T}"/>
     /// </summary>
-    /// <returns>A <see cref="ReadOnlySpan{T}"/> representing the used portion of the buffer</returns>
-    public ReadOnlySpan<byte> AsSpan()
+    /// <returns>A <see cref="Span{T}"/> representing the used portion of the buffer</returns>
+    public Span<byte> AsSpan()
     {
         ObjectDisposedException.ThrowIf( disposed, this );
 
         return buffer.AsSpan( 0, writeOffset );
     }
+
+    // explicit implementation
+    ReadOnlySpan<byte> IByteBuffer.AsSpan() => AsSpan();
 
     private void EnsureCapacity( int additionalLength )
     {
@@ -355,14 +392,6 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
 
         return this;
     }
-
-    /// <summary>
-    /// Writes the contents of another <see cref="IByteBuffer"/> to this buffer.
-    /// </summary>
-    /// <param name="value">The buffer whose contents are to be written</param>
-    /// <returns>The current buffer instance</returns>
-    public IWritableByteBuffer WriteBytes( IByteBuffer value )
-        => WriteBytes( value.AsSpan() );
 
     /// <summary>
     /// Writes the contents of a <see cref="ReadOnlySpan{T}"/> to the buffer.

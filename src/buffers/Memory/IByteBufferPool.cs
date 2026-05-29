@@ -1,4 +1,4 @@
-namespace Faactory.Channels.Buffers;
+namespace Faactory.Channels.Buffers.Memory;
 
 /// <summary>
 /// Defines a pool of byte buffers that can be rented and returned to optimize memory usage and reduce allocations.

@@ -238,7 +238,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                         compactBuffer = () =>
                         {
                             TextBuffer.Truncate();   // move write offset to 0
-                            TextBuffer.Compact( 0 ); // trigger buffer compaction if necessary
+                            TextBuffer.Compact();    // trigger buffer compaction if necessary
                         };
                     }
                 }
@@ -262,7 +262,7 @@ internal sealed class WebSocketChannel : Channel, IWebSocketChannel
                         compactBuffer = () =>
                         {
                             Buffer.Truncate();   // move write offset to 0
-                            Buffer.Compact( 0 ); // trigger buffer compaction if necessary
+                            Buffer.Compact();    // trigger buffer compaction if necessary
                         };
                     }
                 }

@@ -2,6 +2,7 @@ using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
 using Faactory.Channels.Buffers;
+using Faactory.Channels.Buffers.Memory;
 using Xunit;
 
 namespace tests;
@@ -28,9 +29,35 @@ public class WritableByteBufferTests
 
         Assert.Same( buffer, instance );
 
-        Assert.True( buffer.AsReadable().MatchBytes(
+        Assert.True( buffer.AsReadableView().MatchBytes(
         [
             0x00, 0x01, 0x11, 0x02, 0x22, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
+        ] ) );
+    }
+
+    [Fact]
+    public void TestReplace_WithSameLengthReplacement()
+    {
+        var buffer = new WritableByteBuffer();
+
+        buffer.WriteBytes(
+        [
+            0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
+        ] );
+
+        var instance = buffer.ReplaceBytes(
+        [
+            0x01, 0x02
+        ],
+        [
+            0x11, 0x22
+        ] );
+
+        Assert.Same( buffer, instance );
+
+        Assert.True( buffer.AsReadableView().MatchBytes(
+        [
+            0x00, 0x11, 0x22, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09
         ] ) );
     }
 
@@ -48,7 +75,7 @@ public class WritableByteBufferTests
     }
 
     [Fact]
-    public void Compact_ShouldShiftUnreadBytesToStart()
+    public void Rebase_ShouldShiftUnreadBytesToStart()
     {
         var writable = new WritableByteBuffer( 16 );
         writable.WriteBytes( [0x01, 0x02, 0x03, 0x04, 0x05, 0x06] );
@@ -57,25 +84,12 @@ public class WritableByteBufferTests
 
         view.ReadBytes( 2 ); // consume 0x01, 0x02
 
-        writable.Compact( view.Offset );
+        writable.Rebase( view.Offset );
 
         var newView = writable.AsReadableView();
 
         Assert.Equal( 4, newView.Length );
         Assert.Equal( new byte[] { 0x03, 0x04, 0x05, 0x06 }, newView.AsSpan().ToArray() );
-    }
-
-    [Fact]
-    public void AsReadable_ShouldCreateIndependentCopy()
-    {
-        var writable = new WritableByteBuffer( 16 );
-        writable.WriteBytes( [0x01, 0x02, 0x03] );
-
-        var copy = writable.AsReadable();
-
-        writable.WriteBytes( [0x04] );
-
-        Assert.Equal( new byte[] { 0x01, 0x02, 0x03 }, copy.AsSpan().ToArray() );
     }
 
     [Fact]
@@ -172,13 +186,13 @@ public class WritableByteBufferTests
     }
 
     [Fact]
-    public void Compact_ShouldShiftRemainingBytes()
+    public void Rebase_ShouldShiftRemainingBytes()
     {
         var buffer = new WritableByteBuffer();
 
         buffer.WriteBytes([1, 2, 3, 4], 0, 4);
 
-        buffer.Compact(2);
+        buffer.Rebase( 2 );
 
         Assert.Equal(new byte[] { 3, 4 }, buffer.AsSpan().ToArray());
     }
@@ -314,7 +328,7 @@ public class WritableByteBufferTests
     }
 
     [Fact]
-    public void Writable_Compact_ShouldShrinkBuffer_WhenCapacityExceedsMaxRetainedCapacity()
+    public void Compact_ShouldShrinkBuffer_WhenCapacityExceedsMaxRetainedCapacity()
     {
         var bufferAllocator = new TestBufferAllocator();
 
@@ -336,44 +350,40 @@ public class WritableByteBufferTests
 
         var originalBuffer = buffer.Buffer;
 
-        // compact most data away
-        buffer.Compact( 120 );
+        // discard most data
+        buffer.Rebase( 120 );
 
-        // remaining data should be small
+        // reclaim excess memory
+        buffer.Compact();
+
         Assert.Equal( 8, buffer.Length );
 
-        // old oversized buffer should have been released
         Assert.Equal( 1, bufferAllocator.References );
         Assert.NotSame( originalBuffer, buffer.Buffer );
 
-        // buffer should shrink back to retained capacity
         Assert.Equal( 16, buffer.Buffer.Length );
     }
 
     [Fact]
-    public void Writable_Compact_WithZeroOffset_ShouldShrinkBuffer_WhenCapacityExceedsMaxRetainedCapacity()
+    public void Compact_ShouldNotModifyBufferContents()
     {
         var buffer = new WritableByteBuffer(
             new WritableByteBufferOptions
             {
                 InitialCapacity = 16,
-                MaxRetainedCapacity = 32
+                MaxRetainedCapacity = 16
             }
         );
 
-        // force growth
         buffer.WriteBytes( new byte[128] );
 
-        Assert.True( buffer.Buffer.Length > 32 );
+        var before = buffer.ToArray();
+        var length = buffer.Length;
 
-        // simulate logical reset
-        buffer.Truncate();
+        buffer.Compact();
 
-        // should still apply retention policy
-        buffer.Compact( 0 );
-
-        Assert.Equal( 0, buffer.Length );
-        Assert.Equal( 32, buffer.Buffer.Length );
+        Assert.Equal( length, buffer.Length );
+        Assert.Equal( before, buffer.AsSpan().ToArray() );
     }
 
     private class TestBufferAllocator : IByteBufferAllocator

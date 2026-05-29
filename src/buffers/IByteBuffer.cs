@@ -17,14 +17,14 @@ public interface IByteBuffer
     int Length { get; }
 
     /// <summary>
-    /// Gets the entire buffer as a byte[] no matter where the reading/writing offset is
+    /// Gets the full logical contents of the buffer as a span.
     /// </summary>
-    /// <returns>A byte[] value</returns>
-    byte[] ToArray();
+    /// <returns>A <see cref="ReadOnlySpan{T}"/> containing the full logical contents of the buffer.</returns>
+    ReadOnlySpan<byte> AsSpan();
 
     /// <summary>
-    /// Gets the used portion of the buffer as a <see cref="ReadOnlySpan{T}"/>
+    /// Gets the full logical contents of the buffer as a byte array.
     /// </summary>
-    /// <returns>A <see cref="ReadOnlySpan{T}"/> representing the used portion of the buffer</returns>
-    ReadOnlySpan<byte> AsSpan();
+    /// <returns>A byte array containing the full logical contents of the buffer.</returns>
+    byte[] ToArray();
 }
