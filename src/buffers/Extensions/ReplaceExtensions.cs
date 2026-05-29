@@ -44,6 +44,11 @@ public static class WritableByteBufferReplaceExtensions
             return source;
         }
 
+        if ( source is IWritableByteBufferView )
+        {
+            throw new NotSupportedException( "Variable-length replacement is not supported on writable views." );
+        }
+
         var original = source.ToArray();
 
         source.Truncate();
