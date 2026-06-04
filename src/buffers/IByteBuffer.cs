@@ -17,6 +17,12 @@ public interface IByteBuffer
     int Length { get; }
 
     /// <summary>
+    /// Gets the full logical contents of the buffer as a memory.
+    /// </summary>
+    /// <returns>A <see cref="ReadOnlyMemory{T}"/> containing the full logical contents of the buffer.</returns>
+    ReadOnlyMemory<byte> AsMemory();
+
+    /// <summary>
     /// Gets the full logical contents of the buffer as a span.
     /// </summary>
     /// <returns>A <see cref="ReadOnlySpan{T}"/> containing the full logical contents of the buffer.</returns>

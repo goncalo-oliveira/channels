@@ -24,6 +24,12 @@ public interface IWritableByteBuffer : IByteBuffer, IDisposable
     IReadableByteBuffer AsReadableView();
 
     /// <summary>
+    /// Gets the used portion of the buffer as a <see cref="Memory{T}"/>
+    /// </summary>
+    /// <returns>A <see cref="Memory{T}"/> representing the used portion of the buffer</returns>
+    new Memory<byte> AsMemory();
+
+    /// <summary>
     /// Gets the used portion of the buffer as a <see cref="Span{T}"/>
     /// </summary>
     /// <returns>A <see cref="Span{T}"/> representing the used portion of the buffer</returns>

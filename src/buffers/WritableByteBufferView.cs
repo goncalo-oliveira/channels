@@ -21,12 +21,19 @@ internal sealed class WritableByteBufferView( WritableByteBuffer buffer, int off
 
     public int WritableBytes => Length - writeOffset;
 
+    public Memory<byte> AsMemory()
+    {
+        return buffer.AsMemory().Slice( offset, Length );
+    }
+
     public Span<byte> AsSpan()
     {
         return buffer.AsSpan()[offset..bufferLimit];
     }
 
+
     // explicit implementation
+    ReadOnlyMemory<byte> IByteBuffer.AsMemory() => AsMemory();
     ReadOnlySpan<byte> IByteBuffer.AsSpan() => AsSpan();
 
     public IReadableByteBuffer AsReadableView()

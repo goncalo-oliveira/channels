@@ -478,6 +478,15 @@ public sealed class ReadableByteBuffer : IReadableByteBuffer
     }
 
     /// <summary>
+    /// Gets the underlying buffer as a <see cref="ReadOnlyMemory{T}"/>
+    /// </summary>
+    /// <returns>A <see cref="ReadOnlyMemory{T}"/> representing the used portion of the buffer</returns>
+    public ReadOnlyMemory<byte> AsMemory()
+    {
+        return buffer.AsMemory( start, Length );
+    }
+
+    /// <summary>
     /// Gets the underlying buffer as a <see cref="ReadOnlySpan{T}"/>
     /// </summary>
     /// <returns>A <see cref="ReadOnlySpan{T}"/> representing the used portion of the buffer</returns>

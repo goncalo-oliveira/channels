@@ -311,6 +311,19 @@ public sealed class WritableByteBuffer : IWritableByteBuffer
         return buffer.AsSpan( 0, writeOffset );
     }
 
+    /// <summary>
+    /// Gets the used portion of the buffer as a <see cref="Memory{T}"/>
+    /// </summary>
+    /// <returns>A <see cref="Memory{T}"/> representing the used portion of the buffer</returns>
+    public Memory<byte> AsMemory()
+    {
+        ObjectDisposedException.ThrowIf( disposed, this );
+
+        return buffer.AsMemory( 0, writeOffset );
+    }
+
+    ReadOnlyMemory<byte> IByteBuffer.AsMemory() => AsMemory();
+
     // explicit implementation
     ReadOnlySpan<byte> IByteBuffer.AsSpan() => AsSpan();
 

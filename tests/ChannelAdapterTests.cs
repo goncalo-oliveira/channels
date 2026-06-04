@@ -157,6 +157,11 @@ public class ChannelAdapterTests
         public Endianness Endianness => Endianness.BigEndian;
         public int Length => data.Length;
 
+        public ReadOnlyMemory<byte> AsMemory()
+        {
+            return new ReadOnlyMemory<byte>( data );
+        }
+
         public ReadOnlySpan<byte> AsSpan() => new( data );
         public byte[] ToArray() => data;
     }
