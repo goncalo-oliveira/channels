@@ -60,4 +60,11 @@ public interface IChannelHandle
     /// </summary>
     /// <returns>A task that represents the asynchronous close operation.</returns>
     Task CloseAsync();
+
+    /// <summary>
+    /// Sends data through the underlying channel's output pipeline.
+    /// </summary>
+    /// <param name="data">The data to be sent through the channel.</param>
+    /// <returns>A task that represents the asynchronous write operation.</returns>
+    Task WriteAsync( object data );
 }

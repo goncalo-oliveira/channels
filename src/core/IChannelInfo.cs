@@ -19,4 +19,19 @@ public interface IChannelInfo
     /// Gets the channel's ephemeral data
     /// </summary>
     IReadOnlyDictionary<string, object> Data { get; }
+
+    /// <summary>
+    /// Gets channel creation date
+    /// </summary>
+    DateTimeOffset Created { get; }
+
+    /// <summary>
+    /// Gets last received data timestamp
+    /// </summary>
+    DateTimeOffset? LastReceived { get; }
+
+    /// <summary>
+    /// Gets last sent data timestamp
+    /// </summary>
+    DateTimeOffset? LastSent { get; }
 }
