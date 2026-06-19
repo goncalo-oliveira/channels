@@ -26,4 +26,7 @@ internal sealed class ChannelHandle( IChannel channel ) : IChannelHandle
 
     public Task CloseAsync()
         => channel.CloseAsync();
+
+    public Task WriteAsync( object data )
+        => channel.WriteAsync( data );
 }

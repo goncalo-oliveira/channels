@@ -18,6 +18,8 @@ public abstract class Channel : IChannel, IAsyncDisposable
     private readonly Func<IChannelInfo, TagList> metricsTagsFactory;
     private Task initializeTask = Task.CompletedTask;
     private Task idleMonitorTask = Task.CompletedTask;
+    private long lastReceived;
+    private long lastSent;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Channel"/> class with the specified service scope.
@@ -138,12 +140,16 @@ public abstract class Channel : IChannel, IAsyncDisposable
     /// <summary>
     /// The timestamp when the channel last received data.
     /// </summary>
-    public DateTimeOffset? LastReceived { get; private set; }
+    public DateTimeOffset? LastReceived => lastReceived > 0
+        ? DateTimeOffset.FromUnixTimeMilliseconds( Interlocked.Read( ref lastReceived ) )
+        : null;
 
     /// <summary>
     /// The timestamp when the channel last sent data.
     /// </summary>
-    public DateTimeOffset? LastSent { get; private set; }
+    public DateTimeOffset? LastSent => lastSent > 0
+        ? DateTimeOffset.FromUnixTimeMilliseconds( Interlocked.Read( ref lastSent ) )
+        : null;
 
     /// <summary>
     /// The channel services initialized for the current channel instance.
@@ -361,7 +367,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
     /// <param name="data">The data that was received.</param>
     protected void NotifyDataReceived( ReadOnlySpan<byte> data )
     {
-        LastReceived = DateTimeOffset.UtcNow;
+        Interlocked.Exchange( ref lastReceived, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() );
 
         Metrics.DataReceived.Add( data.Length, GetMetricsTags() );
 
@@ -377,7 +383,7 @@ public abstract class Channel : IChannel, IAsyncDisposable
     /// <param name="data">The data that was sent.</param>
     protected void NotifyDataSent( ReadOnlySpan<byte> data )
     {
-        LastSent = DateTimeOffset.UtcNow;
+        Interlocked.Exchange( ref lastSent, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() );
 
         Metrics.DataSent.Add( data.Length, GetMetricsTags() );
 
@@ -445,8 +451,10 @@ public abstract class Channel : IChannel, IAsyncDisposable
 
     private async Task MonitorIdleStateAsync( CancellationToken cancellationToken )
     {
-        LastReceived = DateTimeOffset.UtcNow;
-        LastSent = DateTimeOffset.UtcNow;
+        var now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+        Interlocked.Exchange( ref lastReceived, now );
+        Interlocked.Exchange( ref lastSent, now );
 
         ScopeLogger(
             logger => logger.LogDebug( "Idle state monitoring started." )
